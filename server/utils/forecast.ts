@@ -37,7 +37,7 @@ export async function getForecast(event: any, lat: number, lon: number, dates: s
       try {
         const parsed = JSON.parse(cached) as { result: ForecastResult; fetchedAt: number }
         const ageH = (Date.now() - parsed.fetchedAt) / 36e5
-        if (ageH <= 12) {
+        if (ageH <= 6) {
           return parsed.result
         }
         // else fallthrough to refresh

@@ -15,15 +15,7 @@ export type RankItem = {
 }
 
 export function useRank() {
-  const prefs = process.client
-    ? usePrefs()
-    : ({
-        where: ref({ lat: 51.5074, lon: -0.1278, name: 'London' }),
-        maxDriveMins: ref(120),
-        when: ref('next-weekend' as WhenPreset),
-        type: ref('any' as ClimbType)
-      } as const)
-  const { where, maxDriveMins, when, type } = prefs
+  const { where, maxDriveMins, when, type } = usePrefs()
   const items = ref<RankItem[]>([])
   const pending = ref(false)
   const error = ref<string | null>(null)
@@ -32,20 +24,42 @@ export function useRank() {
     pending.value = true
     error.value = null
     try {
+      console.debug('[useRank] fetchRank:start', {
+        where: where.value,
+        maxDriveMins: maxDriveMins.value,
+        when: when.value,
+        type: type.value,
+        customDates
+      })
+      const w = where.value as any
+      const lat = Number(w?.lat)
+      const lon = Number(w?.lon)
+      console.debug('[useRank] parsed location', { lat, lon })
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+        items.value = []
+        error.value = 'Please pick a location'
+        console.debug('[useRank] fetchRank:abort no location')
+        return
+      }
       const dates = customDates ?? presetDates(when.value as WhenPreset)
       const params = new URLSearchParams()
-      params.set('lat', String(where.value.lat))
-      params.set('lon', String(where.value.lon))
+      params.set('lat', String(lat))
+      params.set('lon', String(lon))
       params.set('maxDriveMins', String(maxDriveMins.value))
       params.set('climbType', type.value)
       params.set('dates', dates.join(','))
-      const res = await fetch(`/api/rank?${params.toString()}`)
-      items.value = await res.json()
+      const url = `/api/rank?${params.toString()}`
+      console.debug('[useRank] GET', url)
+      const res = await fetch(url)
+      const json = await res.json()
+      items.value = json
+      console.debug('[useRank] fetchRank:ok', { count: Array.isArray(json) ? json.length : null })
     } catch (e: any) {
       error.value = e?.message || 'Failed to fetch rank'
-      console.error('fetchRank error', e)
+      console.error('[useRank] fetchRank:error', e)
     } finally {
       pending.value = false
+      console.debug('[useRank] fetchRank:end', { pending: pending.value, error: error.value })
     }
   }
 

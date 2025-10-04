@@ -1,24 +1,13 @@
 <template>
   <div class="space-y-6">
-    <div v-if="!mounted" class="text-gray-500">Loading…</div>
-    <section v-else-if="firstRun" class="space-y-4">
-      <h2 class="text-xl font-semibold">Where?</h2>
-      <PlaceSearch @picked="onPicked" />
-      <h2 class="text-xl font-semibold">Max distance</h2>
-      <URange v-model="prefs.maxDriveMins.value" :min="30" :max="240" :step="10" />
-      <h2 class="text-xl font-semibold">When?</h2>
-      <WhenPicker v-model="prefs.when.value" />
-      <h2 class="text-xl font-semibold">Climbing type (optional)</h2>
-      <URadioGroup v-model="prefs.type.value" :options="types" />
-      <div>
-        <UButton label="Save" @click="savePrefs" />
-      </div>
+    <section v-if="showPrefs || needsSetup" class="space-y-4">
+      <PrefsForm ctaLabel="Get Recommendation" @confirm="savePrefs" />
     </section>
 
     <section v-else>
       <div class="mb-4 flex items-center justify-between">
         <div class="text-sm text-gray-500">Showing for {{ prefs.where.value.name }} · max {{ prefs.maxDriveMins.value }} mins · {{ labelWhen }}</div>
-        <UButton color="gray" variant="ghost" icon="i-heroicons-adjustments-horizontal" @click="firstRun=true">Adjust</UButton>
+        <UButton color="gray" variant="ghost" icon="i-heroicons-adjustments-horizontal" @click="showPrefs = true">Adjust</UButton>
       </div>
       <div v-if="pending" class="text-gray-500">Loading…</div>
       <div v-else>
@@ -36,20 +25,20 @@
 import { ref, computed, onMounted } from 'vue'
 import { usePrefs } from '~/composables/usePrefs'
 import { useRank } from '~/composables/useRank'
-import PlaceSearch from '~/app/components/PlaceSearch.vue'
-import WhenPicker from '~/app/components/WhenPicker.vue'
-import RegionCard from '~/app/components/RegionCard.vue'
-const prefs = process.client
-  ? usePrefs()
-  : ({
-      where: ref({ lat: 51.5074, lon: -0.1278, name: 'London' }),
-      maxDriveMins: ref(120),
-      when: ref('next-weekend'),
-      type: ref('any')
-    } as any)
+import PrefsForm from '~/components/PrefsForm.vue'
+import RegionCard from '~/components/RegionCard.vue'
+const prefs = usePrefs()
 const { items, pending, fetchRank } = useRank()
-const mounted = ref(false)
-const firstRun = ref(false)
+const showPrefs = ref(false)
+const hasValidLocation = computed(() => {
+  const w = prefs.where.value as any
+  if (!w) return false
+  const lat = Number(w.lat)
+  const lon = Number(w.lon)
+  const name = typeof w.name === 'string' ? w.name.trim() : ''
+  return Number.isFinite(lat) && Number.isFinite(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180 && name.length > 1
+})
+const needsSetup = computed(() => !hasValidLocation.value)
 const types = [
   { value: 'any', label: 'Any' },
   { value: 'trad', label: 'Trad' },
@@ -57,25 +46,17 @@ const types = [
   { value: 'boulder', label: 'Boulder' },
 ]
 const labelWhen = computed(() => {
-  if (!mounted.value) return ''
   const m: any = { 'today': 'Today', 'tomorrow': 'Tomorrow', 'this-weekend': 'This weekend', 'next-weekend': 'Next weekend', 'custom': 'Custom' }
   return m[prefs.when.value]
 })
 
 onMounted(async () => {
-  mounted.value = true
-  // determine first-run if no explicit where stored by user
-  firstRun.value = !localStorage.getItem('climb.prefs.where.set')
-  if (!firstRun.value) await fetchRank()
+  if (hasValidLocation.value) await fetchRank()
 })
 
-function onPicked(p:{ lat:number; lon:number; name:string }) {
-  prefs.where.value = p
-}
-
 async function savePrefs() {
-  localStorage.setItem('climb.prefs.where.set', '1')
+  if (!prefs.where.value) return
   await fetchRank()
-  firstRun.value = false
+  showPrefs.value = false
 }
 </script>
