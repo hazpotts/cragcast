@@ -1,0 +1,90 @@
+name: Deploy CragCast to Cloudflare Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "assets/**"
+      - "components/**"
+      - "composables/**"
+      - "pages/**"
+      - "plugins/**"
+      - "public/**"
+      - "server/**"
+      - "utils/**"
+      - "types/**"
+      - "app.vue"
+      - "app.config.ts"
+      - "nuxt.config.*"
+      - "package.json"
+      - "pnpm-lock.yaml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    permissions:
+      contents: read
+      deployments: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: pnpm fetch
+        run: pnpm fetch
+
+      - name: Install dependencies (frozen, offline if possible)
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      # Build for Cloudflare Pages (SSR with Pages Functions via Nitro preset)
+      - name: Nuxt build
+        run: pnpm exec nuxi build
+
+      - name: Generate wrangler.toml (from secrets)
+        run: |
+          cat > wrangler.toml <<EOF
+          name = "cragcast"
+          main = ".output/server/index.mjs"
+          compatibility_date = "2025-10-06"
+          compatibility_flags = ["nodejs_compat"]
+
+          routes = [
+            { pattern = "${{ vars.APP_DOMAIN }}/*", zone_id = "${{ secrets.CLOUDFLARE_ZONE_ID }}" }
+          ]
+
+          workers_dev = false
+
+          [[kv_namespaces]]
+          binding = "CRAGCAST"
+          id = "${{ secrets.CLOUDFLARE_KV_NAMESPACE_ID }}"
+          preview_id = "${{ secrets.CLOUDFLARE_KV_NAMESPACE_ID }}"
+
+          [assets]
+          directory = ".output/public"
+          binding = "ASSETS"
+          EOF
+
+      - name: Deploy via Wrangler
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4'
+          command: deploy --minify
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
