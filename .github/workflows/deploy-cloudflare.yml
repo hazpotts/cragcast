@@ -34,17 +34,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-          run_install: false
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "pnpm"
+
+      - name: Enable corepack (use pnpm from package.json)
+        run: corepack enable
 
       - name: pnpm fetch
         run: pnpm fetch
@@ -52,7 +49,7 @@ jobs:
       - name: Install dependencies (frozen, offline if possible)
         run: pnpm install --frozen-lockfile --prefer-offline
 
-      # Build for Cloudflare Pages (SSR with Pages Functions via Nitro preset)
+      # Build for Cloudflare Workers (Nitro cloudflare preset)
       - name: Nuxt build
         run: pnpm exec nuxi build
 
