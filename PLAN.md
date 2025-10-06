@@ -3,7 +3,7 @@
 ## Milestones
 - [x] Scaffold Nuxt 3 (TypeScript, pnpm, Vite) targeting Cloudflare Pages
 - [x] Cloudflare KV binding (CLIMB_KV) and wrangler config for local dev
-- [x] API: /api/regions and /api/rank with 12h freshness via KV + Open-Meteo
+- [x] API: /api/regions and /api/rank with 3h freshness via KV + Open-Meteo
 - [x] Utilities: forecast, score, regions, dates, distance
 - [x] Styling: Tailwind + Nuxt UI integration
 - [x] UI Components: ModeToggle, WhenPicker, RegionCard, CompareTable, MiniChart, PlaceSearch
@@ -24,10 +24,16 @@
 - Google Places optional; fallback geocoder provided for dev.
 
 ## Next Actions
-1. Switch to get parameters in the url instead of local storage
-2. Change location search to auto-complete, when user clicks result add it, remove search button, place cross hair location icon to the right of the input field to use for the browser API, remove use my location button, add hover text instead
-3. Change location distance to 30 min, 1 hour, 2 hours, no limit, keep number as value, just use these options in the UI, use buttons like for when
-4. Switch to pure dates for when, presets just in UI
-5. Make interface maximum width 600px on recommed page, keep all results as single card on a row, hide additionals initially, with button to show
-6. Add square to regions to calculate range of travel to time
-7. Add Cypress e2e tests and polish UI/empty states
+1. Add severe weather warnings
+2. Add AI page with crag info
+    - crag info api suggested by ai
+    - MWIS
+    - tell it to read UKC if possible?
+    - Have it locked town to only advise on these things
+    - Feed it the users prefs first
+    - Plan for how to suggest crags
+    - Cache initial results and rate limit
+
+
+
+

@@ -1,36 +1,133 @@
 <template>
   <div>
-    <UTable :rows="rows" :columns="columns" :sort="sort" @update:sort="s=>sort=s">
+    <UTable :rows="rowsWithSort" :columns="columns" :sort="sort" @update:sort="onSort">
+      <template #fav-data="{ row }">
+        <UButton
+          variant="ghost"
+          size="xs"
+          :aria-label="isFaved(row.id) ? 'Unfavourite' : 'Favourite'"
+          @click="toggle(row.id)"
+          class="text-yellow-500 hover:text-yellow-600"
+        >
+          <Icon :name="isFaved(row.id) ? 'heroicons-solid:star' : 'heroicons:star'" class="h-5 w-5" />
+        </UButton>
+      </template>
+      <template #areaSort-data="{ row }">
+        {{ row.pending ? '…' : row.area }}
+      </template>
       <template #score-data="{ row }">
-        <span class="font-semibold">{{ row.score }}</span>
+        <span class="font-semibold">{{ row.pending ? '…' : row.score }}</span>
       </template>
-      <template #rain-data="{ row }">
-        <MiniChart :rain="row.mini.rainMm" :wind="[]" :temp="[]" />
+      <template #weather-data="{ row }">
+        <template v-if="row.pending">
+          <div class="flex items-center gap-2 text-lg text-gray-300">
+            <span class="animate-pulse">•</span>
+            <span class="animate-pulse">•</span>
+            <span class="animate-pulse">•</span>
+          </div>
+        </template>
+        <template v-else>
+          <div class="flex items-center gap-2">
+            <template v-for="d in row.daily" :key="d.date">
+              <Icon :name="iconName(d.icon)" :title="`${iconLabel(d.icon)} – ${d.date}`" class="h-7 w-7" />
+            </template>
+          </div>
+        </template>
       </template>
-      <template #wind-data="{ row }">
-        <MiniChart :rain="[]" :wind="row.mini.wind" :temp="[]" />
+      <template #avgTempC-data="{ row }">
+        {{ row.pending ? '…' : `${row.avgTempC} °C` }}
       </template>
-      <template #temp-data="{ row }">
-        <MiniChart :rain="[]" :wind="[]" :temp="row.mini.temp" />
+      <template #avgWindMph-data="{ row }">
+        {{ row.pending ? '…' : `${row.avgWindMph} mph` }}
+      </template>
+      <template #avgRainMm-data="{ row }">
+        {{ row.pending ? '…' : `${row.avgRainMm} mm` }}
+      </template>
+      <template #distanceMins-data="{ row }">
+        <template v-if="row.pending">…</template>
+        <template v-else-if="Number.isFinite(row.distanceMins) && row.distanceMins > 0">{{ row.distanceMins }}</template>
+        <!-- else: render nothing to hide the dash -->
+      </template>
+      <template #updatedAt-data="{ row }">
+        <span>{{ row.pending ? '…' : new Date(row.updatedAt).toLocaleString() }}</span>
       </template>
       <template #ukc-data="{ row }">
-        <UButton color="gray" variant="link" :href="row.ukcUrl" target="_blank" rel="noopener">UKC</UButton>
+        <template v-if="row.pending">
+          <span class="text-gray-400">—</span>
+        </template>
+        <template v-else>
+          <div class="flex items-center gap-2">
+            <a :href="row.links?.bbc" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-700 underline flex items-center">
+              BBC <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-1 h-4 w-4" />
+            </a>
+            <a :href="row.links?.metoffice" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-700 underline flex items-center">
+              Met Office <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-1 h-4 w-4" />
+            </a>
+            <a :href="row.links?.windy" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-700 underline flex items-center">
+              Windy <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-1 h-4 w-4" />
+            </a>
+            <a :href="row.ukcUrl" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-700 underline flex items-center">
+              UKC <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-1 h-4 w-4" />
+            </a>
+          </div>
+        </template>
       </template>
     </UTable>
   </div>
 </template>
 <script setup lang="ts">
-import MiniChart from './MiniChart.vue'
-const props = defineProps<{ rows: any[] }>()
+import { reactive, computed } from 'vue'
+const props = defineProps<{ rows: any[]; favourites?: string[] }>()
+const emit = defineEmits<{ (e:'toggle-favourite', id: string): void }>()
+const rowsWithSort = computed(() => (props.rows || []).map((r: any) => ({
+  ...r,
+  areaSort: `${r?.area ?? ''} | ${r?.name ?? ''}`
+})))
+function isFaved(id: string) { return Array.isArray(props.favourites) && props.favourites.includes(id) }
+function toggle(id: string) { emit('toggle-favourite', id) }
 const columns = [
+  { key: 'fav', label: '★' },
+  { key: 'areaSort', label: 'Area', sortable: true },
   { key: 'name', label: 'Region' },
   { key: 'score', label: 'Score', sortable: true },
-  { key: 'rain', label: 'Rain' },
-  { key: 'wind', label: 'Wind' },
-  { key: 'temp', label: 'Temp' },
+  { key: 'weather', label: 'Weather' },
+  { key: 'avgTempC', label: 'Avg Temp' },
+  { key: 'avgWindMph', label: 'Avg Wind' },
+  { key: 'avgRainMm', label: 'Avg Rain' },
   { key: 'distanceMins', label: 'Distance', sortable: true },
   { key: 'updatedAt', label: 'Updated' },
-  { key: 'ukc', label: 'UKC' }
+  { key: 'ukc', label: 'Links' }
 ]
 let sort = reactive({ column: 'score', direction: 'desc' as const })
+function onSort(s: any) { sort = s }
+
+function iconName(code: string): string {
+  switch (code) {
+    case 'sun': return 'meteocons:clear-day'
+    case 'light-cloud': return 'meteocons:partly-cloudy-day'
+    case 'cloud': return 'meteocons:cloudy'
+    case 'dark-cloud': return 'meteocons:overcast'
+    case 'rain': return 'meteocons:rain'
+    case 'heavy-rain': return 'meteocons:extreme-rain'
+    case 'thunder': return 'meteocons:thunderstorms'
+    case 'snow': return 'meteocons:snow'
+    case 'sleet': return 'meteocons:sleet'
+    default: return 'meteocons:cloudy'
+  }
+}
+function iconLabel(code: string): string {
+  switch (code) {
+    case 'sun': return 'Sunny'
+    case 'light-cloud': return 'Partly cloudy'
+    case 'cloud': return 'Cloudy'
+    case 'dark-cloud': return 'Overcast'
+    case 'rain': return 'Rain'
+    case 'heavy-rain': return 'Heavy rain'
+    case 'thunder': return 'Thunderstorms'
+    case 'snow': return 'Snow'
+    case 'sleet': return 'Sleet'
+    default: return 'Cloudy'
+  }
+}
+// Built-in colours from Meteocons, no custom classes needed
 </script>

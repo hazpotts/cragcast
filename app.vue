@@ -1,16 +1,27 @@
 <template>
   <div class="app">
-    <header class="container">
-      <h1>
-        <a href="/">CragCast</a>
-      </h1>
+    <header class="p-4">
+      <a href="/" aria-label="CragCast home" class="flex items-center gap-2">
+        <img :src="logoUrl" alt="CragCast" class="h-8 w-auto" />
+        <span class="text-white text-xl font-semibold">cragcast</span>
+      </a>
       <ModeToggle />
     </header>
-    <main class="container">
+    <main class="p-4">
       <NuxtPage />
     </main>
   </div>
 </template>
+<script setup lang="ts">
+import logoUrl from '~/assets/images/logo.png?url'
+useHead({
+  link: [
+    { rel: 'icon', type: 'image/png', href: logoUrl, sizes: '32x32' },
+    { rel: 'icon', type: 'image/png', href: logoUrl, sizes: '16x16' },
+    { rel: 'apple-touch-icon', href: logoUrl, sizes: '180x180' }
+  ]
+})
+</script>
 
 <style>
 :root { color-scheme: light dark; }

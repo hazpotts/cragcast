@@ -20,6 +20,9 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@iconify-json/heroicons": "^1.2.3",
+    "@iconify-json/heroicons-solid": "^1.2.1",
+    "@iconify-json/meteocons": "^1.2.4",
     "@nuxtjs/tailwindcss": "^6.12.1",
     "@types/node": "^20.11.0",
     "autoprefixer": "^10.4.20",

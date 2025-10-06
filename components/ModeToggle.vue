@@ -1,8 +1,22 @@
 <template>
   <div class="flex items-center gap-2">
     <UButtonGroup size="sm" :ui="{ rounded: 'rounded-full' }">
-      <UButton :color="mode === 'recommend' ? 'primary' : 'gray'" label="Recommend" @click="set('recommend')"/>
-      <UButton :color="mode === 'compare' ? 'primary' : 'gray'" label="Compare" @click="set('compare')"/>
+      <UButton
+        label="Recommend"
+        @click="set('recommend')"
+        variant="soft"
+        :class="mode === 'recommend'
+          ? 'bg-sky-600 text-sky-50 hover:bg-sky-500 dark:bg-sky-500 dark:text-sky-50 dark:hover:bg-sky-400'
+          : 'bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50'"
+      />
+      <UButton
+        label="Compare"
+        @click="set('compare')"
+        variant="soft"
+        :class="mode === 'compare'
+          ? 'bg-sky-600 text-sky-50 hover:bg-sky-500 dark:bg-sky-500 dark:text-sky-50 dark:hover:bg-sky-400'
+          : 'bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50'"
+      />
     </UButtonGroup>
   </div>
 </template>

@@ -1,39 +1,57 @@
 <template>
   <div class="space-y-6 max-w-[600px] mx-auto">
     <section v-if="showPrefs" class="space-y-4">
-      <PrefsForm ctaLabel="Get Recommendation" @confirm="savePrefs" />
+      <PrefsForm @confirm="savePrefs" @cancel="showPrefs=false" />
     </section>
 
     <section v-else>
       <div class="mb-4 flex items-center justify-between">
-        <div class="text-sm text-gray-500">Showing for {{ prefs.where.value.name }} · max {{ prefs.maxDriveMins.value }} mins · {{ labelWhen }}</div>
-        <UButton color="gray" variant="ghost" icon="i-heroicons-adjustments-horizontal" @click="showPrefs = true">Adjust</UButton>
+        <div class="text-sm text-gray-500">
+          <template v-if="prefs.where.value">
+            Showing for {{ (prefs.where.value as any).name }} · {{ distanceLabel }} · {{ labelWhen }}
+          </template>
+          <template v-else>
+            Showing {{ labelWhen }}
+          </template>
+        </div>
+        <UButton variant="ghost" @click="showPrefs = true" class="text-sky-700 hover:text-sky-800 dark:text-sky-200 dark:hover:text-sky-100">
+          <Icon name="heroicons:adjustments-horizontal-20-solid" class="mr-1 h-5 w-5" />
+          Adjust
+        </UButton>
       </div>
-      <div v-if="pending" class="text-gray-500">Loading…</div>
+      <div v-if="pending" class="space-y-4">
+        <SkeletonCard />
+      </div>
       <div v-else>
         <div v-if="items[0]" class="mb-6">
-          <RegionCard :name="items[0].name" :score="items[0].score" :why="items[0].why" :mini="items[0].mini" :distanceMins="items[0].distanceMins" :updatedAt="items[0].updatedAt" :ukcUrl="items[0].ukcUrl" />
+          <RegionCard :name="items[0].name" :score="items[0].score" :why="items[0].why" :daily="items[0].daily" :distanceMins="Number(items[0].distanceMins ?? 0)" :updatedAt="items[0].updatedAt" :ukcUrl="items[0].ukcUrl" :links="items[0].links" />
         </div>
         <div class="flex flex-col gap-4">
-          <template v-if="showMore">
-            <RegionCard v-for="r in items.slice(1)" :key="r.id" :name="r.name" :score="r.score" :why="r.why" :mini="r.mini" :distanceMins="r.distanceMins" :updatedAt="r.updatedAt" :ukcUrl="r.ukcUrl" />
+          <template>
+            <RegionCard v-for="r in items.slice(1, visibleCount)" :key="r.id" :name="r.name" :score="r.score" :why="r.why" :daily="r.daily" :distanceMins="Number(r.distanceMins ?? 0)" :updatedAt="r.updatedAt" :ukcUrl="r.ukcUrl" :links="r.links" />
           </template>
-          <UButton v-else-if="items.length > 1" label="Show more" color="gray" variant="soft" @click="showMore=true" />
+          <UButton v-if="items.length > visibleCount" label="Show more" variant="soft" @click="showMore()"
+            class="bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-300 dark:hover:bg-sky-900/50" />
         </div>
       </div>
     </section>
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { usePrefs } from '~/composables/usePrefs'
 import { useRank } from '~/composables/useRank'
 import PrefsForm from '~/components/PrefsForm.vue'
+import SkeletonCard from '~/components/SkeletonCard.vue'
 import RegionCard from '~/components/RegionCard.vue'
 const prefs = usePrefs()
 const { items, pending, fetchRank } = useRank()
 const showPrefs = ref(true)
-const showMore = ref(false)
+const visibleCount = ref(6) // show top 1, then next 5 by default
+function showMore() { visibleCount.value += 5 }
+const route = useRoute()
+const hasUrlDates = computed(() => typeof route.query.dates === 'string' && route.query.dates.length > 0)
+let routeWatchTimer: any = null
 const hasValidLocation = computed(() => {
   const w = prefs.where.value as any
   if (!w) return false
@@ -50,11 +68,34 @@ const labelWhen = computed(() => {
   const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
   return ds.length === 1 ? fmt(d1) : `${fmt(d1)} – ${fmt(dN)}`
 })
+const distanceLabel = computed(() => Number.isFinite(prefs.maxDriveMins.value)
+  ? `max ${prefs.maxDriveMins.value} mins`
+  : 'No distance limit')
+
+onMounted(async () => {
+  showPrefs.value = !hasUrlDates.value
+  if (hasUrlDates.value && !items.value?.length) await fetchRank()
+})
+
+watch(() => route.query, () => {
+  if (routeWatchTimer) clearTimeout(routeWatchTimer)
+  routeWatchTimer = setTimeout(async () => {
+    if (showPrefs.value) return
+    const has = hasUrlDates.value
+    showPrefs.value = !has
+    if (has) {
+      await fetchRank()
+    } else {
+      // Clear list when no URL dates
+      items.value = [] as any
+      visibleCount.value = 6
+    }
+  }, 150)
+}, { deep: true })
 
 async function savePrefs() {
-  if (!prefs.where.value) return
   await fetchRank()
   showPrefs.value = false
-  showMore.value = false
+  visibleCount.value = 6
 }
 </script>

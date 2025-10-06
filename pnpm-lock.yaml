@@ -24,6 +24,15 @@ importers:
         specifier: ^3.24.0
         version: 3.25.76
     devDependencies:
+      '@iconify-json/heroicons':
+        specifier: ^1.2.3
+        version: 1.2.3
+      '@iconify-json/heroicons-solid':
+        specifier: ^1.2.1
+        version: 1.2.1
+      '@iconify-json/meteocons':
+        specifier: ^1.2.4
+        version: 1.2.4
       '@nuxtjs/tailwindcss':
         specifier: ^6.12.1
         version: 6.14.0(magicast@0.3.5)(yaml@2.8.1)
@@ -716,8 +725,14 @@ packages:
     peerDependencies:
       vue: ^3.2.0
 
+  '@iconify-json/heroicons-solid@1.2.1':
+    resolution: {integrity: sha512-sRZ6U1FT1lkxtIuL+iQ9Fpm5IZxvJCDaKdLpP5elgZ6OkQn6j8HVJpxgFIcuJbHC/EeoNp3tHldMEELqN9pZDQ==}
+
   '@iconify-json/heroicons@1.2.3':
     resolution: {integrity: sha512-n+vmCEgTesRsOpp5AB5ILB6srsgsYK+bieoQBNlafvoEhjVXLq8nIGN4B0v/s4DUfa0dOrjwE/cKJgIKdJXOEg==}
+
+  '@iconify-json/meteocons@1.2.4':
+    resolution: {integrity: sha512-E7YV02ql5WmJgAOpXU/hoF9Mdshq73KjwR6fBxZ5SrqMJghMa3CIcRG6NQGwP4I1uBOhIjOFlAikYoPAKuT56A==}
 
   '@iconify/collections@1.0.601':
     resolution: {integrity: sha512-0rTkng4arHTfeEPA+h5zHHBCdvRsWxcrGbit+dOGyRqNj7Rtx3PwBtdh/q9+h8wai5j+wcbkaJSQPHqgRLb2zw==}
@@ -5359,7 +5374,15 @@ snapshots:
       '@tanstack/vue-virtual': 3.13.12(vue@3.5.22(typescript@5.9.3))
       vue: 3.5.22(typescript@5.9.3)
 
+  '@iconify-json/heroicons-solid@1.2.1':
+    dependencies:
+      '@iconify/types': 2.0.0
+
   '@iconify-json/heroicons@1.2.3':
+    dependencies:
+      '@iconify/types': 2.0.0
+
+  '@iconify-json/meteocons@1.2.4':
     dependencies:
       '@iconify/types': 2.0.0
 

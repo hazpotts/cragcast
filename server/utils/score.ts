@@ -2,6 +2,7 @@ import type { MiniSeries } from './forecast'
 
 function avg(a: number[]) { return a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0 }
 function max(a: number[]) { return a.length ? Math.max(...a) : 0 }
+function sum(a: number[]) { return a.length ? a.reduce((s, x) => s + x, 0) : 0 }
 
 export type RockKind = 'gritstone' | 'limestone' | 'sandstone' | 'volcanic' | 'rhyolite' | 'andesite' | 'other'
 
@@ -42,19 +43,45 @@ export function scoreRegion(mini: MiniSeries, opts: {
   const cloudBonus = temp > tmax ? (cloud / 100) * 10 : (1 - cloud / 100) * 5
   const baseScore = Math.max(0, Math.min(100, drynessScore + windScore + tempScore + cloudBonus))
 
+  const hasDist = Number.isFinite(opts.distanceMins) && Number.isFinite(opts.maxDriveMins)
   const dist = opts.distanceMins
   const maxMins = Math.max(30, opts.maxDriveMins)
-  const distMultiplier = dist <= maxMins ? 1 : Math.max(0.6, 1 - (dist - maxMins) / 180)
+  const distMultiplier = hasDist
+    ? (dist <= maxMins ? 1 : Math.max(0.6, 1 - (dist - maxMins) / 180))
+    : 1
 
   const finalScore = Math.round(Math.max(0, Math.min(100, baseScore * distMultiplier)))
 
   const why: string[] = []
-  if (drynessPct > 80) why.push('Dry forecast')
-  if (wind < 15 && gust < 25) why.push('Light winds')
+  // Precipitation summary (use both total precip and max probability to avoid conflicts with icons)
+  const rainSum = sum(mini.rainMm)
+  const popMax = max(mini.pop)
+  if (popMax >= 70 || rainSum >= 4) why.push('Rain likely')
+  else if (popMax >= 40 || rainSum >= 1) why.push('Showers possible')
+  else if (drynessPct >= 90) why.push('Very low rain chance')
+  else why.push('Low chance of rain')
+
+  // Wind summary
+  if (wind < 10 && gust < 20) why.push('Calm winds')
+  else if (wind < 15 && gust < 25) why.push('Light winds')
+  else if (gust > 35) why.push('Gusty')
+
+  // Temperature/friction
   if (frictionPct >= 0.9) why.push('Good temps for friction')
+  else if (temp > tmax + 4) why.push('Hot')
   else if (temp > tmax) why.push('Warm, seek shade')
-  if (cloud < 40 && temp <= tmax) why.push('Some sun for drying')
-  if (dist <= 60) why.push('Close by')
+  else if (temp >= min && temp <= tmax) why.push('Mild temperatures')
+
+  // Cloud context (only add one cloud message)
+  if (cloud < 30 && temp <= tmax) why.push('Sunny spells')
+  else if (cloud < 60 && temp <= tmax) why.push('Bright intervals')
+  else if (cloud > 70) why.push('Overcast')
+
+  // Distance context only when we have a real distance
+  if (hasDist) {
+    if (dist <= 45) why.push('Close by')
+    else if (dist <= 90) why.push('Within reach')
+  }
 
   return { score: finalScore, why: why.slice(0, 3) }
 }

@@ -12,11 +12,11 @@
       />
       <UButton icon="i-heroicons-map-pin" variant="ghost" :title="'Use browser location'" @click="useGeo" />
 
-      <div v-if="!useGoogle && suggestions.length"
-           class="absolute left-0 top-full mt-1 w-80 max-h-64 overflow-auto rounded-md border border-gray-200 bg-white shadow z-20">
+      <div v-if="!useGoogle && allowSuggest && suggestions.length"
+           class="absolute left-0 top-full mt-1 w-80 max-h-64 overflow-auto rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow z-20">
         <ul>
           <li v-for="(s,i) in suggestions" :key="i"
-              class="px-3 py-2 cursor-pointer hover:bg-gray-50 text-sm"
+              class="px-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 text-sm text-gray-900 dark:text-gray-100"
               @mousedown.prevent="pickSuggestion(s)">
             {{ s.name }}
           </li>
@@ -29,6 +29,7 @@
 <script setup lang="ts">
 import { watch } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
+import { usePrefs } from '~/composables/usePrefs'
 const emit = defineEmits<{ (e:'picked', v:{ lat:number; lon:number; name:string }): void }>()
 const cfg = useRuntimeConfig() as any
 const pub = cfg.public || {}
@@ -38,6 +39,7 @@ const placeName = ref('')
 const inputRef = ref<any>(null)
 const suggestions = ref<{ name: string; lat: number; lon: number }[]>([])
 const loading = ref(false)
+const allowSuggest = ref(false) // only show dropdown due to user typing
 
 function normalizeName(raw: string, address?: any): string {
   // Prefer structured fields if available
@@ -71,6 +73,8 @@ async function useGeo() {
     const nameShort = normalizeName(friendly)
     placeName.value = nameShort
     query.value = nameShort
+    allowSuggest.value = false
+    suggestions.value = []
     console.log('[PlaceSearch] geolocation success', { lat4, lon4, nameShort })
     emit('picked', { lat: lat4, lon: lon4, name: nameShort })
     console.log('[PlaceSearch] emitted picked (geo)')
@@ -104,10 +108,11 @@ const fetchSuggest = useDebounceFn(async () => {
 }, 300)
 
 function onType() {
+  allowSuggest.value = true
   fetchSuggest()
 }
 
-watch(query, () => fetchSuggest())
+watch(query, () => { if (allowSuggest.value) fetchSuggest() })
 
 function pickSuggestion(s: { name:string; lat:number; lon:number }) {
   const nameShort = normalizeName(s.name)
@@ -117,6 +122,7 @@ function pickSuggestion(s: { name:string; lat:number; lon:number }) {
   query.value = nameShort
   emit('picked', { lat: lat4, lon: lon4, name: nameShort })
   suggestions.value = []
+  allowSuggest.value = false
   console.log('[PlaceSearch] emitted picked (osm suggest)', { nameShort, lat4, lon4 })
 }
 
@@ -142,6 +148,13 @@ async function onEnter() {
 }
 
 onMounted(() => {
+  // Pre-fill from prefs on load/refresh without opening suggestions
+  const prefs = usePrefs()
+  if (prefs.where.value) {
+    placeName.value = prefs.where.value.name
+    query.value = prefs.where.value.name
+    allowSuggest.value = false
+  }
   if (!useGoogle) return
   const g = (window as any).google
   if (!g?.maps?.places) return
