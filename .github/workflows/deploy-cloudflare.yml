@@ -43,6 +43,15 @@ jobs:
       - name: Enable corepack (use pnpm from package.json)
         run: corepack enable
 
+      - name: Setup PNPM cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
       - name: pnpm fetch
         run: pnpm fetch
 
