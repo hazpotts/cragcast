@@ -12,7 +12,7 @@
       </ul>
       <div class="flex items-center justify-between text-sm">
         <div>Distance: ~{{ distanceMins }} mins</div>
-        <UButton color="gray" variant="link" :href="ukcUrl" target="_blank" rel="noopener">View on UKC</UButton>
+        <a :href="ukcUrl" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-700 underline">View on UKC</a>
       </div>
     </div>
   </UCard>

@@ -1,7 +1,5 @@
 import type { MiniSeries } from './forecast'
 
-export type ClimbType = 'trad' | 'sport' | 'boulder' | 'any'
-
 function avg(a: number[]) { return a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0 }
 function max(a: number[]) { return a.length ? Math.max(...a) : 0 }
 
@@ -16,8 +14,6 @@ function tempTarget(rocks: string[]): { min: number; max: number } {
 
 export function scoreRegion(mini: MiniSeries, opts: {
   rocks: string[]
-  typeAffinity?: { trad: number; sport: number; boulder: number }
-  climbType: ClimbType
   distanceMins: number
   maxDriveMins: number
 }): { score: number; why: string[] } {
@@ -50,13 +46,7 @@ export function scoreRegion(mini: MiniSeries, opts: {
   const maxMins = Math.max(30, opts.maxDriveMins)
   const distMultiplier = dist <= maxMins ? 1 : Math.max(0.6, 1 - (dist - maxMins) / 180)
 
-  let typeMul = 1
-  if (opts.climbType !== 'any' && opts.typeAffinity) {
-    const m = opts.typeAffinity[opts.climbType]
-    typeMul = Math.max(0.9, Math.min(1.0, m))
-  }
-
-  const finalScore = Math.round(Math.max(0, Math.min(100, baseScore * distMultiplier * typeMul)))
+  const finalScore = Math.round(Math.max(0, Math.min(100, baseScore * distMultiplier)))
 
   const why: string[] = []
   if (drynessPct > 80) why.push('Dry forecast')

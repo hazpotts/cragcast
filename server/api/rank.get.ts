@@ -1,7 +1,7 @@
 import { getForecast } from "~/server/utils/forecast"
 import { regions } from "~/server/utils/regions"
 import { haversineKm, driveMinutesApprox } from "~/server/utils/distance"
-import { scoreRegion, type ClimbType } from "~/server/utils/score"
+import { scoreRegion } from "~/server/utils/score"
 import { presetDates, parseDate, formatDate } from "~/server/utils/dates"
 
 export default defineEventHandler(async (event) => {
@@ -9,7 +9,6 @@ export default defineEventHandler(async (event) => {
   const lat = Number(q.lat)
   const lon = Number(q.lon)
   const maxDriveMins = q.maxDriveMins ? Number(q.maxDriveMins) : 120
-  const climbType = (q.climbType as ClimbType) || 'any'
   const datesParam = (q.dates as string) || ''
 
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
@@ -35,8 +34,6 @@ export default defineEventHandler(async (event) => {
 
     const { score, why } = scoreRegion(mini, {
       rocks: r.rock,
-      typeAffinity: r.typeAffinity,
-      climbType,
       distanceMins,
       maxDriveMins
     })
@@ -50,7 +47,6 @@ export default defineEventHandler(async (event) => {
       mini,
       distanceMins,
       updatedAt,
-      typeAffinity: r.typeAffinity,
       coords: { lat: pt.lat, lon: pt.lon },
       ukcUrl: `https://www.ukclimbing.com/logbook/crags/?location=${locParam}&distance=20`
     }

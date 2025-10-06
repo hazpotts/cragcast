@@ -9,10 +9,11 @@
 <script setup lang="ts">
 import { useLocalStorage } from '@vueuse/core'
 const router = useRouter()
+const route = useRoute()
 const modeStorage = useLocalStorage<'recommend' | 'compare'>('mode', 'recommend')
 const mode = computed(() => modeStorage.value)
 function set(m: 'recommend' | 'compare') {
   modeStorage.value = m
-  router.push({ path: m === 'recommend' ? '/recommend' : '/compare' })
+  router.push({ path: m === 'recommend' ? '/recommend' : '/compare', query: { ...route.query } })
 }
 </script>

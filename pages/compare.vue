@@ -31,8 +31,12 @@ const prefs = usePrefs()
 const { items, fetchRank } = useRank()
 const showPrefs = ref(false)
 const labelWhen = computed(() => {
-  const m: any = { 'today': 'Today', 'tomorrow': 'Tomorrow', 'this-weekend': 'This weekend', 'next-weekend': 'Next weekend', 'custom': 'Custom' }
-  return m[prefs.when.value]
+  const ds = (prefs.dates.value || []) as string[]
+  if (!ds.length) return 'Dates'
+  const d1 = new Date(ds[0])
+  const dN = new Date(ds[ds.length - 1])
+  const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+  return ds.length === 1 ? fmt(d1) : `${fmt(d1)} – ${fmt(dN)}`
 })
 
 onMounted(async () => {

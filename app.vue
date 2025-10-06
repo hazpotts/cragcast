@@ -1,7 +1,9 @@
 <template>
   <div class="app">
     <header class="container">
-      <h1>CragCast</h1>
+      <h1>
+        <a href="/">CragCast</a>
+      </h1>
       <ModeToggle />
     </header>
     <main class="container">

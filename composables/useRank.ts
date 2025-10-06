@@ -1,6 +1,5 @@
 import { ref } from 'vue'
-import { usePrefs, type ClimbType, type WhenPreset } from './usePrefs'
-import { presetDates } from '~/utils/dates'
+import { usePrefs } from './usePrefs'
 
 export type RankItem = {
   id: string
@@ -15,7 +14,7 @@ export type RankItem = {
 }
 
 export function useRank() {
-  const { where, maxDriveMins, when, type } = usePrefs()
+  const { where, maxDriveMins, dates } = usePrefs()
   const items = ref<RankItem[]>([])
   const pending = ref(false)
   const error = ref<string | null>(null)
@@ -24,13 +23,7 @@ export function useRank() {
     pending.value = true
     error.value = null
     try {
-      console.debug('[useRank] fetchRank:start', {
-        where: where.value,
-        maxDriveMins: maxDriveMins.value,
-        when: when.value,
-        type: type.value,
-        customDates
-      })
+      console.debug('[useRank] fetchRank:start', { where: where.value, maxDriveMins: maxDriveMins.value, dates: customDates || dates.value })
       const w = where.value as any
       const lat = Number(w?.lat)
       const lon = Number(w?.lon)
@@ -41,13 +34,12 @@ export function useRank() {
         console.debug('[useRank] fetchRank:abort no location')
         return
       }
-      const dates = customDates ?? presetDates(when.value as WhenPreset)
+      const pickedDates = customDates ?? dates.value
       const params = new URLSearchParams()
       params.set('lat', String(lat))
       params.set('lon', String(lon))
       params.set('maxDriveMins', String(maxDriveMins.value))
-      params.set('climbType', type.value)
-      params.set('dates', dates.join(','))
+      params.set('dates', pickedDates.join(','))
       const url = `/api/rank?${params.toString()}`
       console.debug('[useRank] GET', url)
       const res = await fetch(url)

@@ -5,7 +5,7 @@ const mini = { hours:[], rainMm:[0,0,0], pop:[0,0,0], wind:[10,12,8], gust:[15,1
 
 describe('score', () => {
   it('scores reasonably for dry, light winds', () => {
-    const r = scoreRegion(mini, { rocks:['gritstone'], climbType:'any', distanceMins:30, maxDriveMins:120 })
+    const r = scoreRegion(mini, { rocks:['gritstone'], distanceMins:30, maxDriveMins:120 })
     expect(r.score).toBeGreaterThan(50)
   })
 })
