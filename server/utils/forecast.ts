@@ -18,7 +18,8 @@ export type ForecastResult = {
 type KV = { get: (k: string) => Promise<string | null>; put: (k: string, v: string, opts?: { expirationTtl?: number }) => Promise<void> }
 
 function kvFromEvent(event: any): KV | null {
-  return (event?.platform?.env?.CLIMB_KV as KV) || null
+  const env = event?.platform?.env || {}
+  return (env.CRAGCAST as KV) || (env.CLIMB_KV as KV) || null
 }
 
 function cacheKey(lat: number, lon: number, datesKey: string) {
