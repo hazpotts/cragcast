@@ -1,6 +1,6 @@
 <template>
   <div class="rounded-md border border-gray-200 dark:border-gray-700 p-4 shadow bg-white dark:bg-gray-900 overflow-hidden">
-    <div class="flex gap-4 items-start">
+    <div class="flex gap-4 items-start flex-col sm:flex-row">
       <!-- Left: content -->
       <div class="flex-1 min-w-0 space-y-3">
         <div class="flex items-center justify-between">
@@ -14,17 +14,31 @@
         </div>
         <div class="skeleton h-4 w-36 rounded" />
       </div>
-      <!-- Right: large icons -->
-      <div class="flex-1 flex justify-end">
-        <div class="flex flex-wrap gap-4 items-center justify-end">
-          <div class="skeleton h-24 w-24 rounded" />
-          <div class="skeleton h-24 w-24 rounded" />
+      <!-- Right: icons + per-day stats -->
+      <div class="w-full sm:w-auto sm:flex-1 flex justify-center">
+        <div class="flex flex-wrap gap-2 items-start justify-center sm:justify-end">
+          <div class="flex items-center sm:flex-col sm:items-center text-sm text-gray-600 dark:text-gray-300">
+            <div class="skeleton h-20 w-20 sm:h-24 sm:w-24 mr-3 sm:mr-0 sm:-mt-4 sm:-mb-3 rounded" />
+            <div class="mt-0 sm:mt-1 sm:mb-2 text-left sm:text-center space-y-1">
+              <div class="skeleton h-3 w-16 rounded" />
+              <div class="skeleton h-3 w-12 rounded" />
+              <div class="skeleton h-3 w-14 rounded" />
+            </div>
+          </div>
+          <div class="flex items-center sm:flex-col sm:items-center text-sm text-gray-600 dark:text-gray-300">
+            <div class="skeleton h-20 w-20 sm:h-24 sm:w-24 mr-3 sm:mr-0 sm:-mt-4 sm:-mb-3 rounded" />
+            <div class="mt-0 sm:mt-1 sm:mb-2 text-left sm:text-center space-y-1">
+              <div class="skeleton h-3 w-16 rounded" />
+              <div class="skeleton h-3 w-12 rounded" />
+              <div class="skeleton h-3 w-14 rounded" />
+            </div>
+          </div>
         </div>
       </div>
     </div>
     <!-- Footer: external links bottom-right -->
     <div class="mt-4 flex justify-end">
-      <div class="flex items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2">
         <div class="skeleton h-8 w-16 rounded" />
         <div class="skeleton h-8 w-28 rounded" />
         <div class="skeleton h-8 w-20 rounded" />
