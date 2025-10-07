@@ -1,6 +1,6 @@
 <template>
   <UCard>
-    <div class="flex gap-4 items-start">
+    <div class="flex gap-4 items-start flex-col sm:flex-row">
       <!-- Left: content -->
       <div class="flex-1 min-w-0 space-y-2">
         <div class="flex items-center justify-between">
@@ -18,16 +18,16 @@
         </div>
       </div>
       <!-- Right: large weather icons -->
-      <div class="flex-1 flex justify-center">
-        <div class="flex flex-wrap gap-6 items-start justify-end">
+      <div class="w-full sm:w-auto sm:flex-1 flex justify-center">
+        <div class="flex flex-wrap gap-2 items-start justify-center sm:justify-end">
           <template v-for="d in daily" :key="d.date">
-            <div class="flex flex-col items-center text-sm text-gray-600 dark:text-gray-300">
+            <div class="flex items-center sm:flex-col sm:items-center text-sm text-gray-600 dark:text-gray-300">
               <Icon
                 :name="iconName(d.icon)"
                 :title="`${iconLabel(d.icon)} – ${d.date}`"
-                class="h-20 w-20 sm:h-24 sm:w-24 -mt-4 -mb-3"
+                class="h-20 w-20 sm:h-24 sm:w-24 mr-3 sm:mr-0 sm:-mt-4 sm:-mb-3"
               />
-              <div class="mt-1 mb-2 text-center">
+              <div class="mt-0 sm:mt-1 sm:mb-2 text-left sm:text-center">
                 <div v-if="Number.isFinite(d.tempAvgC as any)">{{ d.tempAvgC }}°C</div>
                 <div v-if="Number.isFinite(d.rainSumMm as any)">{{ d.rainSumMm }} mm</div>
                 <div v-if="Number.isFinite(d.windAvgMph as any)">{{ d.windAvgMph }} mph</div>
@@ -39,7 +39,7 @@
     </div>
     <!-- Footer: external links bottom-right -->
     <div class="mt-4 flex justify-end">
-      <div class="flex items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2">
         <a v-if="links?.bbc" :href="links?.bbc" target="_blank" rel="noopener"
            class="inline-flex items-center px-3 py-2 rounded-md bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
           BBC
@@ -69,7 +69,7 @@ const props = defineProps<{
   name: string
   score: number
   why: string[]
-  daily: { date: string; icon: string }[]
+  daily: { date: string; icon: string; tempAvgC: number; windAvgMph: number; rainSumMm: number }[]
   distanceMins: number | null
   updatedAt: string
   ukcUrl: string
