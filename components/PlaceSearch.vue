@@ -8,6 +8,7 @@
         @input="onType"
         @update:modelValue="onType"
         @keydown.enter="onEnter"
+        @blur="onBlur"
         class="w-80"
       />
       <UButton icon="i-heroicons-map-pin" variant="ghost" :title="'Use browser location'" @click="useGeo" />
@@ -18,12 +19,11 @@
           <li v-for="(s,i) in suggestions" :key="i"
               class="px-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 text-sm text-gray-900 dark:text-gray-100"
               @mousedown.prevent="pickSuggestion(s)">
-            {{ s.name }}
+            {{ s.fullName }}
           </li>
         </ul>
       </div>
     </div>
-    <div class="text-sm text-gray-500" v-if="placeName">Selected: {{ placeName }}</div>
   </div>
 </template>
 <script setup lang="ts">
@@ -37,7 +37,7 @@ const useGoogle = !!pub.googlePlacesEnabled && !!pub.googlePlacesApiKey
 const query = ref('')
 const placeName = ref('')
 const inputRef = ref<any>(null)
-const suggestions = ref<{ name: string; lat: number; lon: number }[]>([])
+const suggestions = ref<{ fullName: string; shortName: string; lat: number; lon: number }[]>([])
 const loading = ref(false)
 const allowSuggest = ref(false) // only show dropdown due to user typing
 
@@ -93,11 +93,15 @@ const fetchSuggest = useDebounceFn(async () => {
     url.searchParams.set('limit', '8')
     const res = await fetch(url.toString(), { headers: { 'Accept': 'application/json' } })
     const data = await res.json()
-    const list = Array.isArray(data) ? data.slice(0, 8).map((d:any) => ({
-      name: normalizeName(String(d.display_name || ''), d.address),
-      lat: Number(d.lat),
-      lon: Number(d.lon)
-    })) : []
+    const list = Array.isArray(data) ? data.slice(0, 8).map((d:any) => {
+      const full = String(d.display_name || '')
+      return {
+        fullName: full,
+        shortName: normalizeName(full, d.address),
+        lat: Number(d.lat),
+        lon: Number(d.lon)
+      }
+    }) : []
     suggestions.value = list
     console.log('[PlaceSearch] OSM suggest', { count: list.length })
   } catch (e) {
@@ -114,8 +118,8 @@ function onType() {
 
 watch(query, () => { if (allowSuggest.value) fetchSuggest() })
 
-function pickSuggestion(s: { name:string; lat:number; lon:number }) {
-  const nameShort = normalizeName(s.name)
+function pickSuggestion(s: { fullName: string; shortName: string; lat: number; lon: number }) {
+  const nameShort = normalizeName(s.shortName)
   const lat4 = Number(s.lat.toFixed(4))
   const lon4 = Number(s.lon.toFixed(4))
   placeName.value = nameShort
@@ -142,9 +146,15 @@ async function onEnter() {
     const data = await res.json()
     if (Array.isArray(data) && data[0]) {
       const d = data[0]
-      pickSuggestion({ name: normalizeName(String(d.display_name || ''), d.address), lat: Number(d.lat), lon: Number(d.lon) })
+      const full = String(d.display_name || '')
+      pickSuggestion({ fullName: full, shortName: normalizeName(full, d.address), lat: Number(d.lat), lon: Number(d.lon) })
     }
   } catch (e) {}
+}
+
+function onBlur() {
+  allowSuggest.value = false
+  suggestions.value = []
 }
 
 onMounted(() => {

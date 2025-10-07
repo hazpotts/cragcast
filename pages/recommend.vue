@@ -30,8 +30,9 @@
           <template>
             <RegionCard v-for="r in items.slice(1, visibleCount)" :key="r.id" :name="r.name" :score="r.score" :why="r.why" :daily="r.daily" :distanceMins="Number(r.distanceMins ?? 0)" :updatedAt="r.updatedAt" :ukcUrl="r.ukcUrl" :links="r.links" />
           </template>
+          <!--
           <UButton v-if="items.length > visibleCount" label="Show more" variant="soft" @click="showMore()"
-            class="bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-300 dark:hover:bg-sky-900/50" />
+            class="bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-300 dark:hover:bg-sky-900/50" /> -->
         </div>
       </div>
     </section>
@@ -100,6 +101,8 @@ async function savePrefs() {
   ignoreNextWatch.value = true
   showPrefs.value = false
   visibleCount.value = 6
+  // Ensure dates/maxDrive are flushed to URL before fetching
+  await prefs.commit()
   // Trigger fetch without awaiting so pending state renders skeleton
   fetchRank()
 }

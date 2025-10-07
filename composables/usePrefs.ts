@@ -7,6 +7,7 @@ type PrefsState = {
   where: Ref<Location | null>
   maxDriveMins: Ref<number>
   dates: Ref<string[]>
+  commit: () => Promise<void>
 }
 
 let clientState: PrefsState | null = null
@@ -16,15 +17,31 @@ export const usePrefs = () => {
   const router = useRouter()
 
   const build = (): PrefsState => {
-    const updateQuery = (patch: Record<string, any>) => {
-      if (!process.client) return
+    // Batch route query updates within the same tick to prevent overwrites
+    let pendingPatch: Record<string, any> = {}
+    let updateTimer: any = null
+    const flushQuery = async () => {
+      if (!process.client) { pendingPatch = {}; updateTimer = null; return }
       const q = { ...route.query }
-      for (const k of Object.keys(patch)) {
-        const v = patch[k]
+      for (const k of Object.keys(pendingPatch)) {
+        const v = pendingPatch[k]
         if (v === undefined || v === null || v === '') delete (q as any)[k]
         else (q as any)[k] = String(v)
       }
-      router.replace({ query: q })
+      pendingPatch = {}
+      updateTimer = null
+      await router.replace({ query: q })
+    }
+    const updateQuery = (patch: Record<string, any>) => {
+      if (!process.client) return
+      pendingPatch = { ...pendingPatch, ...patch }
+      if (updateTimer) return
+      updateTimer = setTimeout(() => { flushQuery() }, 0)
+    }
+    const commit = async () => {
+      if (!process.client) { pendingPatch = {}; if (updateTimer) { clearTimeout(updateTimer); updateTimer = null } ; return }
+      if (updateTimer) { clearTimeout(updateTimer); updateTimer = null }
+      await flushQuery()
     }
 
     const where = computed<Location | null>({
@@ -71,7 +88,7 @@ export const usePrefs = () => {
       }
     }) as unknown as Ref<string[]>
 
-    return { where, maxDriveMins, dates }
+    return { where, maxDriveMins, dates, commit }
   }
 
   if (process.client) {

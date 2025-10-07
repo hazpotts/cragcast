@@ -48,8 +48,10 @@ import PrefsForm from '~/components/PrefsForm.vue'
 const prefs = usePrefs()
 const route = useRoute()
 const items = ref<any[]>([])
-const showPrefs = ref(true)
+const hasUrlDates = computed(() => typeof route.query.dates === 'string' && (route.query.dates as string).length > 0)
+const showPrefs = ref(!hasUrlDates.value)
 const shrink = ref(false)
+const ignoreNextWatch = ref(false)
 const distanceLabel = computed(() => Number.isFinite(prefs.maxDriveMins.value)
   ? `max ${prefs.maxDriveMins.value} mins`
   : 'No distance limit')
@@ -83,7 +85,6 @@ const mainRows = computed(() => items.value.filter((r: any) => !favs.value.inclu
 
 // Simple client cache for compare
 const TTL_MS = 5 * 60 * 1000
-const hasUrlDates = computed(() => typeof route.query.dates === 'string' && (route.query.dates as string).length > 0)
 let routeWatchTimer: any = null
 function cacheKey() {
   const w:any = prefs.where.value || {}
@@ -110,7 +111,6 @@ function writeCache() {
 }
 
 onMounted(async () => {
-  showPrefs.value = !hasUrlDates.value
   loadFavs()
   if (hasUrlDates.value && !items.value?.length) {
     const cached = readCache()
@@ -121,6 +121,7 @@ onMounted(async () => {
 watch(() => route.query, () => {
   if (routeWatchTimer) clearTimeout(routeWatchTimer)
   routeWatchTimer = setTimeout(async () => {
+    if (ignoreNextWatch.value) { ignoreNextWatch.value = false; return }
     if (showPrefs.value) return
     const has = hasUrlDates.value
     showPrefs.value = !has
@@ -134,12 +135,11 @@ watch(() => route.query, () => {
   }, 150)
 }, { deep: true })
 async function applyPrefs() {
-  if (hasUrlDates.value) {
-    await loadCompare()
-    showPrefs.value = false
-  } else {
-    showPrefs.value = true
-  }
+  ignoreNextWatch.value = true
+  showPrefs.value = false
+  // Load immediately using prefs (does not depend on route update timing)
+  await prefs.commit()
+  await loadCompare()
 }
 
 async function loadCompare() {
