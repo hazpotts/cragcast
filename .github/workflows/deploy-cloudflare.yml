@@ -70,6 +70,7 @@ jobs:
           echo "Root contents:" && ls -la
           echo "--- .output ---" && ls -la .output || true
           echo "--- .output/public ---" && ls -la .output/public || true
+          echo "--- dist ---" && ls -la dist || true
 
       - name: Show Nuxt version
         run: |
@@ -77,13 +78,17 @@ jobs:
 
       - name: Locate _worker.js
         run: |
-          echo "Searching for _worker.js in .output..."
+          echo "Searching for _worker.js in .output and dist..."
           find .output -maxdepth 4 -name "_worker.js" -print || true
+          find dist -maxdepth 4 -name "_worker.js" -print || true
 
       - name: Select Pages deploy directory
         id: select_dir
         run: |
-          if [ -d .output/public ]; then
+          if [ -d dist ]; then
+            echo "DEPLOY_DIR=dist" >> $GITHUB_ENV
+            echo "Using DEPLOY_DIR=dist"
+          elif [ -d .output/public ]; then
             echo "DEPLOY_DIR=.output/public" >> $GITHUB_ENV
             echo "Using DEPLOY_DIR=.output/public"
           elif [ -d .output ]; then
