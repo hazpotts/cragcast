@@ -25,7 +25,7 @@
               <Icon
                 :name="iconName(d.icon)"
                 :title="`${iconLabel(d.icon)} – ${d.date}`"
-                class="h-20 w-20 sm:h-24 sm:w-24 -mt-5 -mb-3"
+                class="h-20 w-20 sm:h-24 sm:w-24 -mt-4 -mb-3"
               />
               <div class="mt-1 mb-2 text-center">
                 <div v-if="Number.isFinite(d.tempAvgC as any)">{{ d.tempAvgC }}°C</div>

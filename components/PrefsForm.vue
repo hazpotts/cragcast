@@ -2,7 +2,7 @@
   <div class="p-0 space-y-4 max-w-[600px] mx-auto">
 
     <h2 class="text-xl font-semibold">Weather for</h2>
-    <UButtonGroup size="sm">
+    <UButtonGroup size="sm" :ui="{ base: 'flex flex-wrap' }">
       <UButton :color="whenPreset==='today'?'primary':'gray'" label="Today" @click="setWhen('today')" />
       <UButton :color="whenPreset==='tomorrow'?'primary':'gray'" label="Tomorrow" @click="setWhen('tomorrow')" />
       <UButton :color="whenPreset==='this-weekend'?'primary':'gray'" label="This weekend" @click="setWhen('this-weekend')" />
@@ -13,7 +13,7 @@
     <div v-if="whenPreset==='custom'" class="space-y-3">
       <div>
         <div class="text-sm font-medium mb-1">From</div>
-        <UButtonGroup size="sm">
+        <UButtonGroup size="sm" :ui="{ base: 'flex flex-wrap' }">
           <UButton
             v-for="opt in next7"
             :key="`from-`+opt.iso"
@@ -25,7 +25,7 @@
       </div>
       <div>
         <div class="text-sm font-medium mb-1">To</div>
-        <UButtonGroup size="sm">
+        <UButtonGroup size="sm" :ui="{ base: 'flex flex-wrap' }">
           <UButton
             v-for="opt in next7"
             :key="`to-`+opt.iso"
@@ -40,7 +40,7 @@
     </div>
 
     <h2 class="text-xl font-semibold">within</h2>
-    <UButtonGroup size="sm">
+    <UButtonGroup size="sm" :ui="{ base: 'flex flex-wrap' }">
       <UButton :color="selectedMax===30?'primary':'gray'" label="30 min" @click="setMax(30)" />
       <UButton :color="selectedMax===60?'primary':'gray'" label="1 hour" @click="setMax(60)" />
       <UButton :color="selectedMax===120?'primary':'gray'" label="2 hours" @click="setMax(120)" />
