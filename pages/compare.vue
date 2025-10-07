@@ -10,7 +10,7 @@
             Showing for {{ prefs.where.value.name }} · {{ distanceLabel }} · {{ labelWhen }}
           </template>
           <template v-else>
-            Showing {{ labelWhen }}
+            Showing for UK-wide · {{ labelWhen }}
           </template>
         </div>
         <div class="flex items-center gap-2">

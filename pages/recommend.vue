@@ -3,7 +3,6 @@
     <section v-if="showPrefs" class="space-y-4">
       <PrefsForm @confirm="savePrefs" @cancel="showPrefs=false" />
     </section>
-
     <section v-else>
       <div class="mb-4 flex items-center justify-between">
         <div class="text-sm text-gray-500">
@@ -11,7 +10,7 @@
             Showing for {{ (prefs.where.value as any).name }} · {{ distanceLabel }} · {{ labelWhen }}
           </template>
           <template v-else>
-            Showing {{ labelWhen }}
+            Showing for UK-wide · {{ labelWhen }}
           </template>
         </div>
         <UButton variant="ghost" @click="showPrefs = true" class="text-sky-700 hover:text-sky-800 dark:text-sky-200 dark:hover:text-sky-100">
@@ -56,6 +55,7 @@
               :avgWindMph="r.avgWindMph"
             />
           </template>
+          <p v-if="!prefs.where.value" class="text-sm text-gray-500">Add a location to get local results.</p>
           <!--
           <UButton v-if="items.length > visibleCount" label="Show more" variant="soft" @click="showMore()"
             class="bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-300 dark:hover:bg-sky-900/50" /> -->

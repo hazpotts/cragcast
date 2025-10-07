@@ -48,8 +48,8 @@
       <UButton size="sm" :color="!Number.isFinite(selectedMax as any)?'primary':'gray'" label="No limit" @click="setMax(Infinity as any)" />
     </div>
 
-    <h2 v-if="selectedMax!==Infinity" class="text-xl font-semibold">of</h2>
-    <PlaceSearch v-if="selectedMax!==Infinity" @picked="onPicked" />
+    <h2 class="text-xl font-semibold">of</h2>
+    <PlaceSearch @picked="onPicked" />
 
     <div class="flex items-center gap-2 pt-6">
       <UButton variant="solid" label="Close" @click="onCancel"
