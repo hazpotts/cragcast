@@ -52,6 +52,7 @@ function showMore() { visibleCount.value += 5 }
 const route = useRoute()
 const hasUrlDates = computed(() => typeof route.query.dates === 'string' && route.query.dates.length > 0)
 let routeWatchTimer: any = null
+const ignoreNextWatch = ref(false)
 const hasValidLocation = computed(() => {
   const w = prefs.where.value as any
   if (!w) return false
@@ -78,6 +79,7 @@ onMounted(async () => {
 })
 
 watch(() => route.query, () => {
+  if (ignoreNextWatch.value) { ignoreNextWatch.value = false; return }
   if (routeWatchTimer) clearTimeout(routeWatchTimer)
   routeWatchTimer = setTimeout(async () => {
     if (showPrefs.value) return
@@ -94,8 +96,11 @@ watch(() => route.query, () => {
 }, { deep: true })
 
 async function savePrefs() {
-  await fetchRank()
+  // Close form first so skeleton section can show immediately
+  ignoreNextWatch.value = true
   showPrefs.value = false
   visibleCount.value = 6
+  // Trigger fetch without awaiting so pending state renders skeleton
+  fetchRank()
 }
 </script>

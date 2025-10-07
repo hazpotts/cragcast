@@ -39,17 +39,17 @@
       <p v-if="customError" class="text-sm text-red-500">{{ customError }}</p>
     </div>
 
-    <h2 class="text-xl font-semibold">within driving distance of</h2>
+    <h2 class="text-xl font-semibold">within</h2>
     <UButtonGroup size="sm">
-      <UButton :color="prefs.maxDriveMins.value===30?'primary':'gray'" label="30 min" @click="setMax(30)" />
-      <UButton :color="prefs.maxDriveMins.value===60?'primary':'gray'" label="1 hour" @click="setMax(60)" />
-      <UButton :color="prefs.maxDriveMins.value===120?'primary':'gray'" label="2 hours" @click="setMax(120)" />
-      <UButton :color="prefs.maxDriveMins.value===300?'primary':'gray'" label="5 hours" @click="setMax(300)" />
-      <UButton :color="!Number.isFinite(prefs.maxDriveMins.value)?'primary':'gray'" label="No limit" @click="setMax(Infinity as any)" />
+      <UButton :color="selectedMax===30?'primary':'gray'" label="30 min" @click="setMax(30)" />
+      <UButton :color="selectedMax===60?'primary':'gray'" label="1 hour" @click="setMax(60)" />
+      <UButton :color="selectedMax===120?'primary':'gray'" label="2 hours" @click="setMax(120)" />
+      <UButton :color="selectedMax===300?'primary':'gray'" label="5 hours" @click="setMax(300)" />
+      <UButton :color="!Number.isFinite(selectedMax as any)?'primary':'gray'" label="No limit" @click="setMax(Infinity as any)" />
     </UButtonGroup>
 
-    <h2 v-if="prefs.maxDriveMins.value!==Infinity" class="text-xl font-semibold">of</h2>
-    <PlaceSearch v-if="prefs.maxDriveMins.value!==Infinity" @picked="onPicked" />
+    <h2 v-if="selectedMax!==Infinity" class="text-xl font-semibold">of</h2>
+    <PlaceSearch v-if="selectedMax!==Infinity" @picked="onPicked" />
 
     <div class="flex items-center gap-2 pt-6">
       <UButton variant="solid" label="Close" @click="onCancel"
@@ -82,6 +82,8 @@ const isDisabled = computed(() => !mounted.value)
 watch(() => prefs.where.value, (v) => console.debug('[PrefsForm] where changed ->', v))
 watch(isDisabled, (v) => console.debug('[PrefsForm] CTA disabled ->', v))
 const whenPreset = ref<'today'|'tomorrow'|'this-weekend'|'next-weekend'|'custom'>('this-weekend')
+// Local max distance selection to avoid relying on route until confirm
+const selectedMax = ref<number>(prefs.maxDriveMins.value)
 const todayStr = formatDate(new Date())
 const next7 = computed(() => {
   const out: { iso: string; label: string }[] = []
@@ -113,7 +115,7 @@ const customError = computed(() => {
 })
 function pickStart(iso: string) { customStart.value = customStart.value === iso ? '' : iso }
 function pickEnd(iso: string) { customEnd.value = customEnd.value === iso ? '' : iso }
-function setMax(v:number) { prefs.maxDriveMins.value = v }
+function setMax(v:number) { selectedMax.value = v }
 function setWhen(p:'today'|'tomorrow'|'this-weekend'|'next-weekend'|'custom') {
   whenPreset.value = p
   if (p !== 'custom') {
@@ -141,6 +143,8 @@ function onConfirm() {
   } else {
     prefs.dates.value = presetDates(whenPreset.value)
   }
+  // Apply max distance on confirm
+  prefs.maxDriveMins.value = selectedMax.value
   emit('confirm')
 }
 function onCancel() {
