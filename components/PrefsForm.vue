@@ -2,31 +2,31 @@
   <div class="p-0 space-y-4 max-w-[600px] mx-auto">
 
     <h2 class="text-xl font-semibold">Weather for</h2>
-    <UButtonGroup size="sm" :ui="{ base: 'flex flex-wrap' }">
-      <UButton :color="whenPreset==='today'?'primary':'gray'" label="Today" @click="setWhen('today')" />
-      <UButton :color="whenPreset==='tomorrow'?'primary':'gray'" label="Tomorrow" @click="setWhen('tomorrow')" />
-      <UButton :color="whenPreset==='this-weekend'?'primary':'gray'" label="This weekend" @click="setWhen('this-weekend')" />
-      <UButton :color="whenPreset==='next-weekend'?'primary':'gray'" label="Next weekend" @click="setWhen('next-weekend')" />
-      <UButton :color="whenPreset==='custom'?'primary':'gray'" label="Date(s)" @click="setWhen('custom')" />
-    </UButtonGroup>
+    <div class="flex flex-wrap gap-2">
+      <UButton size="sm" :color="whenPreset==='today'?'primary':'gray'" label="Today" @click="setWhen('today')" />
+      <UButton size="sm" :color="whenPreset==='tomorrow'?'primary':'gray'" label="Tomorrow" @click="setWhen('tomorrow')" />
+      <UButton size="sm" :color="whenPreset==='this-weekend'?'primary':'gray'" label="This weekend" @click="setWhen('this-weekend')" />
+      <UButton size="sm" :color="whenPreset==='next-weekend'?'primary':'gray'" label="Next weekend" @click="setWhen('next-weekend')" />
+      <UButton size="sm" :color="whenPreset==='custom'?'primary':'gray'" label="Date(s)" @click="setWhen('custom')" />
+    </div>
 
     <div v-if="whenPreset==='custom'" class="space-y-3">
       <div>
         <div class="text-sm font-medium mb-1">From</div>
-        <UButtonGroup size="sm" :ui="{ base: 'flex flex-wrap' }">
-          <UButton
+        <div class="flex flex-wrap gap-2">
+          <UButton size="sm"
             v-for="opt in next7"
             :key="`from-`+opt.iso"
             :label="opt.label"
             :color="customStart===opt.iso ? 'primary' : 'gray'"
             @click="pickStart(opt.iso)"
           />
-        </UButtonGroup>
+        </div>
       </div>
       <div>
         <div class="text-sm font-medium mb-1">To</div>
-        <UButtonGroup size="sm" :ui="{ base: 'flex flex-wrap' }">
-          <UButton
+        <div class="flex flex-wrap gap-2">
+          <UButton size="sm"
             v-for="opt in next7"
             :key="`to-`+opt.iso"
             :label="opt.label"
@@ -34,19 +34,19 @@
             :disabled="!customStart"
             @click="pickEnd(opt.iso)"
           />
-        </UButtonGroup>
+        </div>
       </div>
       <p v-if="customError" class="text-sm text-red-500">{{ customError }}</p>
     </div>
 
     <h2 class="text-xl font-semibold">within</h2>
-    <UButtonGroup size="sm" :ui="{ base: 'flex flex-wrap' }">
-      <UButton :color="selectedMax===30?'primary':'gray'" label="30 min" @click="setMax(30)" />
-      <UButton :color="selectedMax===60?'primary':'gray'" label="1 hour" @click="setMax(60)" />
-      <UButton :color="selectedMax===120?'primary':'gray'" label="2 hours" @click="setMax(120)" />
-      <UButton :color="selectedMax===300?'primary':'gray'" label="5 hours" @click="setMax(300)" />
-      <UButton :color="!Number.isFinite(selectedMax as any)?'primary':'gray'" label="No limit" @click="setMax(Infinity as any)" />
-    </UButtonGroup>
+    <div class="flex flex-wrap gap-2">
+      <UButton size="sm" :color="selectedMax===30?'primary':'gray'" label="30 min" @click="setMax(30)" />
+      <UButton size="sm" :color="selectedMax===60?'primary':'gray'" label="1 hour" @click="setMax(60)" />
+      <UButton size="sm" :color="selectedMax===120?'primary':'gray'" label="2 hours" @click="setMax(120)" />
+      <UButton size="sm" :color="selectedMax===300?'primary':'gray'" label="5 hours" @click="setMax(300)" />
+      <UButton size="sm" :color="!Number.isFinite(selectedMax as any)?'primary':'gray'" label="No limit" @click="setMax(Infinity as any)" />
+    </div>
 
     <h2 v-if="selectedMax!==Infinity" class="text-xl font-semibold">of</h2>
     <PlaceSearch v-if="selectedMax!==Infinity" @picked="onPicked" />
