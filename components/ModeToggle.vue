@@ -2,7 +2,7 @@
   <div class="flex items-center gap-2">
     <UButtonGroup size="sm" :ui="{ rounded: 'rounded-full' }">
       <UButton
-        label="Recommend"
+        label="Best"
         @click="set('recommend')"
         variant="soft"
         :class="mode === 'recommend'

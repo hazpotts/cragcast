@@ -19,20 +19,22 @@
         <span class="font-semibold">{{ row.pending ? '…' : row.score }}</span>
       </template>
       <template #weather-data="{ row }">
-        <template v-if="row.pending">
-          <div class="flex items-center gap-2 text-lg text-gray-300">
-            <span class="animate-pulse">•</span>
-            <span class="animate-pulse">•</span>
-            <span class="animate-pulse">•</span>
-          </div>
-        </template>
-        <template v-else>
-          <div class="flex items-center gap-2">
-            <template v-for="d in row.daily" :key="d.date">
-              <Icon :name="iconName(d.icon)" :title="`${iconLabel(d.icon)} – ${d.date}`" class="h-7 w-7" />
-            </template>
-          </div>
-        </template>
+        <div class="bg-gray-400 rounded px-2 py-1">
+          <template v-if="row.pending">
+            <div class="flex items-center gap-2 text-lg text-gray-300">
+              <span class="animate-pulse">•</span>
+              <span class="animate-pulse">•</span>
+              <span class="animate-pulse">•</span>
+            </div>
+          </template>
+          <template v-else>
+            <div class="flex items-center gap-2">
+              <template v-for="d in row.daily" :key="d.date">
+                <Icon :name="iconName(d.icon)" :title="`${iconLabel(d.icon)} – ${d.date}`" class="h-7 w-7" />
+              </template>
+            </div>
+          </template>
+        </div>
       </template>
       <template #avgTempC-data="{ row }">
         {{ row.pending ? '…' : `${row.avgTempC} °C` }}
@@ -45,7 +47,7 @@
       </template>
       <template #distanceMins-data="{ row }">
         <template v-if="row.pending">…</template>
-        <template v-else-if="Number.isFinite(row.distanceMins) && row.distanceMins > 0">{{ row.distanceMins }}</template>
+        <template v-else-if="Number.isFinite(row.distanceMins) && row.distanceMins > 0">{{ `${row.distanceMins} mins` }}</template>
         <!-- else: render nothing to hide the dash -->
       </template>
       <template #updatedAt-data="{ row }">
@@ -77,6 +79,7 @@
 </template>
 <script setup lang="ts">
 import { reactive, computed } from 'vue'
+import { usePrefs } from '~/composables/usePrefs'
 const props = defineProps<{ rows: any[]; favourites?: string[] }>()
 const emit = defineEmits<{ (e:'toggle-favourite', id: string): void }>()
 const rowsWithSort = computed(() => (props.rows || []).map((r: any) => ({
@@ -85,34 +88,41 @@ const rowsWithSort = computed(() => (props.rows || []).map((r: any) => ({
 })))
 function isFaved(id: string) { return Array.isArray(props.favourites) && props.favourites.includes(id) }
 function toggle(id: string) { emit('toggle-favourite', id) }
-const columns = [
-  { key: 'fav', label: '★' },
-  { key: 'areaSort', label: 'Area', sortable: true },
-  { key: 'name', label: 'Region' },
-  { key: 'score', label: 'Score', sortable: true },
-  { key: 'weather', label: 'Weather' },
-  { key: 'avgTempC', label: 'Avg Temp' },
-  { key: 'avgWindMph', label: 'Avg Wind' },
-  { key: 'avgRainMm', label: 'Avg Rain' },
-  { key: 'distanceMins', label: 'Distance', sortable: true },
-  { key: 'updatedAt', label: 'Updated' },
-  { key: 'ukc', label: 'Links' }
-]
+// don't include distance if mindrive not set
+const prefs = usePrefs()
+const showDistance = computed(() => Number.isFinite(prefs.maxDriveMins.value))
+const columns = computed(() => {
+  const cols = [
+    { key: 'name', label: 'Region' },
+    { key: 'weather', label: 'Weather' },
+    { key: 'avgTempC', label: 'Avg Temp' },
+    { key: 'avgWindMph', label: 'Avg Wind' },
+    { key: 'avgRainMm', label: 'Avg Rain' },
+    { key: 'updatedAt', label: 'Updated' },
+    // distance inserted conditionally at index 6
+    { key: 'areaSort', label: 'Area', sortable: true },
+    { key: 'score', label: 'Score', sortable: true },
+    { key: 'ukc', label: 'Links' },
+    { key: 'fav', label: 'Favourite' }
+  ] as any[]
+  if (showDistance.value) cols.splice(6, 0, { key: 'distanceMins', label: 'Distance', sortable: true })
+  return cols
+})
 let sort = reactive({ column: 'score', direction: 'desc' as const })
 function onSort(s: any) { sort = s }
 
 function iconName(code: string): string {
   switch (code) {
-    case 'sun': return 'meteocons:clear-day'
-    case 'light-cloud': return 'meteocons:partly-cloudy-day'
-    case 'cloud': return 'meteocons:cloudy'
-    case 'dark-cloud': return 'meteocons:overcast'
-    case 'rain': return 'meteocons:rain'
-    case 'heavy-rain': return 'meteocons:extreme-rain'
-    case 'thunder': return 'meteocons:thunderstorms'
-    case 'snow': return 'meteocons:snow'
-    case 'sleet': return 'meteocons:sleet'
-    default: return 'meteocons:cloudy'
+    case 'sun': return 'meteocons:clear-day-fill'
+    case 'light-cloud': return 'meteocons:partly-cloudy-day-fill'
+    case 'cloud': return 'meteocons:cloudy-fill'
+    case 'dark-cloud': return 'meteocons:overcast-fill'
+    case 'rain': return 'meteocons:rain-fill'
+    case 'heavy-rain': return 'meteocons:extreme-rain-fill'
+    case 'thunder': return 'meteocons:thunderstorms-fill'
+    case 'snow': return 'meteocons:snow-fill'
+    case 'sleet': return 'meteocons:sleet-fill'
+    default: return 'meteocons:cloudy-fill'
   }
 }
 function iconLabel(code: string): string {

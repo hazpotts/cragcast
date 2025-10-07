@@ -6,7 +6,7 @@ export type RankItem = {
   name: string
   score: number
   why: string[]
-  daily: { date: string; icon: string }[]
+  daily: { date: string; icon: string; tempAvgC: number; windAvgMph: number; rainSumMm: number }[]
   distanceMins: number
   updatedAt: string
   coords: { lat: number; lon: number }

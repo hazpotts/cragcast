@@ -27,24 +27,26 @@ async function fetchForecastWithRetry(event: any, lat: number, lon: number, date
   return null
 }
 
-function dailyIcons(mini: { hours: string[]; rainMm: number[]; pop: number[]; gust: number[]; cloud: number[]; temp: number[] }, dates: string[]) {
-  const icons: { date: string; icon: string }[] = []
+function dailyIcons(mini: { hours: string[]; rainMm: number[]; pop: number[]; gust: number[]; cloud: number[]; temp: number[]; wind: number[] }, dates: string[]) {
+  const icons: { date: string; icon: string; tempAvgC: number; windAvgMph: number; rainSumMm: number }[] = []
   for (const d of dates) {
     const idx: number[] = []
     for (let i = 0; i < mini.hours.length; i++) {
       if (mini.hours[i]?.startsWith(d)) idx.push(i)
     }
-    if (!idx.length) { icons.push({ date: d, icon: 'cloud' }); continue }
+    if (!idx.length) { icons.push({ date: d, icon: 'cloud', tempAvgC: 0, windAvgMph: 0, rainSumMm: 0 }); continue }
     const r = idx.map(i => mini.rainMm[i] || 0)
     const p = idx.map(i => mini.pop[i] || 0)
     const g = idx.map(i => mini.gust[i] || 0)
     const c = idx.map(i => mini.cloud[i] || 0)
     const t = idx.map(i => mini.temp[i] || 0)
+    const w = idx.map(i => (mini as any).wind?.[i] || 0)
     const rainSum = sum(r)
     const popMax = max(p)
     const gustMax = max(g)
     const cloudAvg = avg(c)
     const tempAvg = avg(t)
+    const windAvg = avg(w)
 
     let icon: string
     const precipLikely = (popMax >= 40 || rainSum >= 1)
@@ -59,7 +61,13 @@ function dailyIcons(mini: { hours: string[]; rainMm: number[]; pop: number[]; gu
     else if (cloudAvg < 60) icon = 'light-cloud'
     else if (cloudAvg >= 85 && !precipLikely) icon = 'dark-cloud'
     else icon = 'cloud'
-    icons.push({ date: d, icon })
+    icons.push({
+      date: d,
+      icon,
+      tempAvgC: Math.round(tempAvg * 10) / 10,
+      windAvgMph: Math.round(windAvg * 10) / 10,
+      rainSumMm: Math.round(rainSum * 10) / 10
+    })
   }
   return icons
 }

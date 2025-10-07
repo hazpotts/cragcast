@@ -69,8 +69,12 @@ export const usePrefs = () => {
         return Number.isFinite(n) ? n : Infinity
       },
       set(v: number) {
-        if (!Number.isFinite(v)) updateQuery({ maxDriveMins: null })
-        else updateQuery({ maxDriveMins: v })
+        if (!Number.isFinite(v)) {
+          // No limit: clear distance and any stored location
+          updateQuery({ maxDriveMins: null, lat: null, lon: null, name: null })
+        } else {
+          updateQuery({ maxDriveMins: v })
+        }
       }
     }) as unknown as Ref<number>
 

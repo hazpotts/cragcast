@@ -24,11 +24,37 @@
       </div>
       <div v-else>
         <div v-if="items[0]" class="mb-6">
-          <RegionCard :name="items[0].name" :score="items[0].score" :why="items[0].why" :daily="items[0].daily" :distanceMins="Number(items[0].distanceMins ?? 0)" :updatedAt="items[0].updatedAt" :ukcUrl="items[0].ukcUrl" :links="items[0].links" />
+          <RegionCard
+            :name="items[0].name"
+            :score="items[0].score"
+            :why="items[0].why"
+            :daily="items[0].daily"
+            :distanceMins="Number(items[0].distanceMins ?? 0)"
+            :updatedAt="items[0].updatedAt"
+            :ukcUrl="items[0].ukcUrl"
+            :links="items[0].links"
+            :avgTempC="items[0].avgTempC"
+            :avgRainMm="items[0].avgRainMm"
+            :avgWindMph="items[0].avgWindMph"
+          />
         </div>
         <div class="flex flex-col gap-4">
           <template>
-            <RegionCard v-for="r in items.slice(1, visibleCount)" :key="r.id" :name="r.name" :score="r.score" :why="r.why" :daily="r.daily" :distanceMins="Number(r.distanceMins ?? 0)" :updatedAt="r.updatedAt" :ukcUrl="r.ukcUrl" :links="r.links" />
+            <RegionCard
+              v-for="r in items.slice(1, visibleCount)"
+              :key="r.id"
+              :name="r.name"
+              :score="r.score"
+              :why="r.why"
+              :daily="r.daily"
+              :distanceMins="Number(r.distanceMins ?? 0)"
+              :updatedAt="r.updatedAt"
+              :ukcUrl="r.ukcUrl"
+              :links="r.links"
+              :avgTempC="r.avgTempC"
+              :avgRainMm="r.avgRainMm"
+              :avgWindMph="r.avgWindMph"
+            />
           </template>
           <!--
           <UButton v-if="items.length > visibleCount" label="Show more" variant="soft" @click="showMore()"

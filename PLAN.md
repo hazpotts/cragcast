@@ -1,33 +1,15 @@
-# CragCast Build Plan
-
-## Milestones
-- [x] Scaffold Nuxt 3 (TypeScript, pnpm, Vite) targeting Cloudflare Pages
-- [x] Cloudflare KV binding (CLIMB_KV) and wrangler config for local dev
-- [x] API: /api/regions and /api/rank with 3h freshness via KV + Open-Meteo
-- [x] Utilities: forecast, score, regions, dates, distance
-- [x] Styling: Tailwind + Nuxt UI integration
-- [x] UI Components: ModeToggle, WhenPicker, RegionCard, CompareTable, MiniChart, PlaceSearch
-- [x] Composables: usePrefs, useRank
-- [x] Pages: index redirect, recommend, compare with first-run flow
-- [x] UKC links per region (API ukcUrl + UI buttons)
-- [ ] Testing: vitest unit, cypress e2e skeleton
-- [ ] Deploy: Cloudflare Pages (preset), domain cragcast.app
-
-## Configuration & Docs
-- [x] Nuxt UI theme in app.config.ts
-- [x] `.env.example` and public runtime config for Google Places
-- [x] README with getting started, env, commands, testing, deploy
-- [x] DOCS.md with extensive details
-
-## Notes
-- Local dev uses Node 20 via nvm and pnpm. See README for commands.
-- Google Places optional; fallback geocoder provided for dev.
+# CragCast Project Plan
 
 ## Next Actions
 1. Add severe weather warnings
 2. Consider ways to pull in generic crag info for the regions rather than a set list, use this to allow people to create their own custom compare page rather than a set list, use stored lat lng to get the weather, but then to get BBC or MetOffice links use the closest town with a geocode lookup, windy can use lat lng.
 3. Change distance to a range not a single number
-4. Add AI page with crag info
+4. Check implementation
+5. Add search in compare
+6. Upgrade to profressional icon pack - https://www.mikeafford.com/store/weather-icons/weather-icon-set-bb-01/
+7. Units manager
+8. Testing
+9. Add AI page with crag info
     - crag info api suggested by ai
     - MWIS
     - tell it to read UKC if possible?
@@ -35,6 +17,11 @@
     - Feed it the users prefs first
     - Plan for how to suggest crags
     - Cache initial results and rate limit
+
+## Bugs and tweaks
+- dont show then hide when filtering
+- fix show more
+- logo
 
 
 
