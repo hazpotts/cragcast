@@ -1,5 +1,5 @@
 <template>
-  <footer class="mt-12 py-6 px-4 text-sm text-gray-400 dark:text-gray-600">
+  <footer class="mt-12 py-6 px-4 text-sm text-gray-500 dark:text-gray-600">
     <div class="container flex flex-col md:flex-row md:items-center md:justify-between gap-3">
       <div>© {{ year }} CragCast · Open source</div>
       <nav class="flex flex-wrap items-center gap-4">

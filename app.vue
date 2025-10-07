@@ -2,8 +2,8 @@
   <div class="app">
     <header class="p-4">
       <a href="/" aria-label="CragCast home" class="flex items-center gap-2">
-        <img :src="logoUrl64" alt="CragCast" class="h-8 w-auto" />
-        <span class="text-sky-600 dark:text-sky-400 text-xl font-semibold">CragCast</span>
+        <img :src="logoUrl64" alt="CragCast Logo" class="h-8 w-auto" />
+        <span class="text-sky-800 dark:text-sky-300 text-xl font-semibold">CragCast</span>
       </a>
       <ModeToggle />
     </header>
@@ -17,7 +17,11 @@
 import logoUrl32 from '~/assets/images/logo_32.webp?url'
 import logoUrl64 from '~/assets/images/logo_64.webp?url'
 useHead({
+  htmlAttrs: { lang: 'en-GB' },
   title: 'CragCast',
+  meta: [
+    { name: 'description', content: 'CragCast - Find the best crags for your next climbing trip' },
+  ],
   link: [
     { rel: 'icon', type: 'image/png', href: logoUrl32 },
   ]
