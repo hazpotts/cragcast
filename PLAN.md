@@ -11,8 +11,7 @@
 8. Work on UX
     - Add a "compare" button to the region cards
     - Allow location without distance to use in score
-    - Prompt to say what is showing when no location is set, UK Wide
-    - Prompt to add location for local recommendations
+    - Switch to cards/table views and allow cards to be filtered and favourited
     - Default to Compare?
     - Show additional cards on recommend by default?
 9. Allow add to desktop

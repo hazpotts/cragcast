@@ -2,7 +2,7 @@
   <div class="app">
     <header class="p-4">
       <a href="/" aria-label="CragCast home" class="flex items-center gap-2">
-        <img :src="logoUrl" alt="CragCast" class="h-8 w-auto" />
+        <img :src="logoUrl64" alt="CragCast" class="h-8 w-auto" />
         <span class="text-sky-600 dark:text-sky-400 text-xl font-semibold">CragCast</span>
       </a>
       <ModeToggle />
@@ -14,12 +14,12 @@
   </div>
 </template>
 <script setup lang="ts">
-import logoUrl from '~/assets/images/logo.png?url'
+import logoUrl32 from '~/assets/images/logo_32.webp?url'
+import logoUrl64 from '~/assets/images/logo_64.webp?url'
 useHead({
+  title: 'CragCast',
   link: [
-    { rel: 'icon', type: 'image/png', href: logoUrl, sizes: '32x32' },
-    { rel: 'icon', type: 'image/png', href: logoUrl, sizes: '16x16' },
-    { rel: 'apple-touch-icon', href: logoUrl, sizes: '180x180' }
+    { rel: 'icon', type: 'image/png', href: logoUrl32 },
   ]
 })
 </script>
