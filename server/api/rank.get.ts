@@ -13,7 +13,12 @@ async function fetchForecastWithRetry(event: any, lat: number, lon: number, date
   let lastErr: any
   for (let i = 0; i < attempts; i++) {
     try {
-      const out = await getForecast(event, lat, lon, dates)
+      // Per-attempt timeout to prevent slow upstream from stalling the whole response
+      const ATTEMPT_TIMEOUT_MS = 3500
+      const out = await Promise.race([
+        getForecast(event, lat, lon, dates),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('forecast-timeout')), ATTEMPT_TIMEOUT_MS))
+      ]) as any
       const mini = out?.mini
       if (mini && Array.isArray(mini.hours) && mini.hours.length) return out
       lastErr = new Error('empty-mini')

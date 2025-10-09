@@ -77,14 +77,27 @@ export function useRank() {
       params.set('dates', pickedDates.join(','))
       const url = `/api/rank?${params.toString()}`
       console.debug('[useRank] GET', url)
-      const res = await fetch(url)
-      const json = await res.json()
+      // Add a client-side timeout to avoid hanging skeletons on mobile networks
+      const controller = new AbortController()
+      const timeoutMs = 15000
+      const to = setTimeout(() => controller.abort(), timeoutMs)
+      let json: any
+      try {
+        const res = await fetch(url, { signal: controller.signal })
+        json = await res.json()
+      } finally {
+        clearTimeout(to)
+      }
       items.value = json
       // Persist to client cache
       writeCache(key, json)
       console.debug('[useRank] fetchRank:ok', { count: Array.isArray(json) ? json.length : null })
     } catch (e: any) {
-      error.value = e?.message || 'Failed to fetch rank'
+      if (e?.name === 'AbortError') {
+        error.value = `Timed out after 15s fetching results`
+      } else {
+        error.value = e?.message || 'Failed to fetch rank'
+      }
       console.error('[useRank] fetchRank:error', e)
     } finally {
       pending.value = false
