@@ -80,7 +80,7 @@ export function useRank() {
       // Add a client-side timeout to avoid hanging skeletons on mobile networks
       const controller = new AbortController()
       const timeoutMs = 15000
-      const to = setTimeout(() => controller.abort(), timeoutMs)
+      const to = setTimeout(() => controller.abort(new Error('Request timeout after 15s')), timeoutMs)
       let json: any
       try {
         const res = await fetch(url, { signal: controller.signal })
