@@ -4,6 +4,7 @@ import { haversineKm, driveMinutesApprox } from "~/server/utils/distance"
 import { scoreRegion } from "~/server/utils/score"
 import { presetDates, parseDate, formatDate } from "~/server/utils/dates"
 import { dailyIcons } from "~/server/utils/icons"
+import { createLogger } from "~/server/utils/logger"
 
 function avg(a: number[]) { return a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0 }
 function sleep(ms: number) { return new Promise(res => setTimeout(res, ms)) }
@@ -48,7 +49,9 @@ export default defineEventHandler(async (event) => {
   }
   dates = dates.map(d => formatDate(parseDate(d)))
 
-  console.log('[rank] Request started', {
+  const logger = createLogger(event, { service: 'rank' })
+
+  logger.info('Request started', {
     lat: hasHome ? lat : 'none',
     lon: hasHome ? lon : 'none',
     maxDriveMins: Number.isFinite(maxDriveMins) ? maxDriveMins : 'unlimited',
@@ -153,7 +156,7 @@ export default defineEventHandler(async (event) => {
   results.sort((a, b) => b.score - a.score)
 
   const totalMs = Date.now() - requestStart
-  console.log('[rank] Request completed', {
+  const logData = {
     totalMs,
     totalSeconds: (totalMs / 1000).toFixed(2),
     processed: stats.processed,
@@ -164,7 +167,14 @@ export default defineEventHandler(async (event) => {
     slowRegions: stats.slowRegions.length,
     slowestRegions: stats.slowRegions.sort((a, b) => b.ms - a.ms).slice(0, 5),
     resultsReturned: results.length
-  })
+  }
+
+  // Log as warning if request took > 15s (would timeout on client)
+  if (totalMs > 15000) {
+    logger.warn('Request completed - TIMEOUT RISK', logData)
+  } else {
+    logger.info('Request completed', logData)
+  }
 
   return results
 })
