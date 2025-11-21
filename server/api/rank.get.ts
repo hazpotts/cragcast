@@ -32,6 +32,7 @@ async function fetchForecastWithRetry(event: any, lat: number, lon: number, date
 }
 
 export default defineEventHandler(async (event) => {
+  const requestStart = Date.now()
   const q = getQuery(event)
   const lat = Number(q.lat)
   const lon = Number(q.lon)
@@ -47,7 +48,22 @@ export default defineEventHandler(async (event) => {
   }
   dates = dates.map(d => formatDate(parseDate(d)))
 
+  console.log('[rank] Request started', {
+    lat: hasHome ? lat : 'none',
+    lon: hasHome ? lon : 'none',
+    maxDriveMins: Number.isFinite(maxDriveMins) ? maxDriveMins : 'unlimited',
+    dates,
+    totalRegions: regions.length
+  })
+
   const home = { lat, lon }
+  const stats = {
+    processed: 0,
+    skippedDistance: 0,
+    failed: 0,
+    cacheHits: 0,
+    slowRegions: [] as Array<{ name: string; ms: number }>
+  }
 
   const results: any[] = []
   for (const r of regions) {
@@ -62,12 +78,31 @@ export default defineEventHandler(async (event) => {
     const unlimited = !hasHome || !Number.isFinite(maxDriveMins)
     if (!unlimited && Number.isFinite(distanceMins) && distanceMins > maxDriveMins) {
       // Skip fetching/processing this region entirely
+      stats.skippedDistance++
       continue
     }
 
+    const regionStart = Date.now()
     const out = await fetchForecastWithRetry(event, pt.lat, pt.lon, dates, 3)
+    const regionMs = Date.now() - regionStart
+
+    // Track slow regions (>2s)
+    if (regionMs > 2000) {
+      stats.slowRegions.push({ name: r.name, ms: regionMs })
+    }
+
     // If still failing, skip this region for now (no defaults) and continue
-    if (!out) { await sleep(100); continue }
+    if (!out) {
+      stats.failed++
+      await sleep(100)
+      continue
+    }
+
+    stats.processed++
+    // Check if this was a cache hit (fast response < 100ms likely cached)
+    if (regionMs < 100) {
+      stats.cacheHits++
+    }
 
     const { mini, updatedAt } = out
 
@@ -116,5 +151,20 @@ export default defineEventHandler(async (event) => {
   }
 
   results.sort((a, b) => b.score - a.score)
+
+  const totalMs = Date.now() - requestStart
+  console.log('[rank] Request completed', {
+    totalMs,
+    totalSeconds: (totalMs / 1000).toFixed(2),
+    processed: stats.processed,
+    skippedDistance: stats.skippedDistance,
+    failed: stats.failed,
+    cacheHits: stats.cacheHits,
+    cacheHitRate: stats.processed > 0 ? `${((stats.cacheHits / stats.processed) * 100).toFixed(1)}%` : '0%',
+    slowRegions: stats.slowRegions.length,
+    slowestRegions: stats.slowRegions.sort((a, b) => b.ms - a.ms).slice(0, 5),
+    resultsReturned: results.length
+  })
+
   return results
 })

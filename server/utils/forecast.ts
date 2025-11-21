@@ -41,12 +41,16 @@ export async function getForecast(event: any, lat: number, lon: number, dates: s
         const ageH = (Date.now() - parsed.fetchedAt) / 36e5
         // Aligned with cache TTL: 3 hours
         if (ageH <= 3) {
+          console.debug('[forecast] Cache HIT', { lat, lon, ageMinutes: Math.round(ageH * 60) })
           return parsed.result
         }
+        console.debug('[forecast] Cache STALE', { lat, lon, ageHours: ageH.toFixed(2) })
         // else fallthrough to refresh
       } catch {
         // ignore
       }
+    } else {
+      console.debug('[forecast] Cache MISS', { lat, lon })
     }
   }
 
@@ -66,6 +70,7 @@ export async function getForecast(event: any, lat: number, lon: number, dates: s
   url.searchParams.set('timezone', 'Europe/London')
 
   let data: any
+  const fetchStart = Date.now()
   try {
     const res = await fetch(url.toString(), {
       headers: {
@@ -73,11 +78,14 @@ export async function getForecast(event: any, lat: number, lon: number, dates: s
         'User-Agent': 'CragCast/0.1 (+https://cragcast.app)'
       }
     })
+    const fetchMs = Date.now() - fetchStart
     if (!res.ok) {
       const body = await res.text().catch(() => '')
+      console.warn('[forecast] API error', { lat, lon, status: res.status, fetchMs })
       throw createError({ statusCode: 502, statusMessage: `Open-Meteo fetch failed (${res.status})`, data: { url: url.toString(), body } })
     }
     data = await res.json()
+    console.debug('[forecast] API fetch success', { lat, lon, fetchMs })
   } catch (err: any) {
     // As a last resort, return an empty mini-series so UI can render, but mark as error
     console.warn('[forecast] fetch failed, returning empty fallback', { lat, lon, err: String(err) })
