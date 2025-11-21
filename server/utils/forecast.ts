@@ -13,6 +13,7 @@ export type MiniSeries = {
 export type ForecastResult = {
   mini: MiniSeries
   updatedAt: string
+  error?: boolean  // true if this is a fallback empty response due to API error
 }
 
 type KV = { get: (k: string) => Promise<string | null>; put: (k: string, v: string, opts?: { expirationTtl?: number }) => Promise<void> }
@@ -38,7 +39,8 @@ export async function getForecast(event: any, lat: number, lon: number, dates: s
       try {
         const parsed = JSON.parse(cached) as { result: ForecastResult; fetchedAt: number }
         const ageH = (Date.now() - parsed.fetchedAt) / 36e5
-        if (ageH <= 6) {
+        // Aligned with cache TTL: 3 hours
+        if (ageH <= 3) {
           return parsed.result
         }
         // else fallthrough to refresh
@@ -77,9 +79,10 @@ export async function getForecast(event: any, lat: number, lon: number, dates: s
     }
     data = await res.json()
   } catch (err: any) {
-    // As a last resort, return an empty mini-series so UI can render, but include updatedAt for visibility
+    // As a last resort, return an empty mini-series so UI can render, but mark as error
+    console.warn('[forecast] fetch failed, returning empty fallback', { lat, lon, err: String(err) })
     const empty: MiniSeries = { hours: [], rainMm: [], pop: [], wind: [], gust: [], temp: [], cloud: [] }
-    return { mini: empty, updatedAt: new Date().toISOString() }
+    return { mini: empty, updatedAt: new Date().toISOString(), error: true }
   }
 
   const times: string[] = data?.hourly?.time || []
