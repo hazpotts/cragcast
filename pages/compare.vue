@@ -159,8 +159,14 @@ async function loadCompare() {
 
   // 2) Fetch each region individually with a small delay to avoid rate limits
   for (const r of regionList) {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10s timeout per region
     try {
-      const row = await $fetch<any>('/api/region', { params: { id: r.id, ...paramsBase } })
+      const row = await $fetch<any>('/api/region', {
+        params: { id: r.id, ...paramsBase },
+        signal: controller.signal
+      })
+      clearTimeout(timeoutId)
       const unlimited = !Number.isFinite(prefs.maxDriveMins.value)
       if (!unlimited && row.distanceMins > (prefs.maxDriveMins.value as number)) {
         // Remove placeholder when filtered out
@@ -172,7 +178,12 @@ async function loadCompare() {
       writeCache()
       await new Promise(res => setTimeout(res, 120))
     } catch (e) {
-      // Leave placeholder row; we could mark as failed if desired
+      clearTimeout(timeoutId)
+      // Mark row as failed instead of leaving it pending
+      const idx = items.value.findIndex((x: any) => x.id === r.id)
+      if (idx !== -1) {
+        items.value[idx] = { ...items.value[idx], pending: false, error: true }
+      }
     }
   }
 }
