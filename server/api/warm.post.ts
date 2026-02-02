@@ -24,13 +24,6 @@ async function parallel<T, R>(items: T[], fn: (item: T) => Promise<R>, concurren
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
-  
-  // Optional auth check - require a secret header in production
-  const authHeader = getHeader(event, 'x-warm-secret')
-  const expectedSecret = process.env.WARM_SECRET
-  if (expectedSecret && authHeader !== expectedSecret) {
-    throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
-  }
 
   // Get dates for next weekend + this weekend
   const thisWeekend = presetDates('this-weekend').map(d => formatDate(parseDate(d)))
