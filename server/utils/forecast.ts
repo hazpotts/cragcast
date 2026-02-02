@@ -48,6 +48,7 @@ async function fetchFromApi(lat: number, lon: number, dates: string[]): Promise<
   url.searchParams.set('windspeed_unit', 'mph')
   url.searchParams.set('temperature_unit', 'celsius')
   url.searchParams.set('timezone', 'Europe/London')
+  url.searchParams.set('forecast_days', '16')  // Need 16 days to cover "next weekend"
 
   const res = await fetch(url.toString(), {
     headers: {
