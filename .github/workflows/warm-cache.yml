@@ -1,0 +1,35 @@
+name: Warm CragCast Weather Cache
+
+on:
+  schedule:
+    # Run every 2 hours during UK daytime (7am-11pm UK time)
+    # Cron is in UTC, so 7am-11pm UK = 7am-11pm UTC in winter, 6am-10pm UTC in summer
+    # We'll just run every 2 hours to keep it simple
+    - cron: '0 */2 * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  warm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Warm the cache
+        env:
+          WARM_SECRET: ${{ secrets.WARM_SECRET }}
+        run: |
+          echo "Warming cache at $(date -u)"
+          response=$(curl -s -X POST \
+            -H "x-warm-secret: $WARM_SECRET" \
+            -H "Content-Type: application/json" \
+            --max-time 120 \
+            "https://cragcast.app/api/warm")
+          echo "$response" | jq . || echo "$response"
+          
+          # Check if successful
+          if echo "$response" | grep -q '"ok":true'; then
+            echo "✅ Cache warmed successfully"
+          else
+            echo "❌ Cache warming failed"
+            exit 1
+          fi

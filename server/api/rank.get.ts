@@ -8,12 +8,32 @@ import { dailyIcons } from "~/server/utils/icons"
 function avg(a: number[]) { return a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0 }
 function sleep(ms: number) { return new Promise(res => setTimeout(res, ms)) }
 
-async function fetchForecastWithRetry(event: any, lat: number, lon: number, dates: string[], attempts = 3) {
+// Concurrency-limited parallel execution
+async function parallel<T, R>(items: T[], fn: (item: T) => Promise<R>, concurrency = 6): Promise<R[]> {
+  const results: R[] = []
+  const pending: Promise<void>[] = []
+  let index = 0
+
+  async function runNext(): Promise<void> {
+    const i = index++
+    if (i >= items.length) return
+    results[i] = await fn(items[i])
+    await runNext()
+  }
+
+  for (let i = 0; i < Math.min(concurrency, items.length); i++) {
+    pending.push(runNext())
+  }
+  await Promise.all(pending)
+  return results
+}
+
+async function fetchForecastWithRetry(event: any, lat: number, lon: number, dates: string[], attempts = 2) {
   let lastErr: any
   for (let i = 0; i < attempts; i++) {
     try {
       // Per-attempt timeout to prevent slow upstream from stalling the whole response
-      const ATTEMPT_TIMEOUT_MS = 3500
+      const ATTEMPT_TIMEOUT_MS = 4000
       const out = await Promise.race([
         getForecast(event, lat, lon, dates),
         new Promise((_, rej) => setTimeout(() => rej(new Error('forecast-timeout')), ATTEMPT_TIMEOUT_MS))
@@ -24,8 +44,8 @@ async function fetchForecastWithRetry(event: any, lat: number, lon: number, date
     } catch (e: any) {
       lastErr = e
     }
-    // exponential backoff: 300ms, 600ms, 1200ms
-    await sleep(300 * Math.pow(2, i))
+    // Short backoff: 200ms, 400ms
+    if (i < attempts - 1) await sleep(200 * Math.pow(2, i))
   }
   console.warn('[rank] forecast failed after retries', { lat, lon, err: String(lastErr) })
   return null
@@ -49,7 +69,10 @@ export default defineEventHandler(async (event) => {
 
   const home = { lat, lon }
 
-  const results: any[] = []
+  // Pre-filter regions by distance if home is set
+  type RegionWithDistance = { region: typeof regions[0]; distanceMins: number; pt: { lat: number; lon: number } }
+  const candidateRegions: RegionWithDistance[] = []
+  
   for (const r of regions) {
     const pt = r.points[0]
     let distanceMins = 0
@@ -61,13 +84,25 @@ export default defineEventHandler(async (event) => {
     // Only enforce a hard distance filter when we have a home location and a finite max
     const unlimited = !hasHome || !Number.isFinite(maxDriveMins)
     if (!unlimited && Number.isFinite(distanceMins) && distanceMins > maxDriveMins) {
-      // Skip fetching/processing this region entirely
       continue
     }
 
-    const out = await fetchForecastWithRetry(event, pt.lat, pt.lon, dates, 3)
-    // If still failing, skip this region for now (no defaults) and continue
-    if (!out) { await sleep(100); continue }
+    candidateRegions.push({ region: r, distanceMins, pt })
+  }
+
+  // Fetch forecasts in parallel with concurrency limit
+  const forecasts = await parallel(candidateRegions, async ({ pt }) => {
+    return fetchForecastWithRetry(event, pt.lat, pt.lon, dates, 2)
+  }, 8) // 8 concurrent requests
+
+  // Build results from forecasts
+  const results: any[] = []
+  for (let i = 0; i < candidateRegions.length; i++) {
+    const { region: r, distanceMins, pt } = candidateRegions[i]
+    const out = forecasts[i]
+    
+    // Skip if forecast failed
+    if (!out) continue
 
     const { mini, updatedAt } = out
 
@@ -110,9 +145,6 @@ export default defineEventHandler(async (event) => {
       avgRainMm,
       links
     })
-
-    // Small delay between region calls to ease rate limits
-    await sleep(100)
   }
 
   results.sort((a, b) => b.score - a.score)
