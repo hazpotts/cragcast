@@ -93,25 +93,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      # Set secret via wrangler CLI before deploy (workaround for wrangler-action v4 bug)
-      - name: Set Worker Secret
-        working-directory: worker-cron
-        run: |
-          if [ -n "$WARM_SECRET" ]; then
-            echo "$WARM_SECRET" | npx wrangler secret put WARM_SECRET
-          else
-            echo "WARM_SECRET not set, skipping"
-          fi
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          WARM_SECRET: ${{ secrets.WARM_SECRET }}
-
       - name: Deploy Worker
         uses: cloudflare/wrangler-action@v3
         with:

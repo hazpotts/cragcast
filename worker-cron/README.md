@@ -6,32 +6,14 @@ A lightweight Cloudflare Worker that runs on a cron schedule to keep the CragCas
 
 The main CragCast app fetches weather for 35 UK climbing regions. Without a warm cache, this can take 30+ seconds and timeout. This worker pre-populates the cache every 2 hours so users always get fast responses.
 
-## Setup
+## Deployment
 
-1. Install dependencies:
-   ```bash
-   cd worker-cron
-   npm install
-   ```
-
-2. Login to Cloudflare:
-   ```bash
-   npx wrangler login
-   ```
-
-3. (Optional) Set the warm secret to match your Pages environment:
-   ```bash
-   npx wrangler secret put WARM_SECRET
-   ```
-
-4. Deploy:
-   ```bash
-   npm run deploy
-   ```
+This worker is deployed automatically via GitHub Actions alongside the main Pages app. No manual setup needed.
 
 ## Testing locally
 
 ```bash
+npm install
 npm run dev
 # In another terminal:
 curl -X POST http://localhost:8787
