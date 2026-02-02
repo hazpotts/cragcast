@@ -1,0 +1,10 @@
+name = "cragcast-cache-warmer"
+main = "src/index.ts"
+compatibility_date = "2024-09-19"
+
+# Run every 2 hours
+[triggers]
+crons = ["0 */2 * * *"]
+
+[vars]
+CRAGCAST_URL = "https://cragcast.app"
