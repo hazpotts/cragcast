@@ -98,7 +98,7 @@ export default defineEventHandler(async (event) => {
     area: (region as any).area,
     score,
     why,
-    warnings,
+    ...(warnings.length ? { warnings } : {}),
     daily: dailyIcons(mini, dates),
     distanceMins: Number.isFinite(distanceMins) ? distanceMins : 0,
     updatedAt,

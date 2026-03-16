@@ -39,43 +39,43 @@ export function checkWarnings(mini: MiniSeries, dates: string[]): WeatherWarning
     const tempMin = Math.min(...temps)
     const tempMax = Math.max(...temps)
 
-    const thunderRisk = popMax >= 60 && rainSum >= 3 && gustMax >= 30
+    const thunderRisk = popMax >= 70 && rainSum >= 4 && gustMax >= 35
 
     // Lightning / thunder – red
     if (thunderRisk) {
       warnings.push({ level: 'red', type: 'thunder', message: `Thunderstorm risk on ${fmtDate(d)}` })
     }
 
-    // Extreme wind – red (gusts > 45 mph, dangerous on any crag)
-    if (gustMax >= 45) {
-      warnings.push({ level: 'red', type: 'wind', message: `Dangerous gusts of ${Math.round(gustMax)} mph on ${fmtDate(d)}` })
+    // Extreme wind – red (gusts > 60 mph)
+    if (gustMax >= 60) {
+      warnings.push({ level: 'red', type: 'wind', message: `Extreme gusts of ${Math.round(gustMax)} mph on ${fmtDate(d)}` })
     }
-    // High wind – amber (gusts > 30 mph, risky on exposed rock)
-    else if (gustMax >= 30) {
+    // High wind – amber (gusts > 40 mph)
+    else if (gustMax >= 40) {
       warnings.push({ level: 'amber', type: 'wind', message: `Strong gusts of ${Math.round(gustMax)} mph on ${fmtDate(d)}` })
     }
 
-    // Very heavy rain – red (> 10mm, rock will be soaked)
-    if (rainSum >= 10) {
+    // Very heavy rain – red (> 20mm)
+    if (rainSum >= 20) {
       warnings.push({ level: 'red', type: 'rain', message: `Very heavy rain (${Math.round(rainSum)} mm) on ${fmtDate(d)}` })
     }
-    // Heavy rain – amber (> 4mm, wet rock likely)
-    else if (rainSum >= 4) {
+    // Heavy rain – amber (> 8mm)
+    else if (rainSum >= 8) {
       warnings.push({ level: 'amber', type: 'rain', message: `Heavy rain (${Math.round(rainSum)} mm) on ${fmtDate(d)}` })
     }
 
-    // Freezing – amber (min temp below 0°C)
-    if (tempMin <= 0) {
+    // Freezing – amber (min temp below -2°C)
+    if (tempMin <= -2) {
       warnings.push({ level: 'amber', type: 'cold', message: `Freezing conditions (${Math.round(tempMin)}°C) on ${fmtDate(d)}` })
     }
 
-    // Extreme heat – amber (max temp > 28°C)
-    if (tempMax >= 28) {
+    // Extreme heat – amber (max temp > 30°C, rare in UK but possible)
+    if (tempMax >= 30) {
       warnings.push({ level: 'amber', type: 'heat', message: `Very hot (${Math.round(tempMax)}°C) on ${fmtDate(d)}` })
     }
 
     // Snow / ice – amber
-    if (tempMin <= 2 && popMax >= 30 && rainSum >= 0.5) {
+    if (tempMin <= 1.5 && popMax >= 40 && rainSum >= 1) {
       warnings.push({ level: 'amber', type: 'snow', message: `Snow or ice likely on ${fmtDate(d)}` })
     }
   }
