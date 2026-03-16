@@ -8,6 +8,19 @@
           <!-- score retained in code, intentionally not displayed -->
         </div>
         <div class="text-sm text-gray-500">Updated {{ new Date(updatedAt).toLocaleString() }}</div>
+        <div v-if="warnings?.length" class="space-y-1">
+          <div
+            v-for="(w, i) in warnings"
+            :key="i"
+            class="flex items-center gap-1.5 text-sm font-medium rounded px-2 py-1"
+            :class="w.level === 'red'
+              ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200'
+              : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200'"
+          >
+            <Icon name="heroicons:exclamation-triangle-20-solid" class="h-4 w-4 shrink-0" />
+            {{ w.message }}
+          </div>
+        </div>
         <ul class="list-disc pl-5 text-sm">
           <li v-for="(w,i) in why" :key="i">{{ w }}</li>
         </ul>
@@ -69,6 +82,7 @@ const props = defineProps<{
   name: string
   score: number
   why: string[]
+  warnings?: { level: string; type: string; message: string }[]
   daily: { date: string; icon: string; tempAvgC: number; windAvgMph: number; rainSumMm: number }[]
   distanceMins: number | null
   updatedAt: string

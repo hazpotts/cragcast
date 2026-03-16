@@ -28,6 +28,19 @@
           <span class="font-semibold">{{ row.pending ? '…' : row.score }}</span>
         </template>
       </template>
+      <template #warnings-data="{ row }">
+        <template v-if="!row.pending && !row.error && row.warnings?.length">
+          <div class="flex flex-col gap-1">
+            <UTooltip v-for="(w, i) in row.warnings" :key="i" :text="w.message">
+              <Icon
+                name="heroicons:exclamation-triangle-20-solid"
+                class="h-5 w-5"
+                :class="w.level === 'red' ? 'text-red-500' : 'text-amber-500'"
+              />
+            </UTooltip>
+          </div>
+        </template>
+      </template>
       <template #weather-data="{ row }">
         <div class="flex justify-center bg-gray-400 rounded px-2 py-1">
           <template v-if="row.error">
@@ -135,6 +148,7 @@ const showDistance = computed(() => Number.isFinite(prefs.maxDriveMins.value))
 const columns = computed(() => {
   const cols = [
     { key: 'name', label: 'Region' },
+    { key: 'warnings', label: '' },
     { key: 'weather', label: 'Weather' },
     { key: 'avgTempC', label: 'Avg Temp' },
     { key: 'avgWindMph', label: 'Avg Wind' },
