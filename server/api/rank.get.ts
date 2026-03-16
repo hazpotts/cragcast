@@ -4,6 +4,7 @@ import { haversineKm, driveMinutesApprox } from "~/server/utils/distance"
 import { scoreRegion } from "~/server/utils/score"
 import { presetDates, parseDate, formatDate } from "~/server/utils/dates"
 import { dailyIcons } from "~/server/utils/icons"
+import { checkWarnings } from "~/server/utils/warnings"
 
 function avg(a: number[]) { return a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0 }
 function sleep(ms: number) { return new Promise(res => setTimeout(res, ms)) }
@@ -130,11 +131,14 @@ export default defineEventHandler(async (event) => {
       windy: `https://www.windy.com/${pt.lat.toFixed(3)}/${pt.lon.toFixed(3)}?${pt.lat.toFixed(3)},${pt.lon.toFixed(3)},${zoom}`
     }
 
+    const warnings = checkWarnings(mini, dates)
+
     results.push({
       id: r.id,
       name: r.name,
       score,
       why,
+      warnings,
       daily: dailyIcons(mini, dates),
       distanceMins,
       updatedAt,
