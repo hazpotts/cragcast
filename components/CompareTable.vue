@@ -2,15 +2,27 @@
   <div>
     <UTable :rows="rowsWithSort" :columns="columns" :sort="sort" @update:sort="onSort">
       <template #fav-data="{ row }">
-        <UButton
-          variant="ghost"
-          size="xs"
-          :aria-label="isFaved(row.id) ? 'Unfavourite' : 'Favourite'"
-          @click="toggle(row.id)"
-          class="text-yellow-500 hover:text-yellow-600"
-        >
-          <Icon :name="isFaved(row.id) ? 'heroicons-solid:star' : 'heroicons:star'" class="h-5 w-5" />
-        </UButton>
+        <div class="flex items-center gap-1">
+          <UButton
+            variant="ghost"
+            size="xs"
+            :aria-label="isFaved(row.id) ? 'Unfavourite' : 'Favourite'"
+            @click="toggle(row.id)"
+            class="text-yellow-500 hover:text-yellow-600"
+          >
+            <Icon :name="isFaved(row.id) ? 'heroicons-solid:star' : 'heroicons:star'" class="h-5 w-5" />
+          </UButton>
+          <UButton
+            v-if="isRemovable(row.id)"
+            variant="ghost"
+            size="xs"
+            aria-label="Remove custom crag"
+            @click="emit('remove', row.id)"
+            class="text-red-400 hover:text-red-600"
+          >
+            <Icon name="heroicons-solid:trash" class="h-4 w-4" />
+          </UButton>
+        </div>
       </template>
       <template #areaSort-data="{ row }">
         <template v-if="row.error">
@@ -122,6 +134,9 @@
             <a :href="row.links?.windy" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-700 underline flex items-center">
               Windy <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-1 h-4 w-4" />
             </a>
+            <a v-if="row.links?.yrno" :href="row.links.yrno" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-700 underline flex items-center">
+              Yr <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-1 h-4 w-4" />
+            </a>
             <a :href="row.ukcUrl" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-700 underline flex items-center">
               UKC <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-1 h-4 w-4" />
             </a>
@@ -134,13 +149,14 @@
 <script setup lang="ts">
 import { reactive, computed } from 'vue'
 import { usePrefs } from '~/composables/usePrefs'
-const props = defineProps<{ rows: any[]; favourites?: string[] }>()
-const emit = defineEmits<{ (e:'toggle-favourite', id: string): void }>()
+const props = defineProps<{ rows: any[]; favourites?: string[]; removableIds?: string[] }>()
+const emit = defineEmits<{ (e:'toggle-favourite', id: string): void; (e:'remove', id: string): void }>()
 const rowsWithSort = computed(() => (props.rows || []).map((r: any) => ({
   ...r,
   areaSort: `${r?.area ?? ''} | ${r?.name ?? ''}`
 })))
 function isFaved(id: string) { return Array.isArray(props.favourites) && props.favourites.includes(id) }
+function isRemovable(id: string) { return Array.isArray(props.removableIds) && props.removableIds.includes(id) }
 function toggle(id: string) { emit('toggle-favourite', id) }
 // don't include distance if mindrive not set
 const prefs = usePrefs()

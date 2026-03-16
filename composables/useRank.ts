@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { usePrefs } from './usePrefs'
+import { useCustomCrags } from './useCustomCrags'
 
 export type RankItem = {
   id: string
@@ -14,7 +15,7 @@ export type RankItem = {
   avgTempC: number
   avgWindMph: number
   avgRainMm: number
-  links: { bbc: string; metoffice: string; windy: string }
+  links: { bbc: string; metoffice: string; windy: string; yrno?: string }
 }
 
 export function useRank() {
@@ -88,6 +89,29 @@ export function useRank() {
       } finally {
         clearTimeout(to)
       }
+
+      // Also fetch custom crags and merge into results
+      const { crags } = useCustomCrags()
+      if (crags.value.length) {
+        const customResults = await Promise.allSettled(
+          crags.value.map(async (crag) => {
+            const cParams: any = {
+              id: crag.id, name: crag.name,
+              cragLat: crag.lat, cragLon: crag.lon,
+              rocks: crag.rock.join(','),
+              dates: pickedDates.join(',')
+            }
+            if (Number.isFinite(lat)) { cParams.lat = lat; cParams.lon = lon }
+            if (Number.isFinite(maxDriveMins.value)) cParams.maxDriveMins = maxDriveMins.value
+            return $fetch<any>('/api/custom-region', { params: cParams })
+          })
+        )
+        for (const r of customResults) {
+          if (r.status === 'fulfilled' && r.value) json.push(r.value)
+        }
+        json.sort((a: any, b: any) => b.score - a.score)
+      }
+
       items.value = json
       // Persist to client cache
       writeCache(key, json)

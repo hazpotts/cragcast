@@ -30,24 +30,33 @@
       <div class="space-y-6">
         <section v-if="favRows.length" aria-label="Favourites">
           <h3 class="text-base font-semibold mb-2">Favourites</h3>
-          <CompareTable :rows="favRows" :favourites="favs" @toggle-favourite="toggleFav" />
+          <CompareTable :rows="favRows" :favourites="favs" @toggle-favourite="toggleFav" :removable-ids="customCragIds" @remove="onRemoveCustom" />
+        </section>
+        <section v-if="customRows.length" aria-label="Custom crags">
+          <h3 class="text-base font-semibold mb-2">Your Crags</h3>
+          <CompareTable :rows="customRows" :favourites="favs" @toggle-favourite="toggleFav" :removable-ids="customCragIds" @remove="onRemoveCustom" />
         </section>
         <section aria-label="All regions">
           <CompareTable :rows="mainRows" :favourites="favs" @toggle-favourite="toggleFav" />
         </section>
+        <AddCrag @added="onCragAdded" />
       </div>
     </section>
   </div>
-  
+
 </template>
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { usePrefs } from '~/composables/usePrefs'
+import { useCustomCrags } from '~/composables/useCustomCrags'
 import CompareTable from '~/components/CompareTable.vue'
 import PrefsForm from '~/components/PrefsForm.vue'
+import AddCrag from '~/components/AddCrag.vue'
 const prefs = usePrefs()
+const { crags: customCrags, add: addCustomCrag, remove: removeCustomCrag } = useCustomCrags()
 const route = useRoute()
 const items = ref<any[]>([])
+const customItems = ref<any[]>([])
 const hasUrlDates = computed(() => typeof route.query.dates === 'string' && (route.query.dates as string).length > 0)
 const showPrefs = ref(!hasUrlDates.value)
 const shrink = ref(false)
@@ -64,6 +73,7 @@ const labelWhen = computed(() => {
   return ds.length === 1 ? fmt(d1) : `${fmt(d1)} – ${fmt(dN)}`
 })
 const containerClass = computed(() => ['space-y-6', 'px-4', shrink.value ? 'max-w-[1000px] mx-auto' : 'max-w-none'])
+const customCragIds = computed(() => customCrags.value.map(c => c.id))
 // Favourites
 const favs = ref<string[]>([])
 function loadFavs() {
@@ -80,7 +90,9 @@ function toggleFav(id: string) {
   else favs.value.splice(i, 1)
   saveFavs()
 }
-const favRows = computed(() => items.value.filter((r: any) => favs.value.includes(r.id) && !r.pending))
+const allItems = computed(() => [...items.value, ...customItems.value])
+const favRows = computed(() => allItems.value.filter((r: any) => favs.value.includes(r.id) && !r.pending))
+const customRows = computed(() => customItems.value.filter((r: any) => !favs.value.includes(r.id)))
 const mainRows = computed(() => items.value.filter((r: any) => !favs.value.includes(r.id)))
 
 // Simple client cache for compare
@@ -110,12 +122,58 @@ function writeCache() {
   try { localStorage.setItem(cacheKey(), JSON.stringify({ t: Date.now(), v: items.value })) } catch {}
 }
 
+async function onCragAdded(crag: { name: string; lat: number; lon: number; rock: string[] }) {
+  const added = addCustomCrag(crag)
+  // If we have dates loaded, immediately fetch weather for this crag
+  if (hasUrlDates.value) {
+    await loadCustomCrag(added.id, crag.name, crag.lat, crag.lon, crag.rock)
+  }
+}
+
+function onRemoveCustom(id: string) {
+  removeCustomCrag(id)
+  customItems.value = customItems.value.filter(r => r.id !== id)
+  // Also remove from favourites
+  const fi = favs.value.indexOf(id)
+  if (fi !== -1) { favs.value.splice(fi, 1); saveFavs() }
+}
+
+async function loadCustomCrag(id: string, name: string, lat: number, lon: number, rock: string[]) {
+  // Add placeholder
+  customItems.value = [...customItems.value.filter(r => r.id !== id), { id, name, area: 'Custom', pending: true }]
+
+  const paramsBase: any = { dates: (prefs.dates.value || []).join(',') }
+  const w: any = prefs.where.value || {}
+  if (Number.isFinite(Number(w.lat))) paramsBase.lat = w.lat
+  if (Number.isFinite(Number(w.lon))) paramsBase.lon = w.lon
+  if (Number.isFinite(prefs.maxDriveMins.value)) paramsBase.maxDriveMins = prefs.maxDriveMins.value
+
+  try {
+    const row = await $fetch<any>('/api/custom-region', {
+      params: { id, name, cragLat: lat, cragLon: lon, rocks: rock.join(','), ...paramsBase }
+    })
+    const idx = customItems.value.findIndex(r => r.id === id)
+    if (idx !== -1) customItems.value[idx] = row
+  } catch {
+    const idx = customItems.value.findIndex(r => r.id === id)
+    if (idx !== -1) customItems.value[idx] = { ...customItems.value[idx], pending: false, error: true }
+  }
+}
+
+async function loadAllCustomCrags() {
+  customItems.value = []
+  for (const crag of customCrags.value) {
+    await loadCustomCrag(crag.id, crag.name, crag.lat, crag.lon, crag.rock)
+  }
+}
+
 onMounted(async () => {
   loadFavs()
   if (hasUrlDates.value && !items.value?.length) {
     const cached = readCache()
     if (cached) items.value = cached
     else await loadCompare()
+    await loadAllCustomCrags()
   }
 })
 watch(() => route.query, () => {
@@ -129,8 +187,10 @@ watch(() => route.query, () => {
       const cached = readCache()
       if (cached) items.value = cached
       else await loadCompare()
+      await loadAllCustomCrags()
     } else {
       items.value = []
+      customItems.value = []
     }
   }, 150)
 }, { deep: true })
@@ -140,6 +200,7 @@ async function applyPrefs() {
   // Load immediately using prefs (does not depend on route update timing)
   await prefs.commit()
   await loadCompare()
+  await loadAllCustomCrags()
 }
 
 async function loadCompare() {
