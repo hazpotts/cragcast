@@ -138,7 +138,7 @@ export default defineEventHandler(async (event) => {
       name: r.name,
       score,
       why,
-      warnings,
+      ...(warnings.length ? { warnings } : {}),
       daily: dailyIcons(mini, dates),
       distanceMins,
       updatedAt,
