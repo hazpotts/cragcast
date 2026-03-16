@@ -4,19 +4,20 @@
 1. Add severe weather warnings
 2. Consider ways to pull in generic crag info for the regions rather than a set list, use this to allow people to create their own custom compare page rather than a set list, use stored lat lng to get the weather, but then to get BBC or MetOffice links use the closest town with a geocode lookup, windy can use lat lng. find a weather site that uses lat lng
 3. Change distance to a range not a single number
-4. Check implementation
-5. Add search in compare
-6. Upgrade to profressional icon pack - https://www.mikeafford.com/store/weather-icons/weather-icon-set-bb-01/
-7. Units manager
-8. Work on UX
+4. Remove updated column, output in header just the most recent data lookup
+5. Check implementation
+6. Add search in compare
+7. Upgrade to profressional icon pack - https://www.mikeafford.com/store/weather-icons/weather-icon-set-bb-01/
+8. Units manager
+9. Work on UX
     - Add a "compare" button to the region cards
     - Allow location without distance to use in score
-    - Switch to cards/table views and allow cards to be filtered and favourited
+    - Switch to cards/table views (instead of best/compare) and allow cards to be filtered and favourited
     - Default to Compare?
     - Show additional cards on recommend by default?
-9. Allow add to desktop
-10. Testing
-11. Add AI page with crag info
+10. Allow add to desktop
+11. Testing
+12. Add AI page with crag info
     - crag info api suggested by ai
     - MWIS
     - tell it to read UKC if possible?
