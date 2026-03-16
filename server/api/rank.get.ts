@@ -127,7 +127,8 @@ export default defineEventHandler(async (event) => {
       metoffice: metId
         ? `https://weather.metoffice.gov.uk/forecast/${encodeURIComponent(metId)}?n#?date=${encodeURIComponent(firstDate)}`
         : `https://www.metoffice.gov.uk/weather/search?query=${encodeURIComponent(r.name)}`,
-      windy: `https://www.windy.com/${pt.lat.toFixed(3)}/${pt.lon.toFixed(3)}?${pt.lat.toFixed(3)},${pt.lon.toFixed(3)},${zoom}`
+      windy: `https://www.windy.com/${pt.lat.toFixed(3)}/${pt.lon.toFixed(3)}?${pt.lat.toFixed(3)},${pt.lon.toFixed(3)},${zoom}`,
+      yrno: `https://www.yr.no/en/forecast/daily-table/${pt.lat.toFixed(4)},${pt.lon.toFixed(4)}`
     }
 
     results.push({

@@ -55,6 +55,11 @@
           Windy
           <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-1 h-4 w-4" />
         </a>
+        <a v-if="links?.yrno" :href="links?.yrno" target="_blank" rel="noopener"
+           class="inline-flex items-center px-3 py-2 rounded-md bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
+          Yr
+          <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-1 h-4 w-4" />
+        </a>
         <a :href="ukcUrl" target="_blank" rel="noopener"
            class="inline-flex items-center px-3 py-2 rounded-md bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
           UKC
@@ -73,7 +78,7 @@ const props = defineProps<{
   distanceMins: number | null
   updatedAt: string
   ukcUrl: string
-  links?: { bbc: string; metoffice: string; windy: string }
+  links?: { bbc: string; metoffice: string; windy: string; yrno?: string }
   avgTempC: number
   avgWindMph: number
   avgRainMm: number
