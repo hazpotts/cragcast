@@ -66,7 +66,7 @@ type CragRow = {
 }
 
 function getDb(event: any): D1Database | null {
-  const env = event?.platform?.env || {}
+  const env = event?.context?.cloudflare?.env || event?.platform?.env || {}
   return env.CRAG_DB || null
 }
 
