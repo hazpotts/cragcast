@@ -5,6 +5,7 @@
       :whereName="prefs.where.value?.name || null"
       :distanceLabel="distanceLabel"
       :labelWhen="labelWhen"
+      :updatedAt="latestUpdatedAt"
     >
       <template #right>
         <UButton v-if="hasPrefs" class="text-sky-700 hover:text-sky-800 dark:text-sky-200 dark:hover:text-sky-100" variant="ghost" @click="shrink=!shrink" :aria-label="shrink ? 'Expand to full width' : 'Shrink to 1000px'">
@@ -19,16 +20,19 @@
 
     <section v-else>
       <div class="space-y-6">
-        <section v-if="favRows.length" aria-label="Favourites">
+        <div class="max-w-sm">
+          <UInput v-model="searchQuery" placeholder="Search regions..." icon="i-heroicons-magnifying-glass" size="sm" />
+        </div>
+        <section v-if="filteredFavRows.length" aria-label="Favourites">
           <h3 class="text-base font-semibold mb-2">Favourites</h3>
-          <CompareTable :rows="favRows" :favourites="favs" @toggle-favourite="toggleFav" :removable-ids="customCragIds" @remove="onRemoveCustom" />
+          <CompareTable :rows="filteredFavRows" :favourites="favs" @toggle-favourite="toggleFav" :removable-ids="customCragIds" @remove="onRemoveCustom" />
         </section>
-        <section v-if="customRows.length" aria-label="Custom crags">
+        <section v-if="filteredCustomRows.length" aria-label="Custom crags">
           <h3 class="text-base font-semibold mb-2">Your Crags</h3>
-          <CompareTable :rows="customRows" :favourites="favs" @toggle-favourite="toggleFav" :removable-ids="customCragIds" @remove="onRemoveCustom" />
+          <CompareTable :rows="filteredCustomRows" :favourites="favs" @toggle-favourite="toggleFav" :removable-ids="customCragIds" @remove="onRemoveCustom" />
         </section>
         <section aria-label="All regions">
-          <CompareTable :rows="mainRows" :favourites="favs" @toggle-favourite="toggleFav" />
+          <CompareTable :rows="filteredMainRows" :favourites="favs" @toggle-favourite="toggleFav" />
         </section>
         <AddCrag @added="onCragAdded" />
       </div>
@@ -52,6 +56,7 @@ const customItems = ref<any[]>([])
 const hasUrlDates = computed(() => typeof route.query.dates === 'string' && (route.query.dates as string).length > 0)
 const showPrefs = ref(!hasUrlDates.value)
 const shrink = ref(false)
+const searchQuery = ref('')
 const ignoreNextWatch = ref(false)
 const distanceLabel = computed(() => {
   const min = prefs.minDriveMins.value
@@ -69,6 +74,11 @@ const labelWhen = computed(() => {
   const dN = new Date(ds[ds.length - 1])
   const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
   return ds.length === 1 ? fmt(d1) : `${fmt(d1)} – ${fmt(dN)}`
+})
+const latestUpdatedAt = computed(() => {
+  const all = [...items.value, ...customItems.value].filter((r: any) => r.updatedAt)
+  if (!all.length) return null
+  return all.reduce((latest: string, r: any) => r.updatedAt > latest ? r.updatedAt : latest, all[0].updatedAt)
 })
 const containerClass = computed(() => ['space-y-6', 'px-4', shrink.value ? 'max-w-[1000px] mx-auto' : 'max-w-none'])
 const hasPrefs = computed(() => prefs.where.value || prefs.dates.value || prefs.maxDriveMins.value)
@@ -93,6 +103,15 @@ const allItems = computed(() => [...items.value, ...customItems.value])
 const favRows = computed(() => allItems.value.filter((r: any) => favs.value.includes(r.id) && !r.pending))
 const customRows = computed(() => customItems.value.filter((r: any) => !favs.value.includes(r.id)))
 const mainRows = computed(() => items.value.filter((r: any) => !favs.value.includes(r.id)))
+
+function matchesSearch(row: any) {
+  if (!searchQuery.value) return true
+  const q = searchQuery.value.toLowerCase()
+  return (row.name || '').toLowerCase().includes(q) || (row.area || '').toLowerCase().includes(q)
+}
+const filteredFavRows = computed(() => favRows.value.filter(matchesSearch))
+const filteredCustomRows = computed(() => customRows.value.filter(matchesSearch))
+const filteredMainRows = computed(() => mainRows.value.filter(matchesSearch))
 
 // Simple client cache for compare
 const TTL_MS = 5 * 60 * 1000

@@ -83,8 +83,8 @@ export const usePrefs = () => {
       },
       set(v: number) {
         if (!Number.isFinite(v)) {
-          // No limit: clear distance and any stored location
-          updateQuery({ maxDriveMins: null, minDriveMins: null, lat: null, lon: null, name: null })
+          // No limit: clear distance filters but keep location for scoring
+          updateQuery({ maxDriveMins: null, minDriveMins: null })
         } else {
           updateQuery({ maxDriveMins: v })
         }

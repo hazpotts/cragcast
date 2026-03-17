@@ -7,7 +7,6 @@
           <h3 class="text-lg font-semibold truncate">{{ name }}</h3>
           <!-- score retained in code, intentionally not displayed -->
         </div>
-        <div class="text-sm text-gray-500">Updated {{ new Date(updatedAt).toLocaleString() }}</div>
         <div v-if="warnings?.length" class="space-y-1">
           <div
             v-for="(w, i) in warnings"
@@ -26,7 +25,7 @@
         </ul>
         <div class="text-sm" v-if="Number.isFinite(distanceMins as any) && (distanceMins as any) > 0">
           <div>
-            Distance: ~{{ distanceMins }} mins
+            Distance: ~{{ units.convertDistance(distanceMins as number) }} {{ units.distanceLabel.value }}
           </div>
         </div>
       </div>
@@ -42,17 +41,26 @@
                 class="h-20 w-20 sm:h-24 sm:w-24 mr-3 sm:mr-0 sm:-mt-4 sm:-mb-3"
               />
               <div class="mt-0 sm:mt-1 sm:mb-2 text-left sm:text-center">
-                <div v-if="Number.isFinite(d.tempAvgC as any)">{{ d.tempAvgC }}°C</div>
-                <div v-if="Number.isFinite(d.rainSumMm as any)">{{ d.rainSumMm }} mm</div>
-                <div v-if="Number.isFinite(d.windAvgMph as any)">{{ d.windAvgMph }} mph</div>
+                <div v-if="Number.isFinite(d.tempAvgC as any)">{{ units.convertTemp(d.tempAvgC) }}{{ units.tempLabel.value }}</div>
+                <div v-if="Number.isFinite(d.rainSumMm as any)">{{ units.convertRain(d.rainSumMm) }} {{ units.rainLabel.value }}</div>
+                <div v-if="Number.isFinite(d.windAvgMph as any)">{{ units.convertWind(d.windAvgMph) }} {{ units.windLabel.value }}</div>
               </div>
             </div>
           </template>
         </div>
       </div>
     </div>
-    <!-- Footer: external links bottom-right -->
-    <div class="mt-4 flex justify-end">
+    <!-- Footer: table link + external links -->
+    <div class="mt-4 flex items-center justify-between">
+      <UButton
+        size="sm"
+        variant="soft"
+        class="text-sky-700 hover:text-sky-800 dark:text-sky-200 dark:hover:text-sky-100"
+        @click="goToTable"
+      >
+        <Icon name="heroicons-solid:table-cells" class="mr-1 h-4 w-4" />
+        Table
+      </UButton>
       <div class="flex flex-wrap items-center gap-2">
         <a v-if="links?.bbc" :href="links?.bbc" target="_blank" rel="noopener"
            class="inline-flex items-center px-3 py-2 rounded-md bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
@@ -84,6 +92,16 @@
   </UCard>
 </template>
 <script setup lang="ts">
+import { useLocalStorage } from '@vueuse/core'
+import { useUnits } from '~/composables/useUnits'
+const units = useUnits()
+const router = useRouter()
+const route = useRoute()
+function goToTable() {
+  const modeStorage = useLocalStorage<'table'|'cards'>('mode', 'table')
+  modeStorage.value = 'table'
+  router.push({ path: '/table', query: { ...route.query } })
+}
 const props = defineProps<{
   name: string
   score: number
@@ -91,7 +109,6 @@ const props = defineProps<{
   warnings?: { level: string; type: string; message: string }[]
   daily: { date: string; icon: string; tempAvgC: number; windAvgMph: number; rainSumMm: number }[]
   distanceMins: number | null
-  updatedAt: string
   ukcUrl: string
   links?: { bbc: string; metoffice: string; windy: string; yrno?: string }
   avgTempC: number

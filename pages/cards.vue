@@ -5,6 +5,7 @@
       :whereName="(prefs.where.value as any)?.name || null"
       :distanceLabel="distanceLabel"
       :labelWhen="labelWhen"
+      :updatedAt="latestUpdatedAt"
     />
 
     <section v-if="showPrefs" class="space-y-4">
@@ -23,7 +24,6 @@
             :warnings="items[0].warnings"
             :daily="items[0].daily"
             :distanceMins="Number(items[0].distanceMins ?? 0)"
-            :updatedAt="items[0].updatedAt"
             :ukcUrl="items[0].ukcUrl"
             :links="items[0].links"
             :avgTempC="items[0].avgTempC"
@@ -42,7 +42,6 @@
               :warnings="r.warnings"
               :daily="r.daily"
               :distanceMins="Number(r.distanceMins ?? 0)"
-              :updatedAt="r.updatedAt"
               :ukcUrl="r.ukcUrl"
               :links="r.links"
               :avgTempC="r.avgTempC"
@@ -68,9 +67,13 @@ import ResultsHeader from '~/components/ResultsHeader.vue'
 const prefs = usePrefs()
 const { items, pending, fetchRank } = useRank()
 const showPrefs = ref(true)
-const visibleCount = ref(6) // show top 1, then next 5 by default
-function showMore() { visibleCount.value += 5 }
+const visibleCount = ref(Infinity) // show all cards by default
 const route = useRoute()
+const latestUpdatedAt = computed(() => {
+  const all = (items.value || []).filter((r: any) => r.updatedAt)
+  if (!all.length) return null
+  return all.reduce((latest: string, r: any) => r.updatedAt > latest ? r.updatedAt : latest, all[0].updatedAt)
+})
 const hasUrlDates = computed(() => typeof route.query.dates === 'string' && route.query.dates.length > 0)
 let routeWatchTimer: any = null
 const ignoreNextWatch = ref(false)
@@ -117,7 +120,7 @@ watch(() => route.query, () => {
     } else {
       // Clear list when no URL dates
       items.value = [] as any
-      visibleCount.value = 6
+      visibleCount.value = Infinity
     }
   }, 150)
 }, { deep: true })
@@ -126,7 +129,7 @@ async function savePrefs() {
   // Close form first so skeleton section can show immediately
   ignoreNextWatch.value = true
   showPrefs.value = false
-  visibleCount.value = 6
+  visibleCount.value = Infinity
   // Ensure dates/maxDrive are flushed to URL before fetching
   await prefs.commit()
   // Trigger fetch without awaiting so pending state renders skeleton

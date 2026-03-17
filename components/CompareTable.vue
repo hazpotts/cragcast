@@ -62,21 +62,18 @@
         </div>
       </template>
       <template #avgTempC-data="{ row }">
-        {{ row.pending ? '…' : `${row.avgTempC} °C` }}
+        {{ row.pending ? '…' : `${units.convertTemp(row.avgTempC)} ${units.tempLabel.value}` }}
       </template>
       <template #avgWindMph-data="{ row }">
-        {{ row.pending ? '…' : `${row.avgWindMph} mph` }}
+        {{ row.pending ? '…' : `${units.convertWind(row.avgWindMph)} ${units.windLabel.value}` }}
       </template>
       <template #avgRainMm-data="{ row }">
-        {{ row.pending ? '…' : `${row.avgRainMm} mm` }}
+        {{ row.pending ? '…' : `${units.convertRain(row.avgRainMm)} ${units.rainLabel.value}` }}
       </template>
       <template #distanceMins-data="{ row }">
         <template v-if="row.pending">…</template>
-        <template v-else-if="Number.isFinite(row.distanceMins) && row.distanceMins > 0">{{ `${row.distanceMins} mins` }}</template>
+        <template v-else-if="Number.isFinite(row.distanceMins) && row.distanceMins > 0">{{ `${units.convertDistance(row.distanceMins)} ${units.distanceLabel.value}` }}</template>
         <!-- else: render nothing to hide the dash -->
-      </template>
-      <template #updatedAt-data="{ row }">
-        <span>{{ row.pending ? '…' : new Date(row.updatedAt).toLocaleString() }}</span>
       </template>
       <template #ukc-data="{ row }">
         <template v-if="row.pending">
@@ -108,6 +105,7 @@
 <script setup lang="ts">
 import { reactive, computed } from 'vue'
 import { usePrefs } from '~/composables/usePrefs'
+import { useUnits } from '~/composables/useUnits'
 const props = defineProps<{ rows: any[]; favourites?: string[]; removableIds?: string[] }>()
 const emit = defineEmits<{ (e:'toggle-favourite', id: string): void; (e:'remove', id: string): void }>()
 const rowsWithSort = computed(() => (props.rows || []).map((r: any) => ({
@@ -117,6 +115,7 @@ const rowsWithSort = computed(() => (props.rows || []).map((r: any) => ({
 function isFaved(id: string) { return Array.isArray(props.favourites) && props.favourites.includes(id) }
 function isRemovable(id: string) { return Array.isArray(props.removableIds) && props.removableIds.includes(id) }
 function toggle(id: string) { emit('toggle-favourite', id) }
+const units = useUnits()
 // Show distance column when any distance filter is active
 const prefs = usePrefs()
 const showDistance = computed(() => Number.isFinite(prefs.maxDriveMins.value) || prefs.minDriveMins.value > 0)
@@ -125,10 +124,9 @@ const columns = computed(() => {
     { key: 'name', label: 'Region' },
     { key: 'warnings', label: '' },
     { key: 'weather', label: 'Weather' },
-    { key: 'avgTempC', label: 'Avg Temp' },
-    { key: 'avgWindMph', label: 'Avg Wind' },
-    { key: 'avgRainMm', label: 'Avg Rain' },
-    { key: 'updatedAt', label: 'Updated' },
+    { key: 'avgTempC', label: `Temp (${units.tempLabel.value})` },
+    { key: 'avgWindMph', label: `Wind (${units.windLabel.value})` },
+    { key: 'avgRainMm', label: `Rain (${units.rainLabel.value})` },
     // distance inserted conditionally at index 6
     { key: 'areaSort', label: 'Area', sortable: true },
     { key: 'score', label: 'Score', sortable: true },
