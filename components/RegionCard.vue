@@ -3,15 +3,17 @@
   <UCard v-if="compact">
     <div class="flex flex-col gap-2">
       <!-- Weather icons row -->
-      <div class="flex items-center gap-1 bg-slate-400 rounded px-1.5 py-1 justify-center">
-        <img
-          v-for="d in daily"
-          :key="d.date"
-          :src="iconSrc(d.icon)"
-          :alt="iconLabel(d.icon)"
-          :title="`${iconLabel(d.icon)} – ${d.date}`"
-          class="h-12 w-12"
-        />
+      <div class="flex items-center justify-center">
+        <div class="inline-flex items-center gap-2 bg-slate-400 rounded px-1.5 py-1">
+          <img
+            v-for="d in daily"
+            :key="d.date"
+            :src="iconSrc(d.icon)"
+            :alt="iconLabel(d.icon)"
+            :title="`${iconLabel(d.icon)} – ${d.date}`"
+            class="h-12 w-12"
+          />
+        </div>
       </div>
       <!-- Name + score -->
       <div class="flex items-center justify-between">
@@ -48,25 +50,25 @@
         </UTooltip>
       </div>
       <!-- Links -->
-      <div class="flex flex-wrap items-center gap-1">
+      <div class="flex flex-wrap items-center gap-1.5">
         <a v-if="links?.bbc" :href="links.bbc" target="_blank" rel="noopener"
-           class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
+           class="inline-flex items-center px-2 py-1 rounded text-xs bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
           BBC <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-0.5 h-3 w-3" />
         </a>
         <a v-if="links?.metoffice" :href="links.metoffice" target="_blank" rel="noopener"
-           class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
+           class="inline-flex items-center px-2 py-1 rounded text-xs bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
           Met Office <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-0.5 h-3 w-3" />
         </a>
         <a v-if="links?.windy" :href="links.windy" target="_blank" rel="noopener"
-           class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
+           class="inline-flex items-center px-2 py-1 rounded text-xs bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
           Windy <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-0.5 h-3 w-3" />
         </a>
         <a v-if="links?.yrno" :href="links.yrno" target="_blank" rel="noopener"
-           class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
+           class="inline-flex items-center px-2 py-1 rounded text-xs bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
           Yr <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-0.5 h-3 w-3" />
         </a>
         <a :href="ukcUrl" target="_blank" rel="noopener"
-           class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
+           class="inline-flex items-center px-2 py-1 rounded text-xs bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
           UKC <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-0.5 h-3 w-3" />
         </a>
       </div>
