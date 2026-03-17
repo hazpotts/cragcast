@@ -35,8 +35,9 @@
         <div class="flex flex-wrap gap-2 items-start justify-center sm:justify-end">
           <template v-for="d in daily" :key="d.date">
             <div class="flex items-center sm:flex-col sm:items-center text-sm text-gray-600 dark:text-gray-300">
-              <Icon
-                :name="iconName(d.icon)"
+              <img
+                :src="iconSrc(d.icon)"
+                :alt="iconLabel(d.icon)"
                 :title="`${iconLabel(d.icon)} – ${d.date}`"
                 class="h-20 w-20 sm:h-24 sm:w-24 mr-3 sm:mr-0 sm:-mt-4 sm:-mb-3"
               />
@@ -98,18 +99,28 @@ const props = defineProps<{
   avgRainMm: number
 }>()
 
-function iconName(code: string): string {
+import iconSun from '~/assets/images/icons/SVGs/wsymbol_0001_sunny.svg'
+import iconLightCloud from '~/assets/images/icons/SVGs/wsymbol_0002_sunny_intervals.svg'
+import iconCloud from '~/assets/images/icons/SVGs/wsymbol_0003_white_cloud.svg'
+import iconDarkCloud from '~/assets/images/icons/SVGs/wsymbol_0004_black_low_cloud.svg'
+import iconRain from '~/assets/images/icons/SVGs/wsymbol_0017_cloudy_with_light_rain.svg'
+import iconHeavyRain from '~/assets/images/icons/SVGs/wsymbol_0018_cloudy_with_heavy_rain.svg'
+import iconThunder from '~/assets/images/icons/SVGs/wsymbol_0024_thunderstorms.svg'
+import iconSnow from '~/assets/images/icons/SVGs/wsymbol_0019_cloudy_with_light_snow.svg'
+import iconSleet from '~/assets/images/icons/SVGs/wsymbol_0021_cloudy_with_sleet.svg'
+
+function iconSrc(code: string): string {
   switch (code) {
-    case 'sun': return 'meteocons:clear-day-fill'
-    case 'light-cloud': return 'meteocons:partly-cloudy-day-fill'
-    case 'cloud': return 'meteocons:cloudy-fill'
-    case 'dark-cloud': return 'meteocons:overcast-fill'
-    case 'rain': return 'meteocons:rain-fill'
-    case 'heavy-rain': return 'meteocons:extreme-rain-fill'
-    case 'thunder': return 'meteocons:thunderstorms-fill'
-    case 'snow': return 'meteocons:snow-fill'
-    case 'sleet': return 'meteocons:sleet-fill'
-    default: return 'meteocons:cloudy-fill'
+    case 'sun': return iconSun
+    case 'light-cloud': return iconLightCloud
+    case 'cloud': return iconCloud
+    case 'dark-cloud': return iconDarkCloud
+    case 'rain': return iconRain
+    case 'heavy-rain': return iconHeavyRain
+    case 'thunder': return iconThunder
+    case 'snow': return iconSnow
+    case 'sleet': return iconSleet
+    default: return iconCloud
   }
 }
 function iconLabel(code: string): string {
