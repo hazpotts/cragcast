@@ -44,7 +44,7 @@
         </template>
       </template>
       <template #weather-data="{ row }">
-        <div class="flex justify-center bg-gray-400 rounded px-2 py-1">
+        <div class="flex justify-center bg-gray-400 rounded px-2 py-1 overflow-hidden">
           <template v-if="row.pending">
             <div class="flex items-center gap-2 text-lg text-gray-300">
               <span class="animate-pulse">•</span>
