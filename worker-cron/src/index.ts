@@ -9,6 +9,7 @@
 
 export interface Env {
   CRAGCAST_URL: string;
+  ADMIN_API_KEY?: string;
 }
 
 async function warmCache(env: Env): Promise<{ success: number; failed: number; elapsed: number }> {
@@ -33,9 +34,14 @@ async function importCrags(env: Env): Promise<{ imported: number; updated: numbe
 
   console.log(`[cron] Starting crag import at ${new Date().toISOString()}`);
 
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (env.ADMIN_API_KEY) {
+    headers['Authorization'] = `Bearer ${env.ADMIN_API_KEY}`;
+  }
+
   const response = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
   });
 
   if (!response.ok) {
