@@ -84,18 +84,17 @@
         </div>
       </template>
       <template #avgTempC-data="{ row }">
-        {{ row.pending ? '…' : `${units.convertTemp(row.avgTempC)} ${units.tempLabel.value}` }}
+        {{ row.pending ? '…' : units.convertTemp(row.avgTempC) }}
       </template>
       <template #avgWindMph-data="{ row }">
-        {{ row.pending ? '…' : `${units.convertWind(row.avgWindMph)} ${units.windLabel.value}` }}
+        {{ row.pending ? '…' : units.convertWind(row.avgWindMph) }}
       </template>
       <template #avgRainMm-data="{ row }">
-        {{ row.pending ? '…' : `${units.convertRain(row.avgRainMm)} ${units.rainLabel.value}` }}
+        {{ row.pending ? '…' : units.convertRain(row.avgRainMm) }}
       </template>
       <template #distanceMins-data="{ row }">
         <template v-if="row.pending">…</template>
-        <template v-else-if="Number.isFinite(row.distanceMins) && row.distanceMins > 0">{{ `${units.convertDistance(row.distanceMins)} ${units.distanceLabel.value}` }}</template>
-        <!-- else: render nothing to hide the dash -->
+        <template v-else-if="Number.isFinite(row.distanceMins) && row.distanceMins > 0">{{ units.convertDistance(row.distanceMins) }}</template>
       </template>
       <template #ukc-data="{ row }">
         <template v-if="row.pending">
@@ -155,7 +154,7 @@ const columns = computed(() => {
     { key: 'ukc', label: 'Links' },
     { key: 'fav', label: 'Favourite' }
   ] as any[]
-  if (showDistance.value) cols.splice(6, 0, { key: 'distanceMins', label: 'Distance', sortable: true })
+  if (showDistance.value) cols.splice(6, 0, { key: 'distanceMins', label: `Distance (${units.distanceLabel.value})`, sortable: true })
   return cols
 })
 let sort = reactive({ column: 'score', direction: 'desc' as const })
