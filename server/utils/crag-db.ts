@@ -145,9 +145,10 @@ function findClosestRegion(lat: number, lon: number): string {
 /**
  * Create a URL-friendly slug from a crag name and path.
  */
-function slugify(name: string, pathTokens: string[]): string {
-  // Use last two path tokens + name for uniqueness
-  const parts = [...pathTokens.slice(-2), name]
+function slugify(name: string, cragPath: string): string {
+  // Use last two segments of the path for uniqueness
+  const segments = cragPath.split(' > ')
+  const parts = [...segments.slice(-2), name]
   return parts
     .join('-')
     .toLowerCase()
@@ -195,12 +196,12 @@ export async function importCragsToDb(
         }
 
         const regionId = findClosestRegion(crag.lat, crag.lon)
-        const id = slugify(crag.name, crag.pathTokens)
+        const id = slugify(crag.name, crag.cragPath)
 
-        // Check if this crag already exists (by openbeta_id)
+        // Check if this crag already exists (by id)
         const existing = await db
-          .prepare('SELECT id, aspect, rock, tags FROM crags WHERE openbeta_id = ?')
-          .bind(crag.uuid)
+          .prepare('SELECT id, aspect, rock, tags FROM crags WHERE id = ?')
+          .bind(id)
           .first<CragRow>()
 
         if (existing) {
@@ -212,12 +213,12 @@ export async function importCragsToDb(
                   name = ?, lat = ?, lon = ?, region_id = ?,
                   trad = ?, sport = ?, boulder = ?,
                   route_count = ?, imported_at = datetime('now'), updated_at = datetime('now')
-                WHERE openbeta_id = ?
+                WHERE id = ?
               `)
               .bind(
                 crag.name, crag.lat, crag.lon, regionId,
                 crag.trad, crag.sport, crag.boulder,
-                crag.totalClimbs, crag.uuid
+                crag.totalClimbs, id
               )
           )
           updated++
@@ -226,13 +227,13 @@ export async function importCragsToDb(
           stmts.push(
             db
               .prepare(`
-                INSERT INTO crags (id, name, region_id, lat, lon, trad, sport, boulder, route_count, openbeta_id, source)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'openbeta')
+                INSERT INTO crags (id, name, region_id, lat, lon, trad, sport, boulder, route_count, source)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'openbeta-parquet')
               `)
               .bind(
                 id, crag.name, regionId, crag.lat, crag.lon,
                 crag.trad, crag.sport, crag.boulder,
-                crag.totalClimbs, crag.uuid
+                crag.totalClimbs
               )
           )
           imported++
