@@ -7,10 +7,22 @@ import { importCragsToDb } from '~/server/utils/crag-db'
  * Triggers a full import of UK crag data from OpenBeta into D1.
  * Can be called manually or by the worker-cron on a schedule.
  *
+ * Requires `Authorization: Bearer <ADMIN_API_KEY>` header.
+ *
  * Optional query params:
  *   ?dryRun=1  — fetch from OpenBeta but don't write to DB (preview mode)
  */
 export default defineEventHandler(async (event) => {
+  // Check admin API key
+  const env = event.context?.cloudflare?.env || (event as any).platform?.env || {}
+  const adminKey = env.ADMIN_API_KEY
+  if (adminKey) {
+    const auth = getHeader(event, 'authorization')
+    if (auth !== `Bearer ${adminKey}`) {
+      throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
+    }
+  }
+
   const q = getQuery(event)
   const dryRun = q.dryRun === '1' || q.dryRun === 'true'
 

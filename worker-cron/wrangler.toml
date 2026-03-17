@@ -10,3 +10,5 @@ crons = ["0 */2 * * *", "0 3 * * 1"]
 
 [vars]
 CRAGCAST_URL = "https://cragcast.app"
+# ADMIN_API_KEY should be set as a secret, not in vars:
+#   npx wrangler secret put ADMIN_API_KEY --name cragcast-cache-warmer
