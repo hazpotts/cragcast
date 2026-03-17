@@ -31,7 +31,7 @@
       </div>
       <!-- Right: large weather icons -->
       <div class="w-full sm:w-auto sm:flex-1 flex justify-center">
-        <div class="flex flex-wrap gap-2 items-start justify-center sm:justify-end">
+        <div class="flex flex-wrap gap-2 items-start justify-center sm:justify-end bg-gray-400 rounded px-2 py-1">
           <template v-for="d in daily" :key="d.date">
             <div class="flex items-center sm:flex-col sm:items-center text-sm text-gray-600 dark:text-gray-300">
               <img
