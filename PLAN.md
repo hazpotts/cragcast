@@ -12,44 +12,26 @@
 
 ## Advanced Recommendations Roadmap
 
-### Phase 1 – OpenBeta Crag Data Integration
+### Phase 1 – Crag Data Integration ✅ DONE
 
-**Goal:** Import individual crag data from [OpenBeta.io](https://openbeta.io) so the scoring system can make finer-grained recommendations at the crag level rather than only at the region level.
+**Goal:** Import individual crag data so the scoring system can make finer-grained recommendations at the crag level rather than only at the region level.
 
-**Data to pull from OpenBeta:**
-- Crag name, location (lat/lng)
-- Aspect / orientation (N, S, E, W, etc.)
-- Rock type (gritstone, limestone, slate, rhyolite, sandstone, etc.)
-- Route counts and grade spread
-- Climb types available (trad, sport, boulder)
+**Status:** Substantially complete. OpenBeta was the original data source but has no UK climbing data, so we switched to a curated UK seed data approach (~100 crags in `server/utils/uk-crags-seed.ts`). The OpenBeta import infrastructure remains in place (`server/utils/openbeta.ts`) for potential future use with other countries.
 
-**Map crags to regions:**
-- Each crag is assigned to its parent region (by proximity or explicit mapping)
-- Crags become sub-items of existing regions — regions remain the primary navigation unit
+**What was built:**
+- ✅ D1 database schema (`migrations/0001_create_crags.sql`) with `crags` and `import_log` tables
+- ✅ Crag data model: `{ id, name, regionId, lat, lon, aspect, rock[], types: {trad, sport, boulder}, routeCount, tags[] }`
+- ✅ Admin import endpoint (`POST /api/admin/import-crags`) with auth, batch processing, UPSERT
+- ✅ Crags auto-assigned to closest region by haversine distance
+- ✅ `scoreCrag()` function (`server/utils/score.ts`) with aspect+temp, aspect+wind, exposure/shelter, drying speed modifiers
+- ✅ `GET /api/crags?regionId=x` endpoint returning scored crags with distance
+- ✅ Expandable crag list in `RegionCard.vue` (accordion) and `CompareTable.vue` (indented sub-rows)
+- ✅ `CragList.vue` component showing name, score, aspect, rock types, route count, climb types, modifiers, UKC link
 
-**UI approach — crags as subsets of regions:**
-- Region cards/table rows stay as-is and remain the default view
-- Add an expandable crag list within each region card (accordion/drawer)
-- Each crag row shows: name, aspect, rock type, crag-level score, route count
-- Crags within a region are sorted by their crag-level score
-- In table view, regions can be expanded to show child crags as indented sub-rows
-- Optional "All crags" flat view as a future addition if useful
-
-**Crag-level scoring enhancements to `scoreRegion` (extend into `scoreCrag`):**
-- **Aspect + temperature:** South-facing crags get a bonus on cold days (solar warming), north-facing crags get a bonus on hot days (shade). East-facing good for morning sun, west for afternoon
-- **Aspect + wind direction:** Crags facing away from the prevailing wind direction score higher on windy days (sheltered)
-- **Rock type + temperature:** Gritstone/sandstone friction is best in cold-to-cool temps (6–12°C). Limestone is more forgiving in warmer temps (12–18°C). Slate and smooth volcanic rock are unpleasant in the cold — penalise more heavily below 5°C
-- **Exposure / shelter tags:** Exposed crags penalised more on windy days; sheltered crags less affected. Sheltered valley crags may dry slower after rain
-- **Drying speed:** Exposed, windy-aspect crags score better the day after heavy rain. Sheltered, north-facing crags penalised after recent rain (stay wet longer)
-
-**Implementation steps:**
-1. Write an OpenBeta data import script (their GraphQL API or bulk data dump)
-2. Create a `Crag` data model: `{ id, name, regionId, lat, lon, aspect, rock[], types, routeCount, tags[] }`
-3. Store crag data in a static JSON file (or KV) — this is reference data, not frequently changing
-4. Add `scoreCrag()` function that extends the region score with aspect/rock/exposure modifiers
-5. Add API endpoint `GET /api/crags?regionId=x` returning scored crags for a region
-6. Update `RegionCard.vue` with expandable crag list
-7. Update `CompareTable.vue` with expandable crag sub-rows
+**Remaining work:**
+- Expand seed data from ~100 to ~500 UK crags (see Next Actions #6)
+- Optional "All crags" flat view (not yet needed)
+- Rock type + temperature scoring not yet implemented (grit best at 6-12°C, limestone at 12-18°C, etc.)
 
 ### Phase 2 – MWIS & External Forecast Sources
 
