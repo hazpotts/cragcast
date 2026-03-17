@@ -1,22 +1,12 @@
 # CragCast Project Plan
 
 ## Next Actions
-1. ~~Add severe weather warnings~~ DONE
-2. ~~Consider ways to pull in generic crag info for the regions rather than a set list, use this to allow people to create their own custom compare page rather than a set list, use stored lat lng to get the weather, but then to get BBC or MetOffice links use the closest town with a geocode lookup, windy can use lat lng. find a weather site that uses lat lng~~ DONE
-3. ~~Change distance to a range not a single number~~ DONE
-4. ~~Remove updated column, output in header just the most recent data lookup~~ DONE
-5. Check implementation
-6. ~~Add search in compare~~ DONE
-7. ~~Upgrade to profressional icon pack - https://www.mikeafford.com/store/weather-icons/weather-icon-set-bb-01/~~ DONE
-8. ~~Units manager~~ DONE
-9. ~~Work on UX~~ DONE
-    - ~~Add a "compare" button to the region cards~~ DONE (now "Table" button)
-    - ~~Allow location without distance to use in score~~ DONE
-    - ~~Switch to cards/table views (instead of best/compare) and allow cards to be filtered and favourited~~ DONE
-    - ~~Default to Compare?~~ DONE (defaults to Table view)
-    - ~~Show additional cards on recommend by default?~~ DONE (shows all cards)
-10. Allow add to desktop
-11. Testing
+1. Check implementation
+2. Allow add to desktop
+3. Testing
+4. Add granularity selector buttons (Crag / Region / Area) to the initial form so users can choose the level of detail in results — requires storing lat/lng and metadata for areas and crags to support this
+5. Add issue tracker (use GitHub Issues if possible)
+6. Expand seed data to ~500 UK crags with lat/lng and metadata to support area/region/crag granularity
 
 ---
 
@@ -146,7 +136,8 @@
 
 ---
 
-## Bugs and tweaks
-- dont show then hide when filtering
+## Bugs
+- **Distance filter doesn't update UI on URL param change:** When changing distance (e.g. 120 → 60 mins), the URL updates but the displayed results don't re-filter until a hard refresh. The route watcher or computed state isn't reacting to the `maxDriveMins` query param change.
+- **Filtered results flash before hiding:** When the distance filter is active, results outside the range briefly appear then disappear as the page loads. Results should never render if they fall outside the distance filter — apply the filter before/during initial render, not after.
 - fix show more
 - logo
