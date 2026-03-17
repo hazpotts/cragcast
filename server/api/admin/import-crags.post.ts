@@ -1,16 +1,16 @@
-import { fetchOpenBetaUKCrags } from '~/server/utils/openbeta'
+import { ukCragsSeed } from '~/server/utils/uk-crags-seed'
 import { importCragsToDb } from '~/server/utils/crag-db'
 
 /**
  * POST /api/admin/import-crags
  *
- * Triggers a full import of UK crag data from OpenBeta into D1.
+ * Imports curated UK crag seed data into D1.
  * Can be called manually or by the worker-cron on a schedule.
  *
  * Requires `Authorization: Bearer <ADMIN_API_KEY>` header.
  *
  * Optional query params:
- *   ?dryRun=1  — fetch from OpenBeta but don't write to DB (preview mode)
+ *   ?dryRun=1  — preview data without writing to DB
  */
 export default defineEventHandler(async (event) => {
   // Check admin API key
@@ -33,9 +33,10 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    onProgress('Starting OpenBeta UK crag import...')
+    onProgress('Starting UK crag seed import...')
 
-    const crags = await fetchOpenBetaUKCrags(onProgress)
+    const crags = ukCragsSeed
+    onProgress(`Loaded ${crags.length} crags from seed data`)
 
     if (dryRun) {
       return {

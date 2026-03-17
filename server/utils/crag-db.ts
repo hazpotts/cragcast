@@ -174,7 +174,7 @@ export async function importCragsToDb(
 
   // Start import log
   const logResult = await db
-    .prepare("INSERT INTO import_log (status, source) VALUES ('running', 'openbeta')")
+    .prepare("INSERT INTO import_log (status, source) VALUES ('running', 'seed-data')")
     .run()
   const logId = logResult.meta?.changes ? logResult.meta.changes : null
 
@@ -228,7 +228,7 @@ export async function importCragsToDb(
             db
               .prepare(`
                 INSERT INTO crags (id, name, region_id, lat, lon, trad, sport, boulder, route_count, source)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'openbeta-parquet')
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'seed-data')
               `)
               .bind(
                 id, crag.name, regionId, crag.lat, crag.lon,
