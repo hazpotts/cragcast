@@ -51,7 +51,7 @@
         </template>
       </template>
       <template #weather-data="{ row }">
-        <div class="flex justify-center bg-gray-400 rounded px-2 py-1 overflow-hidden">
+        <div class="inline-flex justify-center bg-gray-400 rounded px-2 py-1">
           <template v-if="row.pending">
             <div class="flex items-center gap-2 text-lg text-gray-300">
               <span class="animate-pulse">•</span>
@@ -62,7 +62,7 @@
           <template v-else>
             <div class="flex items-center gap-2">
               <template v-for="d in row.daily" :key="d.date">
-                <img :src="iconSrc(d.icon)" :alt="iconLabel(d.icon)" :title="`${iconLabel(d.icon)} – ${d.date}`" class="h-7 w-7" />
+                <img :src="iconSrc(d.icon)" :alt="iconLabel(d.icon)" :title="`${iconLabel(d.icon)} – ${d.date}`" class="h-7 w-7 shrink-0" />
               </template>
             </div>
           </template>
