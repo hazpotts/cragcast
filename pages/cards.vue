@@ -31,7 +31,7 @@
             :avgWindMph="items[0].avgWindMph"
           />
         </div>
-        <div class="flex flex-col gap-4">
+        <div class="grid grid-cols-2 gap-4">
             <RegionCard
               v-for="r in items.slice(1, visibleCount + 1)"
               :key="r.id"
@@ -48,8 +48,8 @@
               :avgWindMph="r.avgWindMph"
               compact
             />
-          <p v-if="!prefs.where.value" class="text-sm text-gray-500">Add a location to get local results.</p>
-          <div v-if="hasMoreCards" class="flex justify-center mt-2">
+          <p v-if="!prefs.where.value" class="col-span-2 text-sm text-gray-500">Add a location to get local results.</p>
+          <div v-if="hasMoreCards" class="col-span-2 flex justify-center mt-2">
             <UButton variant="soft" @click="visibleCount += CARDS_PAGE_SIZE">
               Show more
             </UButton>
