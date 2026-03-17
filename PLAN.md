@@ -1,12 +1,10 @@
 # CragCast Project Plan
 
 ## Next Actions
-1. Check implementation
-2. Allow add to desktop
-3. Testing
-4. Add granularity selector buttons (Crag / Region / Area) to the initial form so users can choose the level of detail in results — requires storing lat/lng and metadata for areas and crags to support this
-5. Add issue tracker (use GitHub Issues if possible)
-6. Expand seed data to ~500 UK crags with lat/lng and metadata to support area/region/crag granularity
+1. Add granularity selector buttons (Crag / Region / Area) to the initial form so users can choose the level of detail in results — requires storing lat/lng and metadata for areas and crags to support this
+2. Add issue tracker (use GitHub Issues if possible)
+3. Expand seed data to ~500 UK crags with lat/lng and metadata to support area/region/crag granularity
+4. Allow add to desktop
 
 ---
 
