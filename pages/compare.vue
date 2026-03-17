@@ -1,32 +1,23 @@
 <template>
   <div :class="containerClass">
+    <ResultsHeader
+      v-model="showPrefs"
+      :whereName="prefs.where.value?.name || null"
+      :distanceLabel="distanceLabel"
+      :labelWhen="labelWhen"
+    >
+      <template #right>
+        <UButton v-if="hasPrefs" class="text-sky-700 hover:text-sky-800 dark:text-sky-200 dark:hover:text-sky-100" variant="ghost" @click="shrink=!shrink" :aria-label="shrink ? 'Expand to full width' : 'Shrink to 1000px'">
+          <Icon :name="shrink ? 'heroicons-solid:arrows-pointing-out' : 'heroicons-solid:arrows-pointing-in'" class="h-5 w-5" />
+        </UButton>
+      </template>
+    </ResultsHeader>
+
     <section v-if="showPrefs" class="space-y-4">
       <PrefsForm @confirm="applyPrefs" @cancel="showPrefs=false" />
     </section>
+
     <section v-else>
-      <div class="mb-4 flex items-center justify-between">
-        <div class="text-sm text-gray-500">
-          <template v-if="prefs.where.value">
-            Showing for {{ prefs.where.value.name }} · {{ distanceLabel }} · {{ labelWhen }}
-          </template>
-          <template v-else>
-            Showing for UK-wide · {{ labelWhen }}
-          </template>
-        </div>
-        <div class="flex items-center gap-2">
-          <UButton
-            variant="ghost"
-            @click="showPrefs=true"
-            class="text-sky-700 hover:text-sky-800 dark:text-sky-200 dark:hover:text-sky-100"
-          >
-            <Icon name="heroicons-solid:adjustments-horizontal" class="mr-1 h-5 w-5" />
-            Adjust
-          </UButton>
-          <UButton class="text-sky-700 hover:text-sky-800 dark:text-sky-200 dark:hover:text-sky-100" variant="ghost" @click="shrink=!shrink" :aria-label="shrink ? 'Expand to full width' : 'Shrink to 1000px'">
-            <Icon :name="shrink ? 'heroicons-solid:arrows-pointing-out' : 'heroicons-solid:arrows-pointing-in'" class="h-5 w-5" />
-          </UButton>
-        </div>
-      </div>
       <div class="space-y-6">
         <section v-if="favRows.length" aria-label="Favourites">
           <h3 class="text-base font-semibold mb-2">Favourites</h3>
@@ -51,6 +42,7 @@ import { usePrefs } from '~/composables/usePrefs'
 import { useCustomCrags } from '~/composables/useCustomCrags'
 import CompareTable from '~/components/CompareTable.vue'
 import PrefsForm from '~/components/PrefsForm.vue'
+import ResultsHeader from '~/components/ResultsHeader.vue'
 import AddCrag from '~/components/AddCrag.vue'
 const prefs = usePrefs()
 const { crags: customCrags, add: addCustomCrag, remove: removeCustomCrag } = useCustomCrags()
@@ -79,6 +71,7 @@ const labelWhen = computed(() => {
   return ds.length === 1 ? fmt(d1) : `${fmt(d1)} – ${fmt(dN)}`
 })
 const containerClass = computed(() => ['space-y-6', 'px-4', shrink.value ? 'max-w-[1000px] mx-auto' : 'max-w-none'])
+const hasPrefs = computed(() => prefs.where.value || prefs.dates.value || prefs.maxDriveMins.value)
 const customCragIds = computed(() => customCrags.value.map(c => c.id))
 // Favourites
 const favs = ref<string[]>([])

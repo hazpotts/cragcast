@@ -52,3 +52,14 @@ export function filterHoursByDates(times: string[], dates: string[]) {
   const set = new Set(dates)
   return times.map((t, i) => ({ t, i })).filter(({ t }) => set.has(t.slice(0, 10)))
 }
+
+// Format like "Mon 01/10" with UK locale
+export function formatShortDayLabel(d: Date): string {
+  const day = d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })
+  const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()]
+  return `${dayOfWeek} ${day}`
+}
+
+export function formatShortDayLabelFromISO(iso: string): string {
+  return formatShortDayLabel(new Date(iso))
+}

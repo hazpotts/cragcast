@@ -4,14 +4,37 @@
       <UInput
         ref="inputRef"
         v-model="query"
-        placeholder="Search a place"
+        placeholder="Search for a location"
         @input="onType"
         @update:modelValue="onType"
         @keydown.enter="onEnter"
         @blur="onBlur"
-        class="w-80"
+        class="w-64"
       />
-      <UButton icon="i-heroicons-map-pin" variant="ghost" :title="'Use browser location'" @click="useGeo" />
+
+      <span class="text-sm text-gray-500 mt-1 px-2">|</span>
+
+      <UButton variant="outline" :title="'Use browser location'" @click="useGeo">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="h-4 w-4"
+          aria-hidden="true"
+        >
+          <!-- Outer ring -->
+          <circle cx="12" cy="12" r="9" />
+          <!-- Centre dot -->
+          <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none" />
+          <!-- Crosshair ticks -->
+          <path d="M12 1v3M12 20v3M1 12h3M20 12h3" />
+        </svg>
+        Browser location
+      </UButton>
 
       <div v-if="!useGoogle && allowSuggest && suggestions.length"
            class="absolute left-0 top-full mt-1 w-80 max-h-64 overflow-auto rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow z-20">
@@ -24,6 +47,7 @@
         </ul>
       </div>
     </div>
+    <p v-if="!query" class="text-sm text-gray-500">If you don't select a location results will be UK-wide.</p>
   </div>
 </template>
 <script setup lang="ts">

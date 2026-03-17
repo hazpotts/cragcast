@@ -1,23 +1,16 @@
 <template>
   <div class="space-y-6 max-w-[600px] mx-auto">
+    <ResultsHeader
+      v-model="showPrefs"
+      :whereName="(prefs.where.value as any)?.name || null"
+      :distanceLabel="distanceLabel"
+      :labelWhen="labelWhen"
+    />
+
     <section v-if="showPrefs" class="space-y-4">
       <PrefsForm @confirm="savePrefs" @cancel="showPrefs=false" />
     </section>
     <section v-else>
-      <div class="mb-4 flex items-center justify-between">
-        <div class="text-sm text-gray-500">
-          <template v-if="prefs.where.value">
-            Showing for {{ (prefs.where.value as any).name }} · {{ distanceLabel }} · {{ labelWhen }}
-          </template>
-          <template v-else>
-            Showing for UK-wide · {{ labelWhen }}
-          </template>
-        </div>
-        <UButton variant="ghost" @click="showPrefs = true" class="text-sky-700 hover:text-sky-800 dark:text-sky-200 dark:hover:text-sky-100">
-          <Icon name="heroicons:adjustments-horizontal-20-solid" class="mr-1 h-5 w-5" />
-          Adjust
-        </UButton>
-      </div>
       <div v-if="pending" class="space-y-4">
         <SkeletonCard />
       </div>
@@ -58,9 +51,6 @@
             />
           </template>
           <p v-if="!prefs.where.value" class="text-sm text-gray-500">Add a location to get local results.</p>
-          <!--
-          <UButton v-if="items.length > visibleCount" label="Show more" variant="soft" @click="showMore()"
-            class="bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-300 dark:hover:bg-sky-900/50" /> -->
         </div>
       </div>
     </section>
@@ -70,9 +60,11 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { usePrefs } from '~/composables/usePrefs'
 import { useRank } from '~/composables/useRank'
+import { formatShortDayLabel } from '~/utils/dates'
 import PrefsForm from '~/components/PrefsForm.vue'
 import SkeletonCard from '~/components/SkeletonCard.vue'
 import RegionCard from '~/components/RegionCard.vue'
+import ResultsHeader from '~/components/ResultsHeader.vue'
 const prefs = usePrefs()
 const { items, pending, fetchRank } = useRank()
 const showPrefs = ref(true)
@@ -95,7 +87,7 @@ const labelWhen = computed(() => {
   if (!ds.length) return 'Dates'
   const d1 = new Date(ds[0])
   const dN = new Date(ds[ds.length - 1])
-  const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+  const fmt = (d: Date) => formatShortDayLabel(d)
   return ds.length === 1 ? fmt(d1) : `${fmt(d1)} – ${fmt(dN)}`
 })
 const distanceLabel = computed(() => {

@@ -1,4 +1,4 @@
-import { computed, type Ref } from 'vue'
+import { computed, ref, type Ref } from 'vue'
 import { presetDates } from '~/utils/dates'
 
 export type Location = { lat: number; lon: number; name: string }
@@ -8,6 +8,7 @@ type PrefsState = {
   minDriveMins: Ref<number>
   maxDriveMins: Ref<number>
   dates: Ref<string[]>
+  whenPreset: Ref<'today'|'tomorrow'|'this-weekend'|'next-weekend'|'custom'>
   commit: () => Promise<void>
 }
 
@@ -96,15 +97,16 @@ export const usePrefs = () => {
         const s = typeof q.dates === 'string' ? q.dates : ''
         const arr = s.split(',').map(x => x.trim()).filter(Boolean)
         if (arr.length) return arr
-        // default to this weekend if not set
-        return presetDates('this-weekend')
+        return null
       },
       set(v: string[]) {
         updateQuery({ dates: (v || []).join(',') })
       }
     }) as unknown as Ref<string[]>
 
-    return { where, minDriveMins, maxDriveMins, dates, commit }
+    const whenPreset = ref<'today'|'tomorrow'|'this-weekend'|'next-weekend'|'custom'>('this-weekend')
+
+    return { where, minDriveMins, maxDriveMins, dates, whenPreset, commit }
   }
 
   if (process.client) {
