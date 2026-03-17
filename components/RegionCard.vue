@@ -1,25 +1,30 @@
 <template>
   <!-- Compact card layout -->
-  <UCard v-if="compact">
-    <div class="flex flex-col gap-2">
-      <!-- Weather icons row -->
-      <div class="flex items-center justify-center">
-        <div class="inline-flex items-center gap-2 bg-slate-400 rounded px-1.5 py-1">
-          <img
-            v-for="d in daily"
-            :key="d.date"
-            :src="iconSrc(d.icon)"
-            :alt="iconLabel(d.icon)"
-            :title="`${iconLabel(d.icon)} – ${d.date}`"
-            class="h-12 w-12"
-          />
-        </div>
-      </div>
-      <!-- Name + score -->
+  <UCard v-if="compact" :ui="{ body: { padding: 'p-0 sm:p-0' } }">
+    <!-- Weather icons – full-width header -->
+    <div class="flex items-center gap-2 bg-slate-400 rounded-t-md px-2 py-1.5 justify-center">
+      <img
+        v-for="d in daily"
+        :key="d.date"
+        :src="iconSrc(d.icon)"
+        :alt="iconLabel(d.icon)"
+        :title="`${iconLabel(d.icon)} – ${d.date}`"
+        class="h-12 w-12"
+      />
+    </div>
+    <div class="flex flex-col gap-1.5 px-3 py-2.5">
+      <!-- Name + score badge -->
       <div class="flex items-center justify-between">
         <h3 class="text-sm font-semibold truncate">{{ name }}</h3>
         <div class="flex items-center gap-1 shrink-0 ml-1">
-          <span class="text-sm font-bold text-primary whitespace-nowrap">{{ score }}<span class="text-xs font-normal text-gray-400">/100</span></span>
+          <span
+            class="text-xs font-bold px-1.5 py-0.5 rounded-full"
+            :class="score >= 70
+              ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200'
+              : score >= 40
+                ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200'
+                : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200'"
+          >{{ score }}</span>
           <UPopover>
             <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
               <Icon name="heroicons:information-circle" class="h-3.5 w-3.5" />
@@ -32,12 +37,20 @@
           </UPopover>
         </div>
       </div>
-      <!-- Stats -->
-      <div class="flex flex-wrap gap-x-3 gap-y-0 text-xs text-gray-500 dark:text-gray-400">
-        <span v-if="Number.isFinite(avgTempC)">{{ units.convertTemp(avgTempC) }}{{ units.tempLabel.value }}</span>
-        <span v-if="Number.isFinite(avgWindMph)">{{ units.convertWind(avgWindMph) }} {{ units.windLabel.value }}</span>
-        <span v-if="Number.isFinite(avgRainMm)">{{ units.convertRain(avgRainMm) }} {{ units.rainLabel.value }}</span>
-        <span v-if="Number.isFinite(distanceMins as any) && (distanceMins as any) > 0">~{{ units.convertDistance(distanceMins as number) }} {{ units.distanceLabel.value }}</span>
+      <!-- Stats with icons -->
+      <div class="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-500 dark:text-gray-400">
+        <span v-if="Number.isFinite(avgTempC)" class="inline-flex items-center gap-0.5">
+          <Icon name="heroicons:fire" class="h-3 w-3" />{{ units.convertTemp(avgTempC) }}{{ units.tempLabel.value }}
+        </span>
+        <span v-if="Number.isFinite(avgWindMph)" class="inline-flex items-center gap-0.5">
+          <Icon name="meteocons:wind" class="h-3 w-3" />{{ units.convertWind(avgWindMph) }} {{ units.windLabel.value }}
+        </span>
+        <span v-if="Number.isFinite(avgRainMm)" class="inline-flex items-center gap-0.5">
+          <Icon name="meteocons:raindrops" class="h-3 w-3" />{{ units.convertRain(avgRainMm) }} {{ units.rainLabel.value }}
+        </span>
+        <span v-if="Number.isFinite(distanceMins as any) && (distanceMins as any) > 0" class="inline-flex items-center gap-0.5">
+          <Icon name="heroicons:map-pin" class="h-3 w-3" />~{{ units.convertDistance(distanceMins as number) }} {{ units.distanceLabel.value }}
+        </span>
       </div>
       <!-- Warnings -->
       <div v-if="warnings?.length" class="flex items-center gap-1">
@@ -49,27 +62,27 @@
           />
         </UTooltip>
       </div>
-      <!-- Links -->
-      <div class="flex flex-wrap items-center gap-1.5">
+      <!-- Links – shortened labels, single row -->
+      <div class="flex flex-wrap items-center gap-1">
         <a v-if="links?.bbc" :href="links.bbc" target="_blank" rel="noopener"
            class="inline-flex items-center px-2 py-1 rounded text-xs bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
-          BBC <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-0.5 h-3 w-3" />
+          BBC
         </a>
         <a v-if="links?.metoffice" :href="links.metoffice" target="_blank" rel="noopener"
            class="inline-flex items-center px-2 py-1 rounded text-xs bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
-          Met Office <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-0.5 h-3 w-3" />
+          Met
         </a>
         <a v-if="links?.windy" :href="links.windy" target="_blank" rel="noopener"
            class="inline-flex items-center px-2 py-1 rounded text-xs bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
-          Windy <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-0.5 h-3 w-3" />
+          Windy
         </a>
         <a v-if="links?.yrno" :href="links.yrno" target="_blank" rel="noopener"
            class="inline-flex items-center px-2 py-1 rounded text-xs bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
-          Yr <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-0.5 h-3 w-3" />
+          Yr
         </a>
         <a :href="ukcUrl" target="_blank" rel="noopener"
            class="inline-flex items-center px-2 py-1 rounded text-xs bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
-          UKC <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-0.5 h-3 w-3" />
+          UKC
         </a>
       </div>
     </div>
