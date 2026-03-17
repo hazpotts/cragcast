@@ -27,8 +27,15 @@
       <template #areaSort-data="{ row }">
         {{ row.pending ? '…' : row.area }}
       </template>
+      <template #score-header="{ column }">
+        <UTooltip text="Score out of 100 based on dryness (40%), wind (25%), temperature & friction (20%), and cloud cover (5–10%), adjusted for distance.">
+          <span class="flex items-center gap-1 cursor-help">{{ column.label }} <Icon name="heroicons:information-circle" class="h-4 w-4 text-gray-400" /></span>
+        </UTooltip>
+      </template>
       <template #score-data="{ row }">
-        <span class="font-semibold">{{ row.pending ? '…' : row.score }}</span>
+        <UTooltip text="Score out of 100 based on dryness (40%), wind (25%), temperature & friction (20%), and cloud cover (5–10%), adjusted for distance.">
+          <span class="font-semibold cursor-help">{{ row.pending ? '…' : row.score }}</span>
+        </UTooltip>
       </template>
       <template #warnings-data="{ row }">
         <template v-if="!row.pending && !row.error && row.warnings?.length">
