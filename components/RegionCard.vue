@@ -52,15 +52,6 @@
     </div>
     <!-- Footer: table link + external links -->
     <div class="mt-4 flex items-center justify-between">
-      <UButton
-        size="sm"
-        variant="soft"
-        class="text-sky-700 hover:text-sky-800 dark:text-sky-200 dark:hover:text-sky-100"
-        @click="goToTable"
-      >
-        <Icon name="heroicons-solid:table-cells" class="mr-1 h-4 w-4" />
-        Table
-      </UButton>
       <div class="flex flex-wrap items-center gap-2">
         <a v-if="links?.bbc" :href="links?.bbc" target="_blank" rel="noopener"
            class="inline-flex items-center px-3 py-2 rounded-md bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
