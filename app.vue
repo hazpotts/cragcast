@@ -5,7 +5,19 @@
         <img :src="logoUrl64" alt="CragCast Logo" class="h-8 w-auto" />
         <span class="text-sky-800 dark:text-sky-300 text-xl font-semibold">CragCast</span>
       </a>
-      <ModeToggle />
+      <div class="flex items-center gap-3">
+        <ModeToggle />
+        <UPopover>
+          <UButton variant="ghost" size="sm" aria-label="Units settings">
+            <Icon name="heroicons-solid:cog-6-tooth" class="h-5 w-5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" />
+          </UButton>
+          <template #panel>
+            <div class="p-3">
+              <UnitsSelector />
+            </div>
+          </template>
+        </UPopover>
+      </div>
     </header>
     <main class="p-4">
       <NuxtPage />

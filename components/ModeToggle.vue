@@ -2,18 +2,18 @@
   <div class="flex items-center gap-2">
     <UButtonGroup size="sm" :ui="{ rounded: 'rounded-full' }">
       <UButton
-        label="Best"
-        @click="set('recommend')"
+        label="Table"
+        @click="set('table')"
         variant="soft"
-        :class="mode === 'recommend'
+        :class="mode === 'table'
           ? 'bg-sky-800 text-sky-50 hover:bg-sky-500 dark:bg-sky-500 dark:text-sky-50 dark:hover:bg-sky-400'
           : 'bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50'"
       />
       <UButton
-        label="Compare"
-        @click="set('compare')"
+        label="Cards"
+        @click="set('cards')"
         variant="soft"
-        :class="mode === 'compare'
+        :class="mode === 'cards'
           ? 'bg-sky-800 text-sky-50 hover:bg-sky-500 dark:bg-sky-500 dark:text-sky-50 dark:hover:bg-sky-400'
           : 'bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50'"
       />
@@ -24,10 +24,10 @@
 import { useLocalStorage } from '@vueuse/core'
 const router = useRouter()
 const route = useRoute()
-const modeStorage = useLocalStorage<'recommend' | 'compare'>('mode', 'recommend')
+const modeStorage = useLocalStorage<'table' | 'cards'>('mode', 'table')
 const mode = computed(() => modeStorage.value)
-function set(m: 'recommend' | 'compare') {
+function set(m: 'table' | 'cards') {
   modeStorage.value = m
-  router.push({ path: m === 'recommend' ? '/recommend' : '/compare', query: { ...route.query } })
+  router.push({ path: `/${m}`, query: { ...route.query } })
 }
 </script>

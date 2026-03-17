@@ -4,9 +4,9 @@
 </template>
 <script setup lang="ts">
 import { useLocalStorage } from '@vueuse/core'
-const mode = useLocalStorage<'recommend'|'compare'>('mode', 'recommend')
+const mode = useLocalStorage<'table'|'cards'>('mode', 'table')
 const route = useRoute()
-const dest = computed(() => (mode.value === 'compare' ? '/compare' : '/recommend'))
+const dest = computed(() => `/${mode.value}`)
 onMounted(() => {
   navigateTo({ path: dest.value, query: { ...route.query } }, { replace: true })
 })

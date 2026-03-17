@@ -7,6 +7,9 @@
       <template v-else-if="hasPrefs">
         Showing {{ labelWhen }} · UK-wide
       </template>
+      <div v-if="updatedAt && !modelValue" class="text-xs text-gray-400 mt-0.5">
+        Data updated {{ new Date(updatedAt).toLocaleString() }}
+      </div>
     </div>
     <div class="flex items-center gap-2">
       <UButton
@@ -31,6 +34,7 @@ const props = defineProps<{
   whereName?: string | null
   distanceLabel?: string
   labelWhen: string
+  updatedAt?: string | null
 }>()
 const emit = defineEmits<{ (e:'update:modelValue', v:boolean): void }>()
 const hasPrefs = computed(() => {
