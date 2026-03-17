@@ -28,16 +28,16 @@
         {{ row.pending ? '…' : row.area }}
       </template>
       <template #avgTempC-header="{ column }">
-        <span class="flex items-center gap-1"><Icon name="heroicons:fire" class="h-3.5 w-3.5" />{{ column.label }}</span>
+        <span class="flex items-start gap-1"><Icon name="meteocons:thermometer" class="h-4 w-4 text-current shrink-0" />{{ column.label }}</span>
       </template>
       <template #avgWindMph-header="{ column }">
-        <span class="flex items-center gap-1"><Icon name="meteocons:wind" class="h-3.5 w-3.5" />{{ column.label }}</span>
+        <span class="flex items-start gap-1"><Icon name="meteocons:wind" class="h-4 w-4 text-current shrink-0" />{{ column.label }}</span>
       </template>
       <template #avgRainMm-header="{ column }">
-        <span class="flex items-center gap-1"><Icon name="meteocons:raindrops" class="h-3.5 w-3.5" />{{ column.label }}</span>
+        <span class="flex items-start gap-1"><Icon name="meteocons:raindrops" class="h-4 w-4 text-current shrink-0" />{{ column.label }}</span>
       </template>
       <template #distanceMins-header="{ column }">
-        <span class="flex items-center gap-1"><Icon name="heroicons:map-pin" class="h-3.5 w-3.5" />{{ column.label }}</span>
+        <span class="flex items-start gap-1"><Icon name="heroicons:map-pin" class="h-4 w-4 text-current shrink-0" />{{ column.label }}</span>
       </template>
       <template #score-header="{ column }">
         <UPopover>
