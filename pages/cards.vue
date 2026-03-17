@@ -18,6 +18,7 @@
       <div v-else>
         <div v-if="items[0]" class="mb-6">
           <RegionCard
+            :regionId="items[0].id"
             :name="items[0].name"
             :score="items[0].score"
             :why="items[0].why"
@@ -29,12 +30,14 @@
             :avgTempC="items[0].avgTempC"
             :avgRainMm="items[0].avgRainMm"
             :avgWindMph="items[0].avgWindMph"
+            :cragCount="items[0].cragCount || 0"
           />
         </div>
         <div class="grid grid-cols-2 gap-4">
             <RegionCard
               v-for="r in items.slice(1, visibleCount + 1)"
               :key="r.id"
+              :regionId="r.id"
               :name="r.name"
               :score="r.score"
               :why="r.why"
@@ -46,6 +49,7 @@
               :avgTempC="r.avgTempC"
               :avgRainMm="r.avgRainMm"
               :avgWindMph="r.avgWindMph"
+              :cragCount="r.cragCount || 0"
               compact
             />
           <p v-if="!prefs.where.value" class="col-span-2 text-sm text-gray-500">Add a location to get local results.</p>

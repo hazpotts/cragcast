@@ -8,6 +8,7 @@ export type MiniSeries = {
   gust: number[]
   temp: number[]
   cloud: number[]
+  windDir?: number[]  // wind direction in degrees (0=N, 90=E, 180=S, 270=W)
 }
 
 export type ForecastResult = {
@@ -43,7 +44,8 @@ async function fetchFromApi(lat: number, lon: number, dates: string[]): Promise<
     'cloudcover',
     'windspeed_10m',
     'windgusts_10m',
-    'temperature_2m'
+    'temperature_2m',
+    'winddirection_10m'
   ].join(','))
   url.searchParams.set('windspeed_unit', 'mph')
   url.searchParams.set('temperature_unit', 'celsius')
@@ -73,7 +75,8 @@ async function fetchFromApi(lat: number, lon: number, dates: string[]): Promise<
     wind: pickIdx.map(i => (data.hourly.windspeed_10m?.[i] ?? 0)),
     gust: pickIdx.map(i => (data.hourly.windgusts_10m?.[i] ?? 0)),
     temp: pickIdx.map(i => (data.hourly.temperature_2m?.[i] ?? 0)),
-    cloud: pickIdx.map(i => (data.hourly.cloudcover?.[i] ?? 0))
+    cloud: pickIdx.map(i => (data.hourly.cloudcover?.[i] ?? 0)),
+    windDir: pickIdx.map(i => (data.hourly.winddirection_10m?.[i] ?? 0))
   }
 
   return { mini }

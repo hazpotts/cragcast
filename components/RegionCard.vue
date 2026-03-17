@@ -84,6 +84,18 @@
            class="inline-flex items-center px-2 py-1 rounded text-xs bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
           UKC
         </a>
+        <button
+          v-if="cragCount > 0"
+          @click="toggleCrags"
+          class="inline-flex items-center gap-0.5 px-2 py-1 rounded text-xs bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-200 dark:hover:bg-emerald-900/50"
+        >
+          <Icon :name="showCrags ? 'heroicons:chevron-up' : 'heroicons:chevron-down'" class="h-3 w-3" />
+          {{ cragCount }} crags
+        </button>
+      </div>
+      <!-- Expandable crag list -->
+      <div v-if="showCrags && cragCount > 0" class="mt-1 border-t border-gray-100 dark:border-gray-700 pt-1">
+        <CragList :crags="cragItems" :pending="cragsPending" />
       </div>
     </div>
   </UCard>
@@ -160,6 +172,19 @@
         </div>
       </div>
     </div>
+    <!-- Expandable crag list for full card -->
+    <div v-if="cragCount > 0" class="mt-3">
+      <button
+        @click="toggleCrags"
+        class="inline-flex items-center gap-1 text-sm text-emerald-700 hover:text-emerald-800 dark:text-emerald-300 dark:hover:text-emerald-200"
+      >
+        <Icon :name="showCrags ? 'heroicons:chevron-up' : 'heroicons:chevron-down'" class="h-4 w-4" />
+        {{ showCrags ? 'Hide' : 'Show' }} {{ cragCount }} crags in this region
+      </button>
+      <div v-if="showCrags" class="mt-2 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+        <CragList :crags="cragItems" :pending="cragsPending" />
+      </div>
+    </div>
     <!-- Footer: table link + external links -->
     <div class="mt-4 flex items-center justify-between">
       <div class="flex flex-wrap items-center gap-2">
@@ -193,8 +218,12 @@
   </UCard>
 </template>
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
 import { useUnits } from '~/composables/useUnits'
+import { usePrefs } from '~/composables/usePrefs'
+import { useCrags, type CragItem } from '~/composables/useCrags'
+import CragList from '~/components/CragList.vue'
 const units = useUnits()
 const router = useRouter()
 const route = useRoute()
@@ -204,6 +233,7 @@ function goToTable() {
   router.push({ path: '/table', query: { ...route.query } })
 }
 const props = defineProps<{
+  regionId?: string
   name: string
   score: number
   why: string[]
@@ -216,7 +246,33 @@ const props = defineProps<{
   avgWindMph: number
   avgRainMm: number
   compact?: boolean
+  cragCount?: number
 }>()
+
+// Crag expansion
+const showCrags = ref(false)
+const cragItems = ref<CragItem[]>([])
+const cragsPending = ref(false)
+const { fetchCrags } = useCrags()
+const prefs = usePrefs()
+
+const cragCount = computed(() => props.cragCount || 0)
+
+async function toggleCrags() {
+  showCrags.value = !showCrags.value
+  if (showCrags.value && !cragItems.value.length && props.regionId) {
+    cragsPending.value = true
+    const w = prefs.where.value as any
+    cragItems.value = await fetchCrags(props.regionId, {
+      lat: Number(w?.lat) || undefined,
+      lon: Number(w?.lon) || undefined,
+      dates: (prefs.dates.value || []).join(','),
+      minDriveMins: prefs.minDriveMins.value > 0 ? prefs.minDriveMins.value : undefined,
+      maxDriveMins: Number.isFinite(prefs.maxDriveMins.value) ? prefs.maxDriveMins.value : undefined
+    })
+    cragsPending.value = false
+  }
+}
 
 import iconSun from '~/assets/images/icons/SVGs/wsymbol_0001_sunny.svg'
 import iconHazySun from '~/assets/images/icons/SVGs/wsymbol_0005_hazy_sun.svg'
