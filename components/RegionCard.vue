@@ -150,7 +150,7 @@
                   class="h-20 w-20 sm:h-24 sm:w-24"
                 />
               </div>
-              <div class="ml-3 sm:ml-0 mt-0 sm:mt-1 sm:mb-2 text-left sm:text-center text-gray-600 dark:text-gray-300">
+              <div class="flex sm:flex-col ml-3 sm:ml-0 mt-0 sm:mt-1 sm:mb-2 text-left sm:text-center text-gray-600 dark:text-gray-300">
                 <div v-if="Number.isFinite(d.tempAvgC as any)" class="inline-flex items-center gap-0.5"><Icon name="lucide:thermometer" class="h-3.5 w-3.5 text-current" />{{ units.convertTemp(d.tempAvgC) }}{{ units.tempLabel.value }}</div>
                 <div v-if="Number.isFinite(d.rainSumMm as any)" class="inline-flex items-center gap-0.5"><Icon name="lucide:droplets" class="h-3.5 w-3.5 text-current" />{{ units.convertRain(d.rainSumMm) }} {{ units.rainLabel.value }}</div>
                 <div v-if="Number.isFinite(d.windAvgMph as any)" class="inline-flex items-center gap-0.5"><Icon name="lucide:wind" class="h-3.5 w-3.5 text-current" />{{ units.convertWind(d.windAvgMph) }} {{ units.windLabel.value }}</div>
