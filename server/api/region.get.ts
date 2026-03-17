@@ -38,6 +38,7 @@ export default defineEventHandler(async (event) => {
   const lat = Number(q.lat)
   const lon = Number(q.lon)
   const hasHome = Number.isFinite(lat) && Number.isFinite(lon)
+  const minDriveMins = q.minDriveMins ? Number(q.minDriveMins) : 0
   const maxDriveMins = q.maxDriveMins ? Number(q.maxDriveMins) : Infinity
   const datesParam = (q.dates as string) || ''
   if (!id) {
@@ -70,6 +71,7 @@ export default defineEventHandler(async (event) => {
   const { score, why } = scoreRegion(mini, {
     rocks: region.rock,
     distanceMins: Number.isFinite(distanceMins) ? distanceMins : 0,
+    minDriveMins,
     maxDriveMins
   })
 

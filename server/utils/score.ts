@@ -16,6 +16,7 @@ function tempTarget(rocks: string[]): { min: number; max: number } {
 export function scoreRegion(mini: MiniSeries, opts: {
   rocks: string[]
   distanceMins: number
+  minDriveMins?: number
   maxDriveMins: number
 }): { score: number; why: string[] } {
   const rain = avg(mini.rainMm)
@@ -45,10 +46,14 @@ export function scoreRegion(mini: MiniSeries, opts: {
 
   const hasDist = Number.isFinite(opts.distanceMins) && Number.isFinite(opts.maxDriveMins)
   const dist = opts.distanceMins
+  const minMins = opts.minDriveMins ?? 0
   const maxMins = Math.max(30, opts.maxDriveMins)
-  const distMultiplier = hasDist
-    ? (dist <= maxMins ? 1 : Math.max(0.6, 1 - (dist - maxMins) / 180))
-    : 1
+  let distMultiplier = 1
+  if (hasDist) {
+    if (dist >= minMins && dist <= maxMins) distMultiplier = 1
+    else if (dist > maxMins) distMultiplier = Math.max(0.6, 1 - (dist - maxMins) / 180)
+    else if (minMins > 0 && dist < minMins) distMultiplier = Math.max(0.6, 1 - (minMins - dist) / 180)
+  }
 
   const finalScore = Math.round(Math.max(0, Math.min(100, baseScore * distMultiplier)))
 
@@ -79,7 +84,9 @@ export function scoreRegion(mini: MiniSeries, opts: {
 
   // Distance context only when we have a real distance
   if (hasDist) {
-    if (dist <= 45) why.push('Close by')
+    if (minMins > 0 && dist < minMins) why.push('Closer than preferred')
+    else if (dist > maxMins) why.push('Further than preferred')
+    else if (dist <= 45) why.push('Close by')
     else if (dist <= 90) why.push('Within reach')
   }
 

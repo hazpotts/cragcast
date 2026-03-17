@@ -158,9 +158,9 @@ const rowsWithSort = computed(() => (props.rows || []).map((r: any) => ({
 function isFaved(id: string) { return Array.isArray(props.favourites) && props.favourites.includes(id) }
 function isRemovable(id: string) { return Array.isArray(props.removableIds) && props.removableIds.includes(id) }
 function toggle(id: string) { emit('toggle-favourite', id) }
-// don't include distance if mindrive not set
+// Show distance column when any distance filter is active
 const prefs = usePrefs()
-const showDistance = computed(() => Number.isFinite(prefs.maxDriveMins.value))
+const showDistance = computed(() => Number.isFinite(prefs.maxDriveMins.value) || prefs.minDriveMins.value > 0)
 const columns = computed(() => {
   const cols = [
     { key: 'name', label: 'Region' },
