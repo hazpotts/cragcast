@@ -1,0 +1,17 @@
+name = "cragcast"
+compatibility_date = "2024-09-19"
+
+# Cloudflare Pages uses this for local dev bindings
+# The D1 database must be created first:
+#   npx wrangler d1 create cragcast-crags
+# Then update the database_id below with the returned ID.
+
+[[d1_databases]]
+binding = "CRAG_DB"
+database_name = "cragcast-crags"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+# KV namespace for weather cache (already configured in Pages dashboard)
+# [[kv_namespaces]]
+# binding = "CRAGCAST"
+# id = "your-kv-namespace-id"

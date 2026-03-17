@@ -1,0 +1,55 @@
+import { fetchOpenBetaUKCrags } from '~/server/utils/openbeta'
+import { importCragsToDb } from '~/server/utils/crag-db'
+
+/**
+ * POST /api/admin/import-crags
+ *
+ * Triggers a full import of UK crag data from OpenBeta into D1.
+ * Can be called manually or by the worker-cron on a schedule.
+ *
+ * Optional query params:
+ *   ?dryRun=1  — fetch from OpenBeta but don't write to DB (preview mode)
+ */
+export default defineEventHandler(async (event) => {
+  const q = getQuery(event)
+  const dryRun = q.dryRun === '1' || q.dryRun === 'true'
+
+  const log: string[] = []
+  const onProgress = (msg: string) => {
+    log.push(msg)
+    console.log(`[import] ${msg}`)
+  }
+
+  try {
+    onProgress('Starting OpenBeta UK crag import...')
+
+    const crags = await fetchOpenBetaUKCrags(onProgress)
+
+    if (dryRun) {
+      return {
+        ok: true,
+        dryRun: true,
+        cragsFound: crags.length,
+        sample: crags.slice(0, 10),
+        log
+      }
+    }
+
+    const result = await importCragsToDb(event, crags, onProgress)
+
+    return {
+      ok: true,
+      imported: result.imported,
+      updated: result.updated,
+      errors: result.errors,
+      totalCrags: crags.length,
+      log
+    }
+  } catch (err: any) {
+    console.error('[import] Import failed:', err)
+    throw createError({
+      statusCode: 500,
+      statusMessage: `Import failed: ${err.message}`
+    })
+  }
+})

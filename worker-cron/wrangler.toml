@@ -2,9 +2,11 @@ name = "cragcast-cache-warmer"
 main = "src/index.ts"
 compatibility_date = "2024-09-19"
 
-# Run every 2 hours
+# Cron triggers:
+# - Every 2 hours: cache warming
+# - Monday 03:00 UTC: weekly crag import from OpenBeta
 [triggers]
-crons = ["0 */2 * * *"]
+crons = ["0 */2 * * *", "0 3 * * 1"]
 
 [vars]
 CRAGCAST_URL = "https://cragcast.app"

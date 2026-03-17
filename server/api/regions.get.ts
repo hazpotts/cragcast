@@ -1,13 +1,10 @@
 import { regions } from "~/server/utils/regions"
-import { crags } from "~/server/utils/crags"
+import { getCragCountsByRegion } from "~/server/utils/crag-db"
 
-export default defineEventHandler(() => {
-  const cragCounts = new Map<string, number>()
-  for (const c of crags) {
-    cragCounts.set(c.regionId, (cragCounts.get(c.regionId) || 0) + 1)
-  }
+export default defineEventHandler(async (event) => {
+  const cragCounts = await getCragCountsByRegion(event)
   return regions.map(r => ({
     ...r,
-    cragCount: cragCounts.get(r.id) || 0
+    cragCount: cragCounts[r.id] || 0
   }))
 })

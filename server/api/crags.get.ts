@@ -1,6 +1,6 @@
 import { getForecast } from "~/server/utils/forecast"
 import { regions } from "~/server/utils/regions"
-import { crags } from "~/server/utils/crags"
+import { getCragsByRegion } from "~/server/utils/crag-db"
 import { haversineKm, driveMinutesApprox } from "~/server/utils/distance"
 import { scoreRegion, scoreCrag } from "~/server/utils/score"
 import { parseDate, formatDate } from "~/server/utils/dates"
@@ -48,7 +48,7 @@ export default defineEventHandler(async (event) => {
   const region = regions.find(r => r.id === regionId)
   if (!region) throw createError({ statusCode: 404, statusMessage: 'region not found' })
 
-  const regionCrags = crags.filter(c => c.regionId === regionId)
+  const regionCrags = await getCragsByRegion(event, regionId)
   if (!regionCrags.length) return []
 
   let dates: string[]

@@ -1,6 +1,6 @@
 import { getForecast } from "~/server/utils/forecast"
 import { regions } from "~/server/utils/regions"
-import { crags } from "~/server/utils/crags"
+import { getCragCountsByRegion } from "~/server/utils/crag-db"
 import { haversineKm, driveMinutesApprox } from "~/server/utils/distance"
 import { scoreRegion } from "~/server/utils/score"
 import { parseDate, formatDate } from "~/server/utils/dates"
@@ -112,6 +112,6 @@ export default defineEventHandler(async (event) => {
     avgWindMph,
     avgRainMm,
     links,
-    cragCount: crags.filter(c => c.regionId === region.id).length
+    cragCount: (await getCragCountsByRegion(event))[region.id] || 0
   }
 })
