@@ -16,6 +16,7 @@ export type RankItem = {
   avgWindMph: number
   avgRainMm: number
   links: { bbc: string; metoffice: string; windy: string; yrno?: string }
+  cragCount?: number
 }
 
 export function useRank() {

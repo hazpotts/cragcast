@@ -1,6 +1,25 @@
 <template>
   <div>
     <UTable :rows="rowsWithSort" :columns="columns" :sort="sort" @update:sort="onSort">
+      <template #name-data="{ row }">
+        <div class="flex items-center gap-1">
+          <UButton
+            v-if="row.cragCount > 0"
+            variant="ghost"
+            size="xs"
+            :aria-label="isExpanded(row.id) ? 'Collapse crags' : 'Expand crags'"
+            @click="toggleExpand(row.id)"
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 -ml-1"
+          >
+            <Icon :name="isExpanded(row.id) ? 'heroicons:chevron-down' : 'heroicons:chevron-right'" class="h-4 w-4" />
+          </UButton>
+          <span :class="{ 'ml-5': !row.cragCount }">{{ row.name }}</span>
+          <span v-if="row.cragCount > 0" class="text-xs text-gray-400 dark:text-gray-500">({{ row.cragCount }})</span>
+        </div>
+        <div v-if="isExpanded(row.id)" class="mt-1">
+          <CragList :crags="expandedCrags[row.id] || []" :pending="expandedPending[row.id] || false" />
+        </div>
+      </template>
       <template #fav-data="{ row }">
         <div class="flex items-center gap-1">
           <UButton
@@ -114,11 +133,51 @@
   </div>
 </template>
 <script setup lang="ts">
-import { reactive, computed } from 'vue'
+import { reactive, computed, ref } from 'vue'
 import { usePrefs } from '~/composables/usePrefs'
 import { useUnits } from '~/composables/useUnits'
+import { useCrags, type CragItem } from '~/composables/useCrags'
+import CragList from '~/components/CragList.vue'
 const props = defineProps<{ rows: any[]; favourites?: string[]; removableIds?: string[] }>()
 const emit = defineEmits<{ (e:'toggle-favourite', id: string): void; (e:'remove', id: string): void }>()
+
+// --- Expandable crag sub-rows ---
+const expandedRegions = ref<Set<string>>(new Set())
+const expandedCrags = ref<Record<string, CragItem[]>>({})
+const expandedPending = ref<Record<string, boolean>>({})
+const { fetchCrags } = useCrags()
+const prefs = usePrefs()
+
+function isExpanded(regionId: string) {
+  return expandedRegions.value.has(regionId)
+}
+
+async function toggleExpand(regionId: string) {
+  if (expandedRegions.value.has(regionId)) {
+    expandedRegions.value.delete(regionId)
+    // Force reactivity
+    expandedRegions.value = new Set(expandedRegions.value)
+    return
+  }
+
+  expandedRegions.value.add(regionId)
+  expandedRegions.value = new Set(expandedRegions.value)
+
+  // Fetch crags if not already loaded
+  if (!expandedCrags.value[regionId]) {
+    expandedPending.value = { ...expandedPending.value, [regionId]: true }
+    const w = prefs.where.value as any
+    const items = await fetchCrags(regionId, {
+      lat: Number(w?.lat) || undefined,
+      lon: Number(w?.lon) || undefined,
+      dates: (prefs.dates.value || []).join(','),
+      minDriveMins: prefs.minDriveMins.value > 0 ? prefs.minDriveMins.value : undefined,
+      maxDriveMins: Number.isFinite(prefs.maxDriveMins.value) ? prefs.maxDriveMins.value : undefined
+    })
+    expandedCrags.value = { ...expandedCrags.value, [regionId]: items }
+    expandedPending.value = { ...expandedPending.value, [regionId]: false }
+  }
+}
 const rowsWithSort = computed(() => (props.rows || []).map((r: any) => ({
   ...r,
   areaSort: `${r?.area ?? ''} | ${r?.name ?? ''}`
@@ -128,7 +187,6 @@ function isRemovable(id: string) { return Array.isArray(props.removableIds) && p
 function toggle(id: string) { emit('toggle-favourite', id) }
 const units = useUnits()
 // Show distance column when any distance filter is active
-const prefs = usePrefs()
 const showDistance = computed(() => Number.isFinite(prefs.maxDriveMins.value) || prefs.minDriveMins.value > 0)
 const columns = computed(() => {
   const cols = [

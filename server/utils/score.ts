@@ -1,4 +1,5 @@
 import type { MiniSeries } from './forecast'
+import type { Aspect } from './crags'
 
 function avg(a: number[]) { return a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0 }
 function max(a: number[]) { return a.length ? Math.max(...a) : 0 }
@@ -91,4 +92,120 @@ export function scoreRegion(mini: MiniSeries, opts: {
   }
 
   return { score: finalScore, why: why.slice(0, 3) }
+}
+
+// --- Crag-level scoring ---
+
+const ASPECT_DEGREES: Record<string, number> = {
+  N: 0, NE: 45, E: 90, SE: 135, S: 180, SW: 225, W: 270, NW: 315
+}
+
+/** Angle difference between two compass bearings (0-180) */
+function angleDiff(a: number, b: number): number {
+  const d = Math.abs(((a - b) % 360 + 360) % 360)
+  return d > 180 ? 360 - d : d
+}
+
+/**
+ * Score an individual crag by adjusting the region base score with
+ * aspect, shelter/exposure, and drying modifiers.
+ * Returns a score in the same 0-100 range.
+ */
+export function scoreCrag(
+  regionScore: number,
+  mini: MiniSeries,
+  opts: {
+    aspect: Aspect | null
+    rocks: string[]
+    tags: string[]
+  }
+): { score: number; modifiers: string[] } {
+  const temp = avg(mini.temp)
+  const wind = avg(mini.wind)
+  const rain = sum(mini.rainMm)
+  const pop = avg(mini.pop)
+  const avgWindDir = mini.windDir?.length ? avg(mini.windDir) : null
+  const modifiers: string[] = []
+
+  let adjustment = 0
+
+  // --- Aspect + temperature ---
+  if (opts.aspect) {
+    const deg = ASPECT_DEGREES[opts.aspect]
+    // South-facing (135-225°) gets solar warming bonus in cold weather
+    const isSouthish = deg >= 135 && deg <= 225
+    // North-facing (315-360, 0-45°) gets shade bonus in hot weather
+    const isNorthish = deg <= 45 || deg >= 315
+
+    if (isSouthish && temp < 10) {
+      // Cold day + south-facing = solar warming benefit
+      const bonus = Math.min(6, (10 - temp) * 0.6)
+      adjustment += bonus
+      modifiers.push('Sun-warmed (south-facing)')
+    } else if (isNorthish && temp > 18) {
+      // Hot day + north-facing = shade benefit
+      const bonus = Math.min(6, (temp - 18) * 0.6)
+      adjustment += bonus
+      modifiers.push('Shaded (north-facing)')
+    }
+
+    // East-facing bonus in the morning sun (general small bonus for climbers who go early)
+    if (opts.aspect === 'E' || opts.aspect === 'SE') {
+      if (temp < 14) {
+        adjustment += 2
+        modifiers.push('Morning sun')
+      }
+    }
+  }
+
+  // --- Aspect + wind direction (shelter) ---
+  if (opts.aspect && avgWindDir !== null && wind > 15) {
+    const aspectDeg = ASPECT_DEGREES[opts.aspect]
+    const diff = angleDiff(aspectDeg, avgWindDir)
+
+    if (diff >= 120) {
+      // Crag faces away from wind — sheltered
+      const bonus = Math.min(5, (wind - 15) * 0.3)
+      adjustment += bonus
+      modifiers.push('Sheltered from wind')
+    } else if (diff <= 45) {
+      // Crag faces into the wind — exposed
+      const penalty = Math.min(5, (wind - 15) * 0.3)
+      adjustment -= penalty
+      modifiers.push('Facing the wind')
+    }
+  }
+
+  // --- Exposure / shelter tags ---
+  const isExposed = opts.tags.includes('exposed') || opts.tags.includes('wind-exposed')
+  const isSheltered = opts.tags.includes('sheltered')
+
+  if (isExposed && wind > 20) {
+    const penalty = Math.min(5, (wind - 20) * 0.4)
+    adjustment -= penalty
+    if (!modifiers.some(m => m.includes('wind'))) modifiers.push('Exposed site')
+  }
+  if (isSheltered && wind > 20) {
+    const bonus = Math.min(4, (wind - 20) * 0.3)
+    adjustment += bonus
+    if (!modifiers.some(m => m.includes('wind') || m.includes('helter'))) modifiers.push('Sheltered site')
+  }
+
+  // --- Drying speed after rain ---
+  if (rain > 2 || pop > 50) {
+    const isQuickDry = opts.tags.includes('quick-dry')
+    const isSeaCliff = opts.tags.includes('sea-cliff')
+    const isNorthFacing = opts.aspect === 'N' || opts.aspect === 'NE' || opts.aspect === 'NW'
+
+    if (isQuickDry || isSeaCliff) {
+      adjustment += 3
+      modifiers.push('Dries quickly')
+    } else if (isSheltered && isNorthFacing) {
+      adjustment -= 3
+      modifiers.push('Stays wet after rain')
+    }
+  }
+
+  const finalScore = Math.round(Math.max(0, Math.min(100, regionScore + adjustment)))
+  return { score: finalScore, modifiers }
 }

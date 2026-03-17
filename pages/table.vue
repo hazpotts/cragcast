@@ -231,7 +231,7 @@ async function loadCompare() {
   // 1) Load region list (names & ids)
   const regionList = await $fetch<any[]>('/api/regions')
   // Prefill table with placeholder rows
-  items.value = regionList.map(r => ({ id: r.id, name: r.name, area: (r as any).area, pending: true }))
+  items.value = regionList.map(r => ({ id: r.id, name: r.name, area: (r as any).area, cragCount: (r as any).cragCount || 0, pending: true }))
 
   const paramsBase: any = {
     dates: (prefs.dates.value || []).join(',')

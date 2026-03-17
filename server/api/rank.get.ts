@@ -1,5 +1,6 @@
 import { getForecast } from "~/server/utils/forecast"
 import { regions } from "~/server/utils/regions"
+import { getCragCountsByRegion } from "~/server/utils/crag-db"
 import { haversineKm, driveMinutesApprox } from "~/server/utils/distance"
 import { scoreRegion } from "~/server/utils/score"
 import { presetDates, parseDate, formatDate } from "~/server/utils/dates"
@@ -101,6 +102,9 @@ export default defineEventHandler(async (event) => {
     return fetchForecastWithRetry(event, pt.lat, pt.lon, dates, 2)
   }, 8) // 8 concurrent requests
 
+  // Get crag counts from D1
+  const cragCounts = await getCragCountsByRegion(event)
+
   // Build results from forecasts
   const results: any[] = []
   for (let i = 0; i < candidateRegions.length; i++) {
@@ -154,7 +158,8 @@ export default defineEventHandler(async (event) => {
       avgTempC,
       avgWindMph,
       avgRainMm,
-      links
+      links,
+      cragCount: cragCounts[r.id] || 0
     })
   }
 
