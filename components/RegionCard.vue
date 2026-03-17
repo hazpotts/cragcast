@@ -1,33 +1,44 @@
 <template>
   <!-- Compact card layout -->
   <UCard v-if="compact">
-    <div class="flex gap-3 items-center">
-      <!-- Weather icons -->
-      <div class="flex items-center gap-1 bg-slate-400 rounded px-1.5 py-1 shrink-0">
+    <div class="flex flex-col gap-2">
+      <!-- Weather icons row -->
+      <div class="flex items-center gap-1 bg-slate-400 rounded px-1.5 py-1 justify-center">
         <img
           v-for="d in daily"
           :key="d.date"
           :src="iconSrc(d.icon)"
           :alt="iconLabel(d.icon)"
           :title="`${iconLabel(d.icon)} – ${d.date}`"
-          class="h-10 w-10"
+          class="h-12 w-12"
         />
       </div>
-      <!-- Info -->
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center justify-between">
-          <h3 class="text-base font-semibold truncate">{{ name }}</h3>
-          <span class="text-base font-bold text-primary whitespace-nowrap ml-2">{{ score }}<span class="text-xs font-normal text-gray-400">/100</span></span>
-        </div>
-        <div class="flex flex-wrap gap-x-3 gap-y-0 text-xs text-gray-500 dark:text-gray-400">
-          <span v-if="Number.isFinite(avgTempC)">{{ units.convertTemp(avgTempC) }}{{ units.tempLabel.value }}</span>
-          <span v-if="Number.isFinite(avgWindMph)">{{ units.convertWind(avgWindMph) }} {{ units.windLabel.value }}</span>
-          <span v-if="Number.isFinite(avgRainMm)">{{ units.convertRain(avgRainMm) }} {{ units.rainLabel.value }}</span>
-          <span v-if="Number.isFinite(distanceMins as any) && (distanceMins as any) > 0">~{{ units.convertDistance(distanceMins as number) }} {{ units.distanceLabel.value }}</span>
+      <!-- Name + score -->
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-semibold truncate">{{ name }}</h3>
+        <div class="flex items-center gap-1 shrink-0 ml-1">
+          <span class="text-sm font-bold text-primary whitespace-nowrap">{{ score }}<span class="text-xs font-normal text-gray-400">/100</span></span>
+          <UPopover>
+            <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+              <Icon name="heroicons:information-circle" class="h-3.5 w-3.5" />
+            </button>
+            <template #panel>
+              <div class="p-3 max-w-[260px] text-sm text-gray-700 dark:text-gray-200">
+                A combined score out of 100 reflecting overall climbing conditions, including weather, distance, and other factors.
+              </div>
+            </template>
+          </UPopover>
         </div>
       </div>
+      <!-- Stats -->
+      <div class="flex flex-wrap gap-x-3 gap-y-0 text-xs text-gray-500 dark:text-gray-400">
+        <span v-if="Number.isFinite(avgTempC)">{{ units.convertTemp(avgTempC) }}{{ units.tempLabel.value }}</span>
+        <span v-if="Number.isFinite(avgWindMph)">{{ units.convertWind(avgWindMph) }} {{ units.windLabel.value }}</span>
+        <span v-if="Number.isFinite(avgRainMm)">{{ units.convertRain(avgRainMm) }} {{ units.rainLabel.value }}</span>
+        <span v-if="Number.isFinite(distanceMins as any) && (distanceMins as any) > 0">~{{ units.convertDistance(distanceMins as number) }} {{ units.distanceLabel.value }}</span>
+      </div>
       <!-- Warnings -->
-      <div v-if="warnings?.length" class="flex items-center gap-1 shrink-0">
+      <div v-if="warnings?.length" class="flex items-center gap-1">
         <UTooltip v-for="(w, i) in warnings" :key="i" :text="w.message">
           <Icon
             name="heroicons:exclamation-triangle-20-solid"
@@ -36,28 +47,29 @@
           />
         </UTooltip>
       </div>
-    </div>
-    <div class="flex flex-wrap items-center gap-1.5 mt-2">
-      <a v-if="links?.bbc" :href="links.bbc" target="_blank" rel="noopener"
-         class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
-        BBC <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-0.5 h-3 w-3" />
-      </a>
-      <a v-if="links?.metoffice" :href="links.metoffice" target="_blank" rel="noopener"
-         class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
-        Met Office <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-0.5 h-3 w-3" />
-      </a>
-      <a v-if="links?.windy" :href="links.windy" target="_blank" rel="noopener"
-         class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
-        Windy <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-0.5 h-3 w-3" />
-      </a>
-      <a v-if="links?.yrno" :href="links.yrno" target="_blank" rel="noopener"
-         class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
-        Yr <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-0.5 h-3 w-3" />
-      </a>
-      <a :href="ukcUrl" target="_blank" rel="noopener"
-         class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
-        UKC <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-0.5 h-3 w-3" />
-      </a>
+      <!-- Links -->
+      <div class="flex flex-wrap items-center gap-1">
+        <a v-if="links?.bbc" :href="links.bbc" target="_blank" rel="noopener"
+           class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
+          BBC <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-0.5 h-3 w-3" />
+        </a>
+        <a v-if="links?.metoffice" :href="links.metoffice" target="_blank" rel="noopener"
+           class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
+          Met Office <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-0.5 h-3 w-3" />
+        </a>
+        <a v-if="links?.windy" :href="links.windy" target="_blank" rel="noopener"
+           class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
+          Windy <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-0.5 h-3 w-3" />
+        </a>
+        <a v-if="links?.yrno" :href="links.yrno" target="_blank" rel="noopener"
+           class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
+          Yr <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-0.5 h-3 w-3" />
+        </a>
+        <a :href="ukcUrl" target="_blank" rel="noopener"
+           class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-200 dark:hover:bg-sky-900/50">
+          UKC <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-0.5 h-3 w-3" />
+        </a>
+      </div>
     </div>
   </UCard>
   <!-- Full card layout -->
@@ -67,9 +79,19 @@
       <div class="flex-1 min-w-0 space-y-2">
         <div class="flex items-center justify-between">
           <h3 class="text-lg font-semibold truncate">{{ name }}</h3>
-          <UTooltip text="Score out of 100 based on dryness (40%), wind (25%), temperature & friction (20%), and cloud cover (5–10%), adjusted for distance.">
-            <span class="text-lg font-bold text-primary whitespace-nowrap ml-2">{{ score }}<span class="text-sm font-normal text-gray-400">/100</span></span>
-          </UTooltip>
+          <div class="flex items-center gap-1 ml-2">
+            <span class="text-lg font-bold text-primary whitespace-nowrap">{{ score }}<span class="text-sm font-normal text-gray-400">/100</span></span>
+            <UPopover>
+              <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                <Icon name="heroicons:information-circle" class="h-4 w-4" />
+              </button>
+              <template #panel>
+                <div class="p-3 max-w-[280px] text-sm text-gray-700 dark:text-gray-200">
+                  A combined score out of 100 reflecting overall climbing conditions, including weather, distance, and other factors.
+                </div>
+              </template>
+            </UPopover>
+          </div>
         </div>
         <div v-if="warnings?.length" class="space-y-1">
           <div

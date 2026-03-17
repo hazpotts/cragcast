@@ -28,14 +28,17 @@
         {{ row.pending ? '…' : row.area }}
       </template>
       <template #score-header="{ column }">
-        <UTooltip text="Score out of 100 based on dryness (40%), wind (25%), temperature & friction (20%), and cloud cover (5–10%), adjusted for distance.">
-          <span class="flex items-center gap-1 cursor-help">{{ column.label }} <Icon name="heroicons:information-circle" class="h-4 w-4 text-gray-400" /></span>
-        </UTooltip>
+        <UPopover>
+          <span class="flex items-center gap-1 cursor-pointer">{{ column.label }} <Icon name="heroicons:information-circle" class="h-4 w-4 text-gray-400" /></span>
+          <template #panel>
+            <div class="p-3 max-w-[280px] text-sm text-gray-700 dark:text-gray-200">
+              A combined score out of 100 reflecting overall climbing conditions, including weather, distance, and other factors.
+            </div>
+          </template>
+        </UPopover>
       </template>
       <template #score-data="{ row }">
-        <UTooltip text="Score out of 100 based on dryness (40%), wind (25%), temperature & friction (20%), and cloud cover (5–10%), adjusted for distance.">
-          <span class="font-semibold cursor-help">{{ row.pending ? '…' : row.score }}</span>
-        </UTooltip>
+        <span class="font-semibold">{{ row.pending ? '…' : row.score }}</span>
       </template>
       <template #warnings-data="{ row }">
         <template v-if="!row.pending && !row.error && row.warnings?.length">
