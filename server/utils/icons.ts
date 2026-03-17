@@ -67,17 +67,26 @@ export function dailyIcons(mini: MiniSeries, dates: string[]): DailyIcon[] {
     // Determine weather icon using consistent thresholds
     let icon: string
     const precipLikely = (popMax >= 40 || rainSum >= 1)
+    const drizzle = (rainSum >= 0.5 && rainSum < 1 && popMax >= 30)
     const veryWet = (rainSum >= 6 || (popMax >= 80 && rainSum >= 2))
     const thunderRisk = (popMax >= 70 && rainSum >= 4 && gustMax >= 35)
+    const windy = (gustMax >= 40 || windAvg >= 25)
 
     if (thunderRisk) icon = 'thunder'
+    else if (tempAvg <= 1.5 && precipLikely && windy) icon = 'blizzard'
+    else if (tempAvg <= 1.5 && veryWet) icon = 'heavy-snow'
     else if (tempAvg <= 1.5 && precipLikely) icon = 'snow'
-    else if (tempAvg > 1.5 && tempAvg <= 3 && precipLikely) icon = 'sleet'
+    else if (tempAvg > 1.5 && tempAvg <= 3 && precipLikely) icon = 'freezing-rain'
+    else if (tempAvg > 3 && tempAvg <= 5 && precipLikely && !veryWet) icon = 'sleet'
     else if (veryWet) icon = 'heavy-rain'
     else if (precipLikely) icon = 'rain'
+    else if (drizzle) icon = 'drizzle'
+    else if (windy) icon = 'windy'
     else if (cloudAvg < 20) icon = 'sun'
+    else if (cloudAvg < 40) icon = 'hazy-sun'
     else if (cloudAvg < 60) icon = 'light-cloud'
-    else if (cloudAvg >= 85 && !precipLikely) icon = 'dark-cloud'
+    else if (cloudAvg >= 85) icon = 'dark-cloud'
+    else if (cloudAvg >= 60) icon = 'mostly-cloudy'
     else icon = 'cloud'
 
     icons.push({

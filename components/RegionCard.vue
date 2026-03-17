@@ -35,8 +35,9 @@
         <div class="flex flex-wrap gap-2 items-start justify-center sm:justify-end">
           <template v-for="d in daily" :key="d.date">
             <div class="flex items-center sm:flex-col sm:items-center text-sm text-gray-600 dark:text-gray-300">
-              <Icon
-                :name="iconName(d.icon)"
+              <img
+                :src="iconSrc(d.icon)"
+                :alt="iconLabel(d.icon)"
                 :title="`${iconLabel(d.icon)} – ${d.date}`"
                 class="h-20 w-20 sm:h-24 sm:w-24 mr-3 sm:mr-0 sm:-mt-4 sm:-mb-3"
               />
@@ -98,31 +99,62 @@ const props = defineProps<{
   avgRainMm: number
 }>()
 
-function iconName(code: string): string {
+import iconSun from '~/assets/images/icons/SVGs/wsymbol_0001_sunny.svg'
+import iconHazySun from '~/assets/images/icons/SVGs/wsymbol_0005_hazy_sun.svg'
+import iconLightCloud from '~/assets/images/icons/SVGs/wsymbol_0002_sunny_intervals.svg'
+import iconCloud from '~/assets/images/icons/SVGs/wsymbol_0003_white_cloud.svg'
+import iconMostlyCloudy from '~/assets/images/icons/SVGs/wsymbol_0043_mostly_cloudy.svg'
+import iconDarkCloud from '~/assets/images/icons/SVGs/wsymbol_0004_black_low_cloud.svg'
+import iconDrizzle from '~/assets/images/icons/SVGs/wsymbol_0048_drizzle.svg'
+import iconRain from '~/assets/images/icons/SVGs/wsymbol_0017_cloudy_with_light_rain.svg'
+import iconHeavyRain from '~/assets/images/icons/SVGs/wsymbol_0018_cloudy_with_heavy_rain.svg'
+import iconFreezingRain from '~/assets/images/icons/SVGs/wsymbol_0050_freezing_rain.svg'
+import iconSleet from '~/assets/images/icons/SVGs/wsymbol_0021_cloudy_with_sleet.svg'
+import iconSnow from '~/assets/images/icons/SVGs/wsymbol_0019_cloudy_with_light_snow.svg'
+import iconHeavySnow from '~/assets/images/icons/SVGs/wsymbol_0020_cloudy_with_heavy_snow.svg'
+import iconBlizzard from '~/assets/images/icons/SVGs/wsymbol_0054_blizzard.svg'
+import iconThunder from '~/assets/images/icons/SVGs/wsymbol_0024_thunderstorms.svg'
+import iconWindy from '~/assets/images/icons/SVGs/wsymbol_0060_windy.svg'
+
+function iconSrc(code: string): string {
   switch (code) {
-    case 'sun': return 'meteocons:clear-day-fill'
-    case 'light-cloud': return 'meteocons:partly-cloudy-day-fill'
-    case 'cloud': return 'meteocons:cloudy-fill'
-    case 'dark-cloud': return 'meteocons:overcast-fill'
-    case 'rain': return 'meteocons:rain-fill'
-    case 'heavy-rain': return 'meteocons:extreme-rain-fill'
-    case 'thunder': return 'meteocons:thunderstorms-fill'
-    case 'snow': return 'meteocons:snow-fill'
-    case 'sleet': return 'meteocons:sleet-fill'
-    default: return 'meteocons:cloudy-fill'
+    case 'sun': return iconSun
+    case 'hazy-sun': return iconHazySun
+    case 'light-cloud': return iconLightCloud
+    case 'cloud': return iconCloud
+    case 'mostly-cloudy': return iconMostlyCloudy
+    case 'dark-cloud': return iconDarkCloud
+    case 'drizzle': return iconDrizzle
+    case 'rain': return iconRain
+    case 'heavy-rain': return iconHeavyRain
+    case 'freezing-rain': return iconFreezingRain
+    case 'sleet': return iconSleet
+    case 'snow': return iconSnow
+    case 'heavy-snow': return iconHeavySnow
+    case 'blizzard': return iconBlizzard
+    case 'thunder': return iconThunder
+    case 'windy': return iconWindy
+    default: return iconCloud
   }
 }
 function iconLabel(code: string): string {
   switch (code) {
     case 'sun': return 'Sunny'
+    case 'hazy-sun': return 'Hazy sun'
     case 'light-cloud': return 'Partly cloudy'
     case 'cloud': return 'Cloudy'
+    case 'mostly-cloudy': return 'Mostly cloudy'
     case 'dark-cloud': return 'Overcast'
+    case 'drizzle': return 'Drizzle'
     case 'rain': return 'Rain'
     case 'heavy-rain': return 'Heavy rain'
-    case 'thunder': return 'Thunderstorms'
-    case 'snow': return 'Snow'
+    case 'freezing-rain': return 'Freezing rain'
     case 'sleet': return 'Sleet'
+    case 'snow': return 'Snow'
+    case 'heavy-snow': return 'Heavy snow'
+    case 'blizzard': return 'Blizzard'
+    case 'thunder': return 'Thunderstorms'
+    case 'windy': return 'Windy'
     default: return 'Cloudy'
   }
 }
