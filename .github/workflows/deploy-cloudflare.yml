@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - staging
     paths:
       - "assets/**"
       - "components/**"
@@ -26,6 +27,7 @@ on:
 jobs:
   deploy-pages:
     name: Deploy Pages App
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -84,8 +86,65 @@ jobs:
           command: pages deploy dist --project-name=cragcast --branch=main
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
 
+  deploy-staging:
+    name: Deploy Staging
+    if: github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    permissions:
+      contents: read
+      deployments: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Enable corepack (use pnpm from package.json)
+        run: corepack enable
+
+      - name: Determine pnpm store path
+        run: echo "PNPM_STORE_PATH=$(pnpm store path)" >> $GITHUB_ENV
+
+      - name: Ensure PNPM store dir exists
+        run: mkdir -p "$PNPM_STORE_PATH"
+
+      - name: Setup PNPM cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PNPM_STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: pnpm fetch
+        run: pnpm fetch
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Nuxt build
+        env:
+          NITRO_PRESET: cloudflare-pages
+        run: pnpm run build
+
+      - name: Deploy to Staging
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4'
+          command: pages deploy dist --project-name=cragcast-staging --branch=main
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
   deploy-worker:
     name: Deploy Cache Warmer Worker
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
