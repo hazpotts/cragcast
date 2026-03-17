@@ -61,9 +61,15 @@ const hasUrlDates = computed(() => typeof route.query.dates === 'string' && (rou
 const showPrefs = ref(!hasUrlDates.value)
 const shrink = ref(false)
 const ignoreNextWatch = ref(false)
-const distanceLabel = computed(() => Number.isFinite(prefs.maxDriveMins.value)
-  ? `max ${prefs.maxDriveMins.value} mins`
-  : 'No distance limit')
+const distanceLabel = computed(() => {
+  const min = prefs.minDriveMins.value
+  const max = prefs.maxDriveMins.value
+  const hasMax = Number.isFinite(max)
+  if (!hasMax && min <= 0) return 'No distance limit'
+  if (min > 0 && hasMax) return `${min}–${max} mins`
+  if (min > 0) return `${min}+ mins`
+  return `max ${max} mins`
+})
 const labelWhen = computed(() => {
   const ds = (prefs.dates.value || []) as string[]
   if (!ds.length) return 'Dates'
@@ -103,8 +109,9 @@ function cacheKey() {
   const latKey = Number.isFinite(Number(w.lat)) ? String(w.lat) : 'na'
   const lonKey = Number.isFinite(Number(w.lon)) ? String(w.lon) : 'na'
   const d = (prefs.dates.value || []).join(',')
+  const minKey = prefs.minDriveMins.value > 0 ? String(prefs.minDriveMins.value) : '0'
   const distKey = Number.isFinite(prefs.maxDriveMins.value) ? String(prefs.maxDriveMins.value) : 'inf'
-  return `compare:${latKey}:${lonKey}:${distKey}:${d}`
+  return `compare:${latKey}:${lonKey}:${minKey}-${distKey}:${d}`
 }
 function readCache() {
   if (!process.client) return null
@@ -146,6 +153,7 @@ async function loadCustomCrag(id: string, name: string, lat: number, lon: number
   const w: any = prefs.where.value || {}
   if (Number.isFinite(Number(w.lat))) paramsBase.lat = w.lat
   if (Number.isFinite(Number(w.lon))) paramsBase.lon = w.lon
+  if (prefs.minDriveMins.value > 0) paramsBase.minDriveMins = prefs.minDriveMins.value
   if (Number.isFinite(prefs.maxDriveMins.value)) paramsBase.maxDriveMins = prefs.maxDriveMins.value
 
   try {
@@ -216,6 +224,7 @@ async function loadCompare() {
   const w:any = prefs.where.value || {}
   if (Number.isFinite(Number(w.lat))) paramsBase.lat = w.lat
   if (Number.isFinite(Number(w.lon))) paramsBase.lon = w.lon
+  if (prefs.minDriveMins.value > 0) paramsBase.minDriveMins = prefs.minDriveMins.value
   if (Number.isFinite(prefs.maxDriveMins.value)) paramsBase.maxDriveMins = prefs.maxDriveMins.value
 
   // 2) Fetch each region individually with a small delay to avoid rate limits
@@ -229,7 +238,9 @@ async function loadCompare() {
       })
       clearTimeout(timeoutId)
       const unlimited = !Number.isFinite(prefs.maxDriveMins.value)
-      if (!unlimited && row.distanceMins > (prefs.maxDriveMins.value as number)) {
+      const tooFar = !unlimited && row.distanceMins > (prefs.maxDriveMins.value as number)
+      const tooClose = prefs.minDriveMins.value > 0 && row.distanceMins < prefs.minDriveMins.value
+      if (tooFar || tooClose) {
         // Remove placeholder when filtered out
         items.value = items.value.filter((x: any) => x.id !== r.id)
       } else {

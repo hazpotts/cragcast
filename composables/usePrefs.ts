@@ -5,6 +5,7 @@ export type Location = { lat: number; lon: number; name: string }
 
 type PrefsState = {
   where: Ref<Location | null>
+  minDriveMins: Ref<number>
   maxDriveMins: Ref<number>
   dates: Ref<string[]>
   commit: () => Promise<void>
@@ -62,6 +63,17 @@ export const usePrefs = () => {
       }
     }) as unknown as Ref<Location | null>
 
+    const minDriveMins = computed<number>({
+      get() {
+        const q = route.query as any
+        const n = q.minDriveMins !== undefined ? Number(q.minDriveMins) : NaN
+        return Number.isFinite(n) && n > 0 ? n : 0
+      },
+      set(v: number) {
+        updateQuery({ minDriveMins: v > 0 ? v : null })
+      }
+    }) as unknown as Ref<number>
+
     const maxDriveMins = computed<number>({
       get() {
         const q = route.query as any
@@ -71,7 +83,7 @@ export const usePrefs = () => {
       set(v: number) {
         if (!Number.isFinite(v)) {
           // No limit: clear distance and any stored location
-          updateQuery({ maxDriveMins: null, lat: null, lon: null, name: null })
+          updateQuery({ maxDriveMins: null, minDriveMins: null, lat: null, lon: null, name: null })
         } else {
           updateQuery({ maxDriveMins: v })
         }
@@ -92,7 +104,7 @@ export const usePrefs = () => {
       }
     }) as unknown as Ref<string[]>
 
-    return { where, maxDriveMins, dates, commit }
+    return { where, minDriveMins, maxDriveMins, dates, commit }
   }
 
   if (process.client) {

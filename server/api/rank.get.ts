@@ -56,6 +56,7 @@ export default defineEventHandler(async (event) => {
   const q = getQuery(event)
   const lat = Number(q.lat)
   const lon = Number(q.lon)
+  const minDriveMins = (q.minDriveMins !== undefined) ? Number(q.minDriveMins) : 0
   const maxDriveMins = (q.maxDriveMins !== undefined) ? Number(q.maxDriveMins) : Infinity
   const datesParam = (q.dates as string) || ''
   const hasHome = Number.isFinite(lat) && Number.isFinite(lon)
@@ -87,6 +88,10 @@ export default defineEventHandler(async (event) => {
     if (!unlimited && Number.isFinite(distanceMins) && distanceMins > maxDriveMins) {
       continue
     }
+    // Filter out regions closer than the minimum
+    if (hasHome && minDriveMins > 0 && Number.isFinite(distanceMins) && distanceMins < minDriveMins) {
+      continue
+    }
 
     candidateRegions.push({ region: r, distanceMins, pt })
   }
@@ -110,6 +115,7 @@ export default defineEventHandler(async (event) => {
     const { score, why } = scoreRegion(mini, {
       rocks: r.rock,
       distanceMins: Number.isFinite(distanceMins) ? distanceMins : 0,
+      minDriveMins,
       maxDriveMins
     })
 

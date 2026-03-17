@@ -19,7 +19,7 @@ export type RankItem = {
 }
 
 export function useRank() {
-  const { where, maxDriveMins, dates } = usePrefs()
+  const { where, minDriveMins, maxDriveMins, dates } = usePrefs()
   const items = ref<RankItem[]>([])
   const pending = ref(false)
   const error = ref<string | null>(null)
@@ -32,8 +32,9 @@ export function useRank() {
     const latKey = Number.isFinite(lat) ? String(lat) : 'na'
     const lonKey = Number.isFinite(lon) ? String(lon) : 'na'
     const d = ((customDates ?? dates.value) || []).join(',')
+    const minKey = minDriveMins.value > 0 ? String(minDriveMins.value) : '0'
     const distKey = Number.isFinite(maxDriveMins.value) ? String(maxDriveMins.value) : 'inf'
-    return `rank:${latKey}:${lonKey}:${distKey}:${d}`
+    return `rank:${latKey}:${lonKey}:${minKey}-${distKey}:${d}`
   }
   function readCache(key: string): RankItem[] | null {
     if (!process.client) return null
@@ -72,6 +73,9 @@ export function useRank() {
       const params = new URLSearchParams()
       if (Number.isFinite(lat)) params.set('lat', String(lat))
       if (Number.isFinite(lon)) params.set('lon', String(lon))
+      if (minDriveMins.value > 0) {
+        params.set('minDriveMins', String(minDriveMins.value))
+      }
       if (Number.isFinite(maxDriveMins.value)) {
         params.set('maxDriveMins', String(maxDriveMins.value))
       }
@@ -102,6 +106,7 @@ export function useRank() {
               dates: pickedDates.join(',')
             }
             if (Number.isFinite(lat)) { cParams.lat = lat; cParams.lon = lon }
+            if (minDriveMins.value > 0) cParams.minDriveMins = minDriveMins.value
             if (Number.isFinite(maxDriveMins.value)) cParams.maxDriveMins = maxDriveMins.value
             return $fetch<any>('/api/custom-region', { params: cParams })
           })

@@ -98,9 +98,15 @@ const labelWhen = computed(() => {
   const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
   return ds.length === 1 ? fmt(d1) : `${fmt(d1)} – ${fmt(dN)}`
 })
-const distanceLabel = computed(() => Number.isFinite(prefs.maxDriveMins.value)
-  ? `max ${prefs.maxDriveMins.value} mins`
-  : 'No distance limit')
+const distanceLabel = computed(() => {
+  const min = prefs.minDriveMins.value
+  const max = prefs.maxDriveMins.value
+  const hasMax = Number.isFinite(max)
+  if (!hasMax && min <= 0) return 'No distance limit'
+  if (min > 0 && hasMax) return `${min}–${max} mins`
+  if (min > 0) return `${min}+ mins`
+  return `max ${max} mins`
+})
 
 onMounted(async () => {
   showPrefs.value = !hasUrlDates.value

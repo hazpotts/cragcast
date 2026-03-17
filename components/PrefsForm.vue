@@ -39,7 +39,15 @@
       <p v-if="customError" class="text-sm text-red-500">{{ customError }}</p>
     </div>
 
-    <h2 class="text-xl font-semibold">within</h2>
+    <h2 class="text-xl font-semibold">between</h2>
+    <div class="flex flex-wrap gap-2">
+      <UButton size="sm" :color="selectedMin===0?'primary':'gray'" label="0 min" @click="setMin(0)" />
+      <UButton size="sm" :color="selectedMin===30?'primary':'gray'" label="30 min" @click="setMin(30)" />
+      <UButton size="sm" :color="selectedMin===60?'primary':'gray'" label="1 hour" @click="setMin(60)" />
+      <UButton size="sm" :color="selectedMin===120?'primary':'gray'" label="2 hours" @click="setMin(120)" />
+    </div>
+
+    <h2 class="text-xl font-semibold">and</h2>
     <div class="flex flex-wrap gap-2">
       <UButton size="sm" :color="selectedMax===30?'primary':'gray'" label="30 min" @click="setMax(30)" />
       <UButton size="sm" :color="selectedMax===60?'primary':'gray'" label="1 hour" @click="setMax(60)" />
@@ -82,7 +90,8 @@ const isDisabled = computed(() => !mounted.value)
 watch(() => prefs.where.value, (v) => console.debug('[PrefsForm] where changed ->', v))
 watch(isDisabled, (v) => console.debug('[PrefsForm] CTA disabled ->', v))
 const whenPreset = ref<'today'|'tomorrow'|'this-weekend'|'next-weekend'|'custom'>('this-weekend')
-// Local max distance selection to avoid relying on route until confirm
+// Local distance range selection to avoid relying on route until confirm
+const selectedMin = ref<number>(prefs.minDriveMins.value)
 const selectedMax = ref<number>(prefs.maxDriveMins.value)
 const todayStr = formatDate(new Date())
 const next7 = computed(() => {
@@ -115,7 +124,11 @@ const customError = computed(() => {
 })
 function pickStart(iso: string) { customStart.value = customStart.value === iso ? '' : iso }
 function pickEnd(iso: string) { customEnd.value = customEnd.value === iso ? '' : iso }
-function setMax(v:number) { selectedMax.value = v }
+function setMin(v:number) { selectedMin.value = v }
+function setMax(v:number) {
+  selectedMax.value = v
+  if (!Number.isFinite(v)) selectedMin.value = 0
+}
 function setWhen(p:'today'|'tomorrow'|'this-weekend'|'next-weekend'|'custom') {
   whenPreset.value = p
   if (p !== 'custom') {
@@ -143,7 +156,8 @@ function onConfirm() {
   } else {
     prefs.dates.value = presetDates(whenPreset.value)
   }
-  // Apply max distance on confirm
+  // Apply distance range on confirm
+  prefs.minDriveMins.value = selectedMin.value
   prefs.maxDriveMins.value = selectedMax.value
   emit('confirm')
 }
