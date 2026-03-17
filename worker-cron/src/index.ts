@@ -2,7 +2,7 @@
  * CragCast Worker - Cloudflare Worker with Cron Triggers
  *
  * - Cache warming: every 2 hours, keeps weather forecasts fresh
- * - Crag import: weekly, imports latest crag data from OpenBeta into D1
+ * - Crag import: weekly, imports curated UK crag seed data into D1
  *
  * Deployed alongside the main Pages app via GitHub Actions.
  */
