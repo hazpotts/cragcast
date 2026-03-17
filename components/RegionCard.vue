@@ -1,5 +1,45 @@
 <template>
-  <UCard>
+  <!-- Compact card layout -->
+  <UCard v-if="compact">
+    <div class="flex gap-3 items-center">
+      <!-- Weather icons -->
+      <div class="flex items-center gap-1 bg-gray-400 rounded px-1.5 py-1 shrink-0">
+        <img
+          v-for="d in daily"
+          :key="d.date"
+          :src="iconSrc(d.icon)"
+          :alt="iconLabel(d.icon)"
+          :title="`${iconLabel(d.icon)} – ${d.date}`"
+          class="h-10 w-10"
+        />
+      </div>
+      <!-- Info -->
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center justify-between">
+          <h3 class="text-base font-semibold truncate">{{ name }}</h3>
+          <span class="text-base font-bold text-primary whitespace-nowrap ml-2">{{ score }}<span class="text-xs font-normal text-gray-400">/100</span></span>
+        </div>
+        <div class="flex flex-wrap gap-x-3 gap-y-0 text-xs text-gray-500 dark:text-gray-400">
+          <span v-if="Number.isFinite(avgTempC)">{{ units.convertTemp(avgTempC) }}{{ units.tempLabel.value }}</span>
+          <span v-if="Number.isFinite(avgWindMph)">{{ units.convertWind(avgWindMph) }} {{ units.windLabel.value }}</span>
+          <span v-if="Number.isFinite(avgRainMm)">{{ units.convertRain(avgRainMm) }} {{ units.rainLabel.value }}</span>
+          <span v-if="Number.isFinite(distanceMins as any) && (distanceMins as any) > 0">~{{ units.convertDistance(distanceMins as number) }} {{ units.distanceLabel.value }}</span>
+        </div>
+      </div>
+      <!-- Warnings -->
+      <div v-if="warnings?.length" class="flex items-center gap-1 shrink-0">
+        <UTooltip v-for="(w, i) in warnings" :key="i" :text="w.message">
+          <Icon
+            name="heroicons:exclamation-triangle-20-solid"
+            class="h-4 w-4"
+            :class="w.level === 'red' ? 'text-red-500' : 'text-amber-500'"
+          />
+        </UTooltip>
+      </div>
+    </div>
+  </UCard>
+  <!-- Full card layout -->
+  <UCard v-else>
     <div class="flex gap-4 items-start flex-col sm:flex-row">
       <!-- Left: content -->
       <div class="flex-1 min-w-0 space-y-2">
@@ -31,18 +71,20 @@
           </div>
         </div>
       </div>
-      <!-- Right: large weather icons -->
+      <!-- Right: large weather icons + stats -->
       <div class="w-full sm:w-auto sm:flex-1 flex justify-center">
-        <div class="flex flex-wrap gap-2 items-start justify-center sm:justify-end bg-gray-400 rounded px-2 py-1">
+        <div class="flex flex-wrap gap-2 items-start justify-center sm:justify-end">
           <template v-for="d in daily" :key="d.date">
             <div class="flex items-center sm:flex-col sm:items-center text-sm text-gray-600 dark:text-gray-300">
-              <img
-                :src="iconSrc(d.icon)"
-                :alt="iconLabel(d.icon)"
-                :title="`${iconLabel(d.icon)} – ${d.date}`"
-                class="h-20 w-20 sm:h-24 sm:w-24 mr-3 sm:mr-0 sm:-mt-4 sm:-mb-3"
-              />
-              <div class="mt-0 sm:mt-1 sm:mb-2 text-left sm:text-center">
+              <div class="bg-gray-400 rounded p-1">
+                <img
+                  :src="iconSrc(d.icon)"
+                  :alt="iconLabel(d.icon)"
+                  :title="`${iconLabel(d.icon)} – ${d.date}`"
+                  class="h-20 w-20 sm:h-24 sm:w-24"
+                />
+              </div>
+              <div class="ml-3 sm:ml-0 mt-0 sm:mt-1 sm:mb-2 text-left sm:text-center">
                 <div v-if="Number.isFinite(d.tempAvgC as any)">{{ units.convertTemp(d.tempAvgC) }}{{ units.tempLabel.value }}</div>
                 <div v-if="Number.isFinite(d.rainSumMm as any)">{{ units.convertRain(d.rainSumMm) }} {{ units.rainLabel.value }}</div>
                 <div v-if="Number.isFinite(d.windAvgMph as any)">{{ units.convertWind(d.windAvgMph) }} {{ units.windLabel.value }}</div>
@@ -107,6 +149,7 @@ const props = defineProps<{
   avgTempC: number
   avgWindMph: number
   avgRainMm: number
+  compact?: boolean
 }>()
 
 import iconSun from '~/assets/images/icons/SVGs/wsymbol_0001_sunny.svg'

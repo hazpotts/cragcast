@@ -32,9 +32,8 @@
           />
         </div>
         <div class="flex flex-col gap-4">
-          <template>
             <RegionCard
-              v-for="r in items.slice(1, visibleCount)"
+              v-for="r in items.slice(1, visibleCount + 1)"
               :key="r.id"
               :name="r.name"
               :score="r.score"
@@ -47,8 +46,8 @@
               :avgTempC="r.avgTempC"
               :avgRainMm="r.avgRainMm"
               :avgWindMph="r.avgWindMph"
+              compact
             />
-          </template>
           <p v-if="!prefs.where.value" class="text-sm text-gray-500">Add a location to get local results.</p>
           <div v-if="hasMoreCards" class="flex justify-center mt-2">
             <UButton variant="soft" @click="visibleCount += CARDS_PAGE_SIZE">
@@ -72,9 +71,9 @@ import ResultsHeader from '~/components/ResultsHeader.vue'
 const prefs = usePrefs()
 const { items, pending, fetchRank } = useRank()
 const showPrefs = ref(true)
-const CARDS_PAGE_SIZE = 5
+const CARDS_PAGE_SIZE = 4
 const visibleCount = ref(CARDS_PAGE_SIZE)
-const hasMoreCards = computed(() => items.value && items.value.length > 1 && visibleCount.value < items.value.length)
+const hasMoreCards = computed(() => items.value && items.value.length > 1 && (visibleCount.value + 1) < items.value.length)
 const route = useRoute()
 const latestUpdatedAt = computed(() => {
   const all = (items.value || []).filter((r: any) => r.updatedAt)
