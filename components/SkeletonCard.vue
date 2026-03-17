@@ -18,7 +18,7 @@
       <div class="w-full sm:w-auto sm:flex-1 flex justify-center">
         <div class="flex flex-wrap gap-2 items-start justify-center sm:justify-end">
           <div class="flex items-center sm:flex-col sm:items-center text-sm text-gray-600 dark:text-gray-300">
-            <div class="skeleton h-20 w-20 sm:h-24 sm:w-24 mr-3 sm:mr-0 sm:-mt-4 sm:-mb-3 rounded" />
+            <div class="skeleton h-20 w-20 sm:h-24 sm:w-24 mr-3 sm:mr-0 rounded" />
             <div class="mt-0 sm:mt-1 sm:mb-2 text-left sm:text-center space-y-1">
               <div class="skeleton h-3 w-16 rounded" />
               <div class="skeleton h-3 w-12 rounded" />
@@ -26,7 +26,7 @@
             </div>
           </div>
           <div class="flex items-center sm:flex-col sm:items-center text-sm text-gray-600 dark:text-gray-300">
-            <div class="skeleton h-20 w-20 sm:h-24 sm:w-24 mr-3 sm:mr-0 sm:-mt-4 sm:-mb-3 rounded" />
+            <div class="skeleton h-20 w-20 sm:h-24 sm:w-24 mr-3 sm:mr-0 rounded" />
             <div class="mt-0 sm:mt-1 sm:mb-2 text-left sm:text-center space-y-1">
               <div class="skeleton h-3 w-16 rounded" />
               <div class="skeleton h-3 w-12 rounded" />

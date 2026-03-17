@@ -25,20 +25,10 @@
         </div>
       </template>
       <template #areaSort-data="{ row }">
-        <template v-if="row.error">
-          <span class="text-red-500">Failed</span>
-        </template>
-        <template v-else>
-          {{ row.pending ? '…' : row.area }}
-        </template>
+        {{ row.pending ? '…' : row.area }}
       </template>
       <template #score-data="{ row }">
-        <template v-if="row.error">
-          <span class="text-red-500">—</span>
-        </template>
-        <template v-else>
-          <span class="font-semibold">{{ row.pending ? '…' : row.score }}</span>
-        </template>
+        <span class="font-semibold">{{ row.pending ? '…' : row.score }}</span>
       </template>
       <template #warnings-data="{ row }">
         <template v-if="!row.pending && !row.error && row.warnings?.length">
@@ -55,12 +45,7 @@
       </template>
       <template #weather-data="{ row }">
         <div class="flex justify-center bg-gray-400 rounded px-2 py-1">
-          <template v-if="row.error">
-            <div class="flex items-center gap-2">
-              <Icon name="heroicons:exclamation-triangle" class="h-6 w-6 text-red-500" title="Failed to load weather data" />
-            </div>
-          </template>
-          <template v-else-if="row.pending">
+          <template v-if="row.pending">
             <div class="flex items-center gap-2 text-lg text-gray-300">
               <span class="animate-pulse">•</span>
               <span class="animate-pulse">•</span>
@@ -77,50 +62,24 @@
         </div>
       </template>
       <template #avgTempC-data="{ row }">
-        <template v-if="row.error">
-          <span class="text-red-500">—</span>
-        </template>
-        <template v-else>
-          {{ row.pending ? '…' : `${row.avgTempC} °C` }}
-        </template>
+        {{ row.pending ? '…' : `${row.avgTempC} °C` }}
       </template>
       <template #avgWindMph-data="{ row }">
-        <template v-if="row.error">
-          <span class="text-red-500">—</span>
-        </template>
-        <template v-else>
-          {{ row.pending ? '…' : `${row.avgWindMph} mph` }}
-        </template>
+        {{ row.pending ? '…' : `${row.avgWindMph} mph` }}
       </template>
       <template #avgRainMm-data="{ row }">
-        <template v-if="row.error">
-          <span class="text-red-500">—</span>
-        </template>
-        <template v-else>
-          {{ row.pending ? '…' : `${row.avgRainMm} mm` }}
-        </template>
+        {{ row.pending ? '…' : `${row.avgRainMm} mm` }}
       </template>
       <template #distanceMins-data="{ row }">
-        <template v-if="row.error">
-          <span class="text-red-500">—</span>
-        </template>
-        <template v-else-if="row.pending">…</template>
+        <template v-if="row.pending">…</template>
         <template v-else-if="Number.isFinite(row.distanceMins) && row.distanceMins > 0">{{ `${row.distanceMins} mins` }}</template>
         <!-- else: render nothing to hide the dash -->
       </template>
       <template #updatedAt-data="{ row }">
-        <template v-if="row.error">
-          <span class="text-red-500">—</span>
-        </template>
-        <template v-else>
-          <span>{{ row.pending ? '…' : new Date(row.updatedAt).toLocaleString() }}</span>
-        </template>
+        <span>{{ row.pending ? '…' : new Date(row.updatedAt).toLocaleString() }}</span>
       </template>
       <template #ukc-data="{ row }">
-        <template v-if="row.error">
-          <span class="text-red-500">—</span>
-        </template>
-        <template v-else-if="row.pending">
+        <template v-if="row.pending">
           <span class="text-gray-400">—</span>
         </template>
         <template v-else>
