@@ -1,0 +1,7 @@
+<svg id="wsymbol_0045_hot" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>wsymbol_0045_hot</title>
+  <rect id="background" width="512" height="512" fill="#599cc1" opacity="0"/>
+  <path id="temperature" d="M256,446a74,74,0,0,1-31.75-140.83V102.3a32.18,32.18,0,1,1,64.35,0V305.59A74,74,0,0,1,256,446Z" fill="#e51f1f"/>
+  <path id="empty" d="M224.25,135.17V102.3a32.18,32.18,0,1,1,64.35,0v33.29Z" fill="#fff"/>
+  <path id="thermometer" d="M310.6,293.09V102.3a54.18,54.18,0,1,0-108.35,0V292.51a96,96,0,1,0,108.35.58Zm-32,19a64,64,0,1,1-44.35-.32V102.3a22.18,22.18,0,1,1,44.35,0Z"/>
+</svg>

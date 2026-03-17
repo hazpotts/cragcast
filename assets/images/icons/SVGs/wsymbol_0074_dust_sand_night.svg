@@ -1,0 +1,13 @@
+<svg id="wsymbol_0074_dust_sand_night" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>wsymbol_0074_dust_sand_night</title>
+  <rect id="background" width="512" height="512" fill="#599cc1" opacity="0"/>
+  <path id="dust_cloud" data-name="dust cloud" d="M357.9,177.16c-2.45,0-4.88.14-7.29.38a95.67,95.67,0,0,0-189.22,0c-2.4-.24-4.83-.38-7.29-.38a71.41,71.41,0,1,0,0,142.81H357.9a71.41,71.41,0,1,0,0-142.81Zm0,110.92H154.1a39.52,39.52,0,1,1,35.25-57.33l20.83-26.29a72,72,0,0,0-17.86-16.16,63.78,63.78,0,0,1,127.46,3.42,63.08,63.08,0,0,1-6,27l28.88,13.52A94.72,94.72,0,0,0,350,209.86a39.51,39.51,0,1,1,7.94,78.22Z" fill="#ffbc00"/>
+  <rect id="motion_line_1" data-name="motion line 1" x="288" y="376" width="128" height="16" fill="#ffbc00"/>
+  <rect id="motion_line_2" data-name="motion line 2" x="288" y="412" width="96" height="16" fill="#ffbc00"/>
+  <circle id="dot" cx="197.59" cy="379.21" r="18.97" fill="#ffbc00"/>
+  <circle id="dot-2" data-name="dot" cx="133.97" cy="397.75" r="18.97" fill="#ffbc00"/>
+  <circle id="dot-3" data-name="dot" cx="232.03" cy="421.9" r="18.97" fill="#ffbc00"/>
+  <circle id="dot-4" data-name="dot" cx="159.46" cy="365.56" r="11.9" fill="#ffbc00"/>
+  <circle id="dot-5" data-name="dot" cx="251.54" cy="382.29" r="11.9" fill="#ffbc00"/>
+  <circle id="dot-6" data-name="dot" cx="185.09" cy="430.52" r="11.9" fill="#ffbc00"/>
+</svg>
