@@ -43,6 +43,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { usePrefs } from '~/composables/usePrefs'
+import { useUnits } from '~/composables/useUnits'
 import { useCustomCrags } from '~/composables/useCustomCrags'
 import CompareTable from '~/components/CompareTable.vue'
 import PrefsForm from '~/components/PrefsForm.vue'
@@ -58,14 +59,16 @@ const showPrefs = ref(!hasUrlDates.value)
 const shrink = ref(false)
 const searchQuery = ref('')
 const ignoreNextWatch = ref(false)
+const units = useUnits()
 const distanceLabel = computed(() => {
   const min = prefs.minDriveMins.value
   const max = prefs.maxDriveMins.value
   const hasMax = Number.isFinite(max)
   if (!hasMax && min <= 0) return 'No distance limit'
-  if (min > 0 && hasMax) return `${min}–${max} mins`
-  if (min > 0) return `${min}+ mins`
-  return `max ${max} mins`
+  const label = units.distanceLabel.value
+  if (min > 0 && hasMax) return `${units.convertDistance(min)}–${units.convertDistance(max)} ${label}`
+  if (min > 0) return `${units.convertDistance(min)}+ ${label}`
+  return `max ${units.convertDistance(max)} ${label}`
 })
 const labelWhen = computed(() => {
   const ds = (prefs.dates.value || []) as string[]

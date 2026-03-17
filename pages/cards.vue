@@ -62,6 +62,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { usePrefs } from '~/composables/usePrefs'
+import { useUnits } from '~/composables/useUnits'
 import { useRank } from '~/composables/useRank'
 import { formatShortDayLabel } from '~/utils/dates'
 import PrefsForm from '~/components/PrefsForm.vue'
@@ -99,14 +100,16 @@ const labelWhen = computed(() => {
   const fmt = (d: Date) => formatShortDayLabel(d)
   return ds.length === 1 ? fmt(d1) : `${fmt(d1)} – ${fmt(dN)}`
 })
+const units = useUnits()
 const distanceLabel = computed(() => {
   const min = prefs.minDriveMins.value
   const max = prefs.maxDriveMins.value
   const hasMax = Number.isFinite(max)
   if (!hasMax && min <= 0) return 'No distance limit'
-  if (min > 0 && hasMax) return `${min}–${max} mins`
-  if (min > 0) return `${min}+ mins`
-  return `max ${max} mins`
+  const label = units.distanceLabel.value
+  if (min > 0 && hasMax) return `${units.convertDistance(min)}–${units.convertDistance(max)} ${label}`
+  if (min > 0) return `${units.convertDistance(min)}+ ${label}`
+  return `max ${units.convertDistance(max)} ${label}`
 })
 
 onMounted(async () => {

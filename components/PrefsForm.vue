@@ -42,12 +42,12 @@
     <h2 class="text-xl font-semibold">Location</h2>
     <PlaceSearch @picked="onPicked" />
 
-    <h2 v-if="selectedLocation || hasValidLocation" class="text-xl font-semibold">Max drive time</h2>
+    <h2 v-if="selectedLocation || hasValidLocation" class="text-xl font-semibold">Max distance</h2>
     <div v-if="selectedLocation || hasValidLocation" class="flex flex-wrap gap-2">
-      <UButton size="sm" :color="selectedMax===30?'primary':'gray'" label="30 min" @click="setMax(30)" />
-      <UButton size="sm" :color="selectedMax===60?'primary':'gray'" label="1 hour" @click="setMax(60)" />
-      <UButton size="sm" :color="selectedMax===120?'primary':'gray'" label="2 hours" @click="setMax(120)" />
-      <UButton size="sm" :color="selectedMax===300?'primary':'gray'" label="5 hours" @click="setMax(300)" />
+      <UButton size="sm" :color="selectedMax===30?'primary':'gray'" :label="driveLabel(30)" @click="setMax(30)" />
+      <UButton size="sm" :color="selectedMax===60?'primary':'gray'" :label="driveLabel(60)" @click="setMax(60)" />
+      <UButton size="sm" :color="selectedMax===120?'primary':'gray'" :label="driveLabel(120)" @click="setMax(120)" />
+      <UButton size="sm" :color="selectedMax===300?'primary':'gray'" :label="driveLabel(300)" @click="setMax(300)" />
       <UButton size="sm" :color="!Number.isFinite(selectedMax as any)?'primary':'gray'" label="No limit" @click="setMax(Infinity as any)" />
     </div>
 
@@ -62,11 +62,21 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { usePrefs } from '~/composables/usePrefs'
+import { useUnits } from '~/composables/useUnits'
 import PlaceSearch from '~/components/PlaceSearch.vue'
 import { presetDates, formatDate, formatShortDayLabel } from '~/utils/dates'
 
 const emit = defineEmits<{ (e: 'confirm'): void; (e:'clear'): void }>()
 const prefs = usePrefs()
+const units = useUnits()
+function driveLabel(mins: number): string {
+  if (units.distanceUnit.value === 'mins') {
+    if (mins < 60) return `${mins} min`
+    const h = mins / 60
+    return h === 1 ? '1 hour' : `${h} hours`
+  }
+  return `${units.convertDistance(mins)} ${units.distanceLabel.value}`
+}
 // Keep disabled on server and until mounted to avoid hydration mismatch
 const mounted = ref(false)
 onMounted(() => { mounted.value = true })
