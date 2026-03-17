@@ -50,6 +50,11 @@
             />
           </template>
           <p v-if="!prefs.where.value" class="text-sm text-gray-500">Add a location to get local results.</p>
+          <div v-if="hasMoreCards" class="flex justify-center mt-2">
+            <UButton variant="soft" @click="visibleCount += CARDS_PAGE_SIZE">
+              Show more
+            </UButton>
+          </div>
         </div>
       </div>
     </section>
@@ -67,7 +72,9 @@ import ResultsHeader from '~/components/ResultsHeader.vue'
 const prefs = usePrefs()
 const { items, pending, fetchRank } = useRank()
 const showPrefs = ref(true)
-const visibleCount = ref(Infinity) // show all cards by default
+const CARDS_PAGE_SIZE = 5
+const visibleCount = ref(CARDS_PAGE_SIZE)
+const hasMoreCards = computed(() => items.value && items.value.length > 1 && visibleCount.value < items.value.length)
 const route = useRoute()
 const latestUpdatedAt = computed(() => {
   const all = (items.value || []).filter((r: any) => r.updatedAt)
@@ -120,7 +127,7 @@ watch(() => route.query, () => {
     } else {
       // Clear list when no URL dates
       items.value = [] as any
-      visibleCount.value = Infinity
+      visibleCount.value = CARDS_PAGE_SIZE
     }
   }, 150)
 }, { deep: true })
@@ -129,7 +136,7 @@ async function savePrefs() {
   // Close form first so skeleton section can show immediately
   ignoreNextWatch.value = true
   showPrefs.value = false
-  visibleCount.value = Infinity
+  visibleCount.value = CARDS_PAGE_SIZE
   // Ensure dates/maxDrive are flushed to URL before fetching
   await prefs.commit()
   // Trigger fetch without awaiting so pending state renders skeleton

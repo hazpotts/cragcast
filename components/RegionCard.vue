@@ -5,7 +5,9 @@
       <div class="flex-1 min-w-0 space-y-2">
         <div class="flex items-center justify-between">
           <h3 class="text-lg font-semibold truncate">{{ name }}</h3>
-          <!-- score retained in code, intentionally not displayed -->
+          <UTooltip text="Score out of 100 based on dryness (40%), wind (25%), temperature & friction (20%), and cloud cover (5–10%), adjusted for distance.">
+            <span class="text-lg font-bold text-primary whitespace-nowrap ml-2">{{ score }}<span class="text-sm font-normal text-gray-400">/100</span></span>
+          </UTooltip>
         </div>
         <div v-if="warnings?.length" class="space-y-1">
           <div
