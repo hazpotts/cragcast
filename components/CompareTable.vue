@@ -27,18 +27,6 @@
       <template #areaSort-data="{ row }">
         {{ row.pending ? '…' : row.area }}
       </template>
-      <template #avgTempC-header="{ column }">
-        <span class="flex items-start gap-1"><Icon name="meteocons:thermometer" class="h-4 w-4 text-current shrink-0" />{{ column.label }}</span>
-      </template>
-      <template #avgWindMph-header="{ column }">
-        <span class="flex items-start gap-1"><Icon name="meteocons:wind" class="h-4 w-4 text-current shrink-0" />{{ column.label }}</span>
-      </template>
-      <template #avgRainMm-header="{ column }">
-        <span class="flex items-start gap-1"><Icon name="meteocons:raindrops" class="h-4 w-4 text-current shrink-0" />{{ column.label }}</span>
-      </template>
-      <template #distanceMins-header="{ column }">
-        <span class="flex items-start gap-1"><Icon name="heroicons:map-pin" class="h-4 w-4 text-current shrink-0" />{{ column.label }}</span>
-      </template>
       <template #score-header="{ column }">
         <UPopover>
           <span class="flex items-center gap-1 cursor-pointer">{{ column.label }} <Icon name="heroicons:information-circle" class="h-4 w-4 text-gray-400" /></span>
@@ -84,17 +72,19 @@
         </div>
       </template>
       <template #avgTempC-data="{ row }">
-        {{ row.pending ? '…' : units.convertTemp(row.avgTempC) }}
+        <span class="block text-center">{{ row.pending ? '…' : units.convertTemp(row.avgTempC) }}</span>
       </template>
       <template #avgWindMph-data="{ row }">
-        {{ row.pending ? '…' : units.convertWind(row.avgWindMph) }}
+        <span class="block text-center">{{ row.pending ? '…' : units.convertWind(row.avgWindMph) }}</span>
       </template>
       <template #avgRainMm-data="{ row }">
-        {{ row.pending ? '…' : units.convertRain(row.avgRainMm) }}
+        <span class="block text-center">{{ row.pending ? '…' : units.convertRain(row.avgRainMm) }}</span>
       </template>
       <template #distanceMins-data="{ row }">
-        <template v-if="row.pending">…</template>
-        <template v-else-if="Number.isFinite(row.distanceMins) && row.distanceMins > 0">{{ units.convertDistance(row.distanceMins) }}</template>
+        <span class="block text-center">
+          <template v-if="row.pending">…</template>
+          <template v-else-if="Number.isFinite(row.distanceMins) && row.distanceMins > 0">{{ units.convertDistance(row.distanceMins) }}</template>
+        </span>
       </template>
       <template #ukc-data="{ row }">
         <template v-if="row.pending">

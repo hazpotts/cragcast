@@ -40,13 +40,13 @@
       <!-- Stats with icons -->
       <div class="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-500 dark:text-gray-400">
         <span v-if="Number.isFinite(avgTempC)" class="inline-flex items-center gap-0.5">
-          <Icon name="meteocons:thermometer" class="h-3 w-3 text-current" />{{ units.convertTemp(avgTempC) }}{{ units.tempLabel.value }}
+          <Icon name="lucide:thermometer" class="h-3 w-3 text-current" />{{ units.convertTemp(avgTempC) }}{{ units.tempLabel.value }}
         </span>
         <span v-if="Number.isFinite(avgWindMph)" class="inline-flex items-center gap-0.5">
-          <Icon name="meteocons:wind" class="h-3 w-3 text-current" />{{ units.convertWind(avgWindMph) }} {{ units.windLabel.value }}
+          <Icon name="lucide:wind" class="h-3 w-3 text-current" />{{ units.convertWind(avgWindMph) }} {{ units.windLabel.value }}
         </span>
         <span v-if="Number.isFinite(avgRainMm)" class="inline-flex items-center gap-0.5">
-          <Icon name="meteocons:raindrops" class="h-3 w-3 text-current" />{{ units.convertRain(avgRainMm) }} {{ units.rainLabel.value }}
+          <Icon name="lucide:droplets" class="h-3 w-3 text-current" />{{ units.convertRain(avgRainMm) }} {{ units.rainLabel.value }}
         </span>
         <span v-if="Number.isFinite(distanceMins as any) && (distanceMins as any) > 0" class="inline-flex items-center gap-0.5">
           <Icon name="heroicons:map-pin" class="h-3 w-3 text-current" />~{{ units.convertDistance(distanceMins as number) }} {{ units.distanceLabel.value }}
@@ -151,9 +151,9 @@
                 />
               </div>
               <div class="ml-3 sm:ml-0 mt-0 sm:mt-1 sm:mb-2 text-left sm:text-center text-gray-600 dark:text-gray-300">
-                <div v-if="Number.isFinite(d.tempAvgC as any)" class="inline-flex items-center gap-0.5"><Icon name="meteocons:thermometer" class="h-3.5 w-3.5 text-current" />{{ units.convertTemp(d.tempAvgC) }}{{ units.tempLabel.value }}</div>
-                <div v-if="Number.isFinite(d.rainSumMm as any)" class="inline-flex items-center gap-0.5"><Icon name="meteocons:raindrops" class="h-3.5 w-3.5 text-current" />{{ units.convertRain(d.rainSumMm) }} {{ units.rainLabel.value }}</div>
-                <div v-if="Number.isFinite(d.windAvgMph as any)" class="inline-flex items-center gap-0.5"><Icon name="meteocons:wind" class="h-3.5 w-3.5 text-current" />{{ units.convertWind(d.windAvgMph) }} {{ units.windLabel.value }}</div>
+                <div v-if="Number.isFinite(d.tempAvgC as any)" class="inline-flex items-center gap-0.5"><Icon name="lucide:thermometer" class="h-3.5 w-3.5 text-current" />{{ units.convertTemp(d.tempAvgC) }}{{ units.tempLabel.value }}</div>
+                <div v-if="Number.isFinite(d.rainSumMm as any)" class="inline-flex items-center gap-0.5"><Icon name="lucide:droplets" class="h-3.5 w-3.5 text-current" />{{ units.convertRain(d.rainSumMm) }} {{ units.rainLabel.value }}</div>
+                <div v-if="Number.isFinite(d.windAvgMph as any)" class="inline-flex items-center gap-0.5"><Icon name="lucide:wind" class="h-3.5 w-3.5 text-current" />{{ units.convertWind(d.windAvgMph) }} {{ units.windLabel.value }}</div>
               </div>
             </div>
           </template>
