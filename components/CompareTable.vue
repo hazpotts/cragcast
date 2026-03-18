@@ -4,7 +4,7 @@
       <template #name-data="{ row }">
         <div class="flex items-center gap-1">
           <UButton
-            v-if="row.cragCount > 0"
+            v-if="row.cragCount > 0 && isCragGranularity"
             variant="ghost"
             size="xs"
             :aria-label="isExpanded(row.id) ? 'Collapse crags' : 'Expand crags'"
@@ -13,10 +13,10 @@
           >
             <Icon :name="isExpanded(row.id) ? 'heroicons:chevron-down' : 'heroicons:chevron-right'" class="h-4 w-4" />
           </UButton>
-          <span :class="{ 'ml-5': !row.cragCount }">{{ row.name }}</span>
-          <span v-if="row.cragCount > 0" class="text-xs text-gray-400 dark:text-gray-500">({{ row.cragCount }})</span>
+          <span :class="{ 'ml-5': !row.cragCount || !isCragGranularity }">{{ row.name }}</span>
+          <span v-if="row.cragCount > 0 && isCragGranularity" class="text-xs text-gray-400 dark:text-gray-500">({{ row.cragCount }})</span>
         </div>
-        <div v-if="isExpanded(row.id)" class="mt-1">
+        <div v-if="isExpanded(row.id) && isCragGranularity" class="mt-1">
           <CragList :crags="expandedCrags[row.id] || []" :pending="expandedPending[row.id] || false" />
         </div>
       </template>
@@ -186,6 +186,7 @@ function isFaved(id: string) { return Array.isArray(props.favourites) && props.f
 function isRemovable(id: string) { return Array.isArray(props.removableIds) && props.removableIds.includes(id) }
 function toggle(id: string) { emit('toggle-favourite', id) }
 const units = useUnits()
+const isCragGranularity = computed(() => prefs.granularity.value === 'crag')
 // Show distance column when any distance filter is active
 const showDistance = computed(() => Number.isFinite(prefs.maxDriveMins.value) || prefs.minDriveMins.value > 0)
 const columns = computed(() => {
