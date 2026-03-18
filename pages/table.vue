@@ -28,15 +28,15 @@
             <h3 class="text-base font-semibold mb-2">Favourites</h3>
             <CompareTable :rows="filteredFavRows" :favourites="favs" @toggle-favourite="toggleFav" :removable-ids="customCragIds" @remove="onRemoveCustom" />
           </section>
-          <section v-if="filteredCustomRows.length" aria-label="Custom crags">
-            <h3 class="text-base font-semibold mb-2">Your Crags</h3>
+          <section v-if="filteredCustomRows.length" aria-label="Custom locations">
+            <h3 class="text-base font-semibold mb-2">Your Locations</h3>
             <CompareTable :rows="filteredCustomRows" :favourites="favs" @toggle-favourite="toggleFav" :removable-ids="customCragIds" @remove="onRemoveCustom" />
           </section>
         </template>
         <section :aria-label="isAreaMode ? 'All areas' : 'All regions'">
           <CompareTable :rows="filteredMainRows" :favourites="isAreaMode ? [] : favs" @toggle-favourite="toggleFav" :nameLabel="isAreaMode ? 'Area' : 'Region'" />
         </section>
-        <AddCrag v-if="!isAreaMode" @added="onCragAdded" />
+        <AddLocation v-if="!isAreaMode" :count="customCrags.length" @added="onLocationAdded" />
       </div>
     </section>
   </div>
@@ -51,7 +51,7 @@ import { useAreas } from '~/composables/useAreas'
 import CompareTable from '~/components/CompareTable.vue'
 import PrefsForm from '~/components/PrefsForm.vue'
 import ResultsHeader from '~/components/ResultsHeader.vue'
-import AddCrag from '~/components/AddCrag.vue'
+import AddLocation from '~/components/AddLocation.vue'
 const prefs = usePrefs()
 const { crags: customCrags, add: addCustomCrag, remove: removeCustomCrag } = useCustomCrags()
 const { items: areaItems, fetchAreas } = useAreas()
@@ -156,8 +156,9 @@ function writeCache(snap: PrefsSnapshot) {
   try { localStorage.setItem(compareCacheKey(snap), JSON.stringify({ t: Date.now(), v: items.value })) } catch {}
 }
 
-async function onCragAdded(crag: { name: string; lat: number; lon: number; rock: string[] }) {
+async function onLocationAdded(crag: { name: string; lat: number; lon: number; rock: string[] }) {
   const added = addCustomCrag(crag)
+  if (!added) return
   if (hasUrlDates.value) {
     await loadCustomCrag(added.id, crag.name, crag.lat, crag.lon, crag.rock, prefs.snapshot())
   }
