@@ -89,12 +89,9 @@ const hasValidLocation = computed(() => {
   return Number.isFinite(lat) && Number.isFinite(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180 && name.length > 1
 })
 const isDisabled = computed(() => !mounted.value)
-watch(() => prefs.where.value, (v) => console.debug('[PrefsForm] where changed ->', v))
-watch(isDisabled, (v) => console.debug('[PrefsForm] CTA disabled ->', v))
 const selectedWhenPreset = ref<'today'|'tomorrow'|'this-weekend'|'next-weekend'|'custom'>('this-weekend')
 const selectedMax = ref<number>(prefs.maxDriveMins.value)
 const selectedLocation = ref<Location | null>(null)
-const todayStr = formatDate(new Date())
 const next7 = computed(() => {
   const out: { iso: string; label: string }[] = []
   const start = new Date()
@@ -136,7 +133,6 @@ function setWhen(p:'today'|'tomorrow'|'this-weekend'|'next-weekend'|'custom') {
   }
 }
 function onPicked(p:{ lat:number; lon:number; name:string }) {
-  console.debug('[PrefsForm] onPicked', p)
   selectedLocation.value = p
 }
 function onConfirm() {

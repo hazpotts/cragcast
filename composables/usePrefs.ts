@@ -3,6 +3,15 @@ import { presetDates } from '~/utils/dates'
 
 export type Location = { lat: number; lon: number; name: string }
 
+export type PrefsSnapshot = {
+  lat?: number
+  lon?: number
+  name?: string
+  dates: string[]
+  minDriveMins: number
+  maxDriveMins: number
+}
+
 type PrefsState = {
   where: Ref<Location | null>
   minDriveMins: Ref<number>
@@ -10,6 +19,7 @@ type PrefsState = {
   dates: Ref<string[]>
   whenPreset: Ref<'today'|'tomorrow'|'this-weekend'|'next-weekend'|'custom'>
   commit: () => Promise<void>
+  snapshot: () => PrefsSnapshot
 }
 
 let clientState: PrefsState | null = null
@@ -44,6 +54,31 @@ export const usePrefs = () => {
       if (!process.client) { pendingPatch = {}; if (updateTimer) { clearTimeout(updateTimer); updateTimer = null } ; return }
       if (updateTimer) { clearTimeout(updateTimer); updateTimer = null }
       await flushQuery()
+    }
+
+    // Returns the merged pending+committed state as a plain object.
+    // This gives callers the "truth" without waiting for router.replace().
+    const snapshot = (): PrefsSnapshot => {
+      const q = { ...route.query } as any
+      for (const k of Object.keys(pendingPatch)) {
+        const v = pendingPatch[k]
+        if (v === undefined || v === null || v === '') delete q[k]
+        else q[k] = String(v)
+      }
+      const lat = q.lat !== undefined ? Number(q.lat) : undefined
+      const lon = q.lon !== undefined ? Number(q.lon) : undefined
+      const name = typeof q.name === 'string' ? q.name : undefined
+      const ds = typeof q.dates === 'string' ? q.dates.split(',').map((x: string) => x.trim()).filter(Boolean) : []
+      const minN = q.minDriveMins !== undefined ? Number(q.minDriveMins) : NaN
+      const maxN = q.maxDriveMins !== undefined ? Number(q.maxDriveMins) : NaN
+      return {
+        lat: Number.isFinite(lat) ? lat : undefined,
+        lon: Number.isFinite(lon) ? lon : undefined,
+        name: name || undefined,
+        dates: ds,
+        minDriveMins: Number.isFinite(minN) && minN > 0 ? minN : 0,
+        maxDriveMins: Number.isFinite(maxN) ? maxN : Infinity,
+      }
     }
 
     const where = computed<Location | null>({
@@ -97,7 +132,7 @@ export const usePrefs = () => {
         const s = typeof q.dates === 'string' ? q.dates : ''
         const arr = s.split(',').map(x => x.trim()).filter(Boolean)
         if (arr.length) return arr
-        return null
+        return []
       },
       set(v: string[]) {
         updateQuery({ dates: (v || []).join(',') })
@@ -106,7 +141,7 @@ export const usePrefs = () => {
 
     const whenPreset = ref<'today'|'tomorrow'|'this-weekend'|'next-weekend'|'custom'>('this-weekend')
 
-    return { where, minDriveMins, maxDriveMins, dates, whenPreset, commit }
+    return { where, minDriveMins, maxDriveMins, dates, whenPreset, commit, snapshot }
   }
 
   if (process.client) {
