@@ -3,7 +3,7 @@ import { presetDates } from '~/utils/dates'
 
 export type Location = { lat: number; lon: number; name: string }
 
-export type Granularity = 'region' | 'crag'
+export type Granularity = 'area' | 'region' | 'crag'
 
 export type PrefsSnapshot = {
   lat?: number
@@ -75,7 +75,7 @@ export const usePrefs = () => {
       const ds = typeof q.dates === 'string' ? q.dates.split(',').map((x: string) => x.trim()).filter(Boolean) : []
       const minN = q.minDriveMins !== undefined ? Number(q.minDriveMins) : NaN
       const maxN = q.maxDriveMins !== undefined ? Number(q.maxDriveMins) : NaN
-      const gran = q.granularity === 'crag' ? 'crag' : 'region'
+      const gran = q.granularity === 'crag' ? 'crag' : q.granularity === 'area' ? 'area' : 'region'
       return {
         lat: Number.isFinite(lat) ? lat : undefined,
         lon: Number.isFinite(lon) ? lon : undefined,
@@ -148,10 +148,12 @@ export const usePrefs = () => {
     const granularity = computed<Granularity>({
       get() {
         const q = route.query as any
-        return q.granularity === 'crag' ? 'crag' : 'region'
+        if (q.granularity === 'crag') return 'crag'
+        if (q.granularity === 'area') return 'area'
+        return 'region'
       },
       set(v: Granularity) {
-        updateQuery({ granularity: v === 'crag' ? 'crag' : null })
+        updateQuery({ granularity: v === 'region' ? null : v })
       }
     }) as unknown as Ref<Granularity>
 

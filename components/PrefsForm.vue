@@ -53,6 +53,7 @@
 
     <h2 class="text-xl font-semibold">Detail level</h2>
     <div class="flex flex-wrap gap-2">
+      <UButton size="sm" :color="selectedGranularity==='area'?'primary':'gray'" label="Area" @click="selectedGranularity='area'" />
       <UButton size="sm" :color="selectedGranularity==='region'?'primary':'gray'" label="Region" @click="selectedGranularity='region'" />
       <UButton size="sm" :color="selectedGranularity==='crag'?'primary':'gray'" label="Crag" @click="selectedGranularity='crag'" />
     </div>
@@ -97,7 +98,7 @@ const hasValidLocation = computed(() => {
 const isDisabled = computed(() => !mounted.value)
 const selectedWhenPreset = ref<'today'|'tomorrow'|'this-weekend'|'next-weekend'|'custom'>('this-weekend')
 const selectedMax = ref<number>(prefs.maxDriveMins.value)
-const selectedGranularity = ref<'region'|'crag'>(prefs.granularity.value)
+const selectedGranularity = ref<'area'|'region'|'crag'>(prefs.granularity.value)
 const selectedLocation = ref<Location | null>(null)
 const next7 = computed(() => {
   const out: { iso: string; label: string }[] = []
@@ -169,7 +170,7 @@ function onClear() {
   selectedLocation.value = null
   selectedMax.value = Infinity
   selectedWhenPreset.value = 'this-weekend'
-  selectedGranularity.value = 'region'
+  selectedGranularity.value = 'region'  // default on clear
   emit('clear')
 }
 </script>

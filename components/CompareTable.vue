@@ -138,7 +138,7 @@ import { usePrefs } from '~/composables/usePrefs'
 import { useUnits } from '~/composables/useUnits'
 import { useCrags, type CragItem } from '~/composables/useCrags'
 import CragList from '~/components/CragList.vue'
-const props = defineProps<{ rows: any[]; favourites?: string[]; removableIds?: string[] }>()
+const props = defineProps<{ rows: any[]; favourites?: string[]; removableIds?: string[]; nameLabel?: string }>()
 const emit = defineEmits<{ (e:'toggle-favourite', id: string): void; (e:'remove', id: string): void }>()
 
 // --- Expandable crag sub-rows ---
@@ -191,7 +191,7 @@ const isCragGranularity = computed(() => prefs.granularity.value === 'crag')
 const showDistance = computed(() => Number.isFinite(prefs.maxDriveMins.value) || prefs.minDriveMins.value > 0)
 const columns = computed(() => {
   const cols = [
-    { key: 'name', label: 'Region' },
+    { key: 'name', label: props.nameLabel ?? 'Region' },
     { key: 'warnings', label: '' },
     { key: 'weather', label: 'Weather' },
     { key: 'avgTempC', label: `Temp (${units.tempLabel.value})` },

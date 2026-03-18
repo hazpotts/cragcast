@@ -21,20 +21,22 @@
     <section v-else>
       <div class="space-y-6">
         <div class="max-w-sm">
-          <UInput v-model="searchQuery" placeholder="Search regions..." icon="i-heroicons-magnifying-glass" size="sm" />
+          <UInput v-model="searchQuery" :placeholder="isAreaMode ? 'Search areas...' : 'Search regions...'" icon="i-heroicons-magnifying-glass" size="sm" />
         </div>
-        <section v-if="filteredFavRows.length" aria-label="Favourites">
-          <h3 class="text-base font-semibold mb-2">Favourites</h3>
-          <CompareTable :rows="filteredFavRows" :favourites="favs" @toggle-favourite="toggleFav" :removable-ids="customCragIds" @remove="onRemoveCustom" />
+        <template v-if="!isAreaMode">
+          <section v-if="filteredFavRows.length" aria-label="Favourites">
+            <h3 class="text-base font-semibold mb-2">Favourites</h3>
+            <CompareTable :rows="filteredFavRows" :favourites="favs" @toggle-favourite="toggleFav" :removable-ids="customCragIds" @remove="onRemoveCustom" />
+          </section>
+          <section v-if="filteredCustomRows.length" aria-label="Custom crags">
+            <h3 class="text-base font-semibold mb-2">Your Crags</h3>
+            <CompareTable :rows="filteredCustomRows" :favourites="favs" @toggle-favourite="toggleFav" :removable-ids="customCragIds" @remove="onRemoveCustom" />
+          </section>
+        </template>
+        <section :aria-label="isAreaMode ? 'All areas' : 'All regions'">
+          <CompareTable :rows="filteredMainRows" :favourites="isAreaMode ? [] : favs" @toggle-favourite="toggleFav" :nameLabel="isAreaMode ? 'Area' : 'Region'" />
         </section>
-        <section v-if="filteredCustomRows.length" aria-label="Custom crags">
-          <h3 class="text-base font-semibold mb-2">Your Crags</h3>
-          <CompareTable :rows="filteredCustomRows" :favourites="favs" @toggle-favourite="toggleFav" :removable-ids="customCragIds" @remove="onRemoveCustom" />
-        </section>
-        <section aria-label="All regions">
-          <CompareTable :rows="filteredMainRows" :favourites="favs" @toggle-favourite="toggleFav" />
-        </section>
-        <AddCrag @added="onCragAdded" />
+        <AddCrag v-if="!isAreaMode" @added="onCragAdded" />
       </div>
     </section>
   </div>
@@ -45,15 +47,18 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { usePrefs, type PrefsSnapshot } from '~/composables/usePrefs'
 import { useUnits } from '~/composables/useUnits'
 import { useCustomCrags } from '~/composables/useCustomCrags'
+import { useAreas } from '~/composables/useAreas'
 import CompareTable from '~/components/CompareTable.vue'
 import PrefsForm from '~/components/PrefsForm.vue'
 import ResultsHeader from '~/components/ResultsHeader.vue'
 import AddCrag from '~/components/AddCrag.vue'
 const prefs = usePrefs()
 const { crags: customCrags, add: addCustomCrag, remove: removeCustomCrag } = useCustomCrags()
+const { items: areaItems, fetchAreas } = useAreas()
 const route = useRoute()
 const items = ref<any[]>([])
 const customItems = ref<any[]>([])
+const isAreaMode = computed(() => prefs.granularity.value === 'area')
 const hasUrlDates = computed(() => typeof route.query.dates === 'string' && (route.query.dates as string).length > 0)
 const showPrefs = ref(!hasUrlDates.value)
 const shrink = ref(false)
@@ -78,7 +83,10 @@ const labelWhen = computed(() => {
   return ds.length === 1 ? fmt(d1) : `${fmt(d1)} – ${fmt(dN)}`
 })
 const latestUpdatedAt = computed(() => {
-  const all = [...items.value, ...customItems.value].filter((r: any) => r.updatedAt)
+  const all = (isAreaMode.value
+    ? areaItems.value
+    : [...items.value, ...customItems.value]
+  ).filter((r: any) => r.updatedAt)
   if (!all.length) return null
   return all.reduce((latest: string, r: any) => r.updatedAt > latest ? r.updatedAt : latest, all[0].updatedAt)
 })
@@ -104,12 +112,15 @@ function toggleFav(id: string) {
 const allItems = computed(() => [...items.value, ...customItems.value])
 const favRows = computed(() => allItems.value.filter((r: any) => favs.value.includes(r.id) && !r.pending))
 const customRows = computed(() => customItems.value.filter((r: any) => !favs.value.includes(r.id)))
-const mainRows = computed(() => items.value.filter((r: any) => !favs.value.includes(r.id)))
+const mainRows = computed(() => isAreaMode.value
+  ? areaItems.value
+  : items.value.filter((r: any) => !favs.value.includes(r.id))
+)
 
 function matchesSearch(row: any) {
   if (!searchQuery.value) return true
   const q = searchQuery.value.toLowerCase()
-  return (row.name || '').toLowerCase().includes(q) || (row.area || '').toLowerCase().includes(q)
+  return (row.name || '').toLowerCase().includes(q) || (row.area || '').toLowerCase().includes(q) || (row.regionCount !== undefined && String(row.regionCount).includes(q))
 }
 const filteredFavRows = computed(() => favRows.value.filter(matchesSearch))
 const filteredCustomRows = computed(() => customRows.value.filter(matchesSearch))
@@ -190,10 +201,14 @@ onMounted(async () => {
   loadFavs()
   if (hasUrlDates.value && !items.value?.length) {
     const snap = prefs.snapshot()
-    const cached = readCache(snap)
-    if (cached) items.value = cached
-    else await loadCompare(snap)
-    await loadAllCustomCrags(snap)
+    if (snap.granularity === 'area') {
+      await fetchAreas(snap)
+    } else {
+      const cached = readCache(snap)
+      if (cached) items.value = cached
+      else await loadCompare(snap)
+      await loadAllCustomCrags(snap)
+    }
   }
 })
 
@@ -204,40 +219,51 @@ watch(() => route.query, () => {
   if (!showPrefs.value && hasUrlDates.value) {
     items.value = []
     customItems.value = []
+    areaItems.value = [] as any
   }
   routeWatchTimer = setTimeout(async () => {
     const has = hasUrlDates.value
     showPrefs.value = !has
     if (has) {
       const snap = prefs.snapshot()
-      const cached = readCache(snap)
-      if (cached) items.value = cached
-      else await loadCompare(snap)
-      await loadAllCustomCrags(snap)
+      if (snap.granularity === 'area') {
+        items.value = []
+        customItems.value = []
+        await fetchAreas(snap)
+      } else {
+        areaItems.value = [] as any
+        const cached = readCache(snap)
+        if (cached) items.value = cached
+        else await loadCompare(snap)
+        await loadAllCustomCrags(snap)
+      }
     } else {
       items.value = []
       customItems.value = []
+      areaItems.value = [] as any
     }
   }, 150)
 }, { deep: true })
 
 async function applyPrefs() {
-  // Capture snapshot BEFORE commit — includes pending prefs that haven't
-  // flushed to the URL yet, so there's no timing dependency on router.replace.
   const snap = prefs.snapshot()
   showPrefs.value = false
   items.value = []
   customItems.value = []
-  // Flush prefs to URL (for bookmarkability) and load with explicit params
+  areaItems.value = [] as any
   prefs.commit()
-  await loadCompare(snap)
-  await loadAllCustomCrags(snap)
+  if (snap.granularity === 'area') {
+    await fetchAreas(snap)
+  } else {
+    await loadCompare(snap)
+    await loadAllCustomCrags(snap)
+  }
 }
 async function clearTable() {
   showPrefs.value = true
   items.value = []
   customItems.value = []
-  // Cancel any in-flight compare
+  areaItems.value = [] as any
   if (compareController) { compareController.abort(); compareController = null }
   prefs.where.value = null
   prefs.maxDriveMins.value = null
