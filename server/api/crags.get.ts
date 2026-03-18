@@ -109,7 +109,7 @@ export default defineEventHandler(async (event) => {
       distanceMins = driveMinutesApprox(km)
     }
 
-    const { score: baseScore } = scoreRegion(cragForecast.mini, {
+    const { score: baseScore, why } = scoreRegion(cragForecast.mini, {
       rocks: crag.rock,
       distanceMins,
       minDriveMins,
@@ -129,12 +129,24 @@ export default defineEventHandler(async (event) => {
       yrno: `https://www.yr.no/en/forecast/daily-table/${crag.lat.toFixed(4)},${crag.lon.toFixed(4)}`
     }
 
+    const warnings = checkWarnings(cragForecast.mini, dates)
+    const daily = dailyIcons(cragForecast.mini, dates)
+    const avgTempC = Math.round(avg(cragForecast.mini.temp) * 10) / 10
+    const avgWindMph = Math.round(avg(cragForecast.mini.wind) * 10) / 10
+    const avgRainMm = Math.round(avg(cragForecast.mini.rainMm) * 10) / 10
+
     results.push({
       id: crag.id,
       name: crag.name,
       regionId: crag.regionId,
       score,
       modifiers,
+      why,
+      warnings,
+      daily,
+      avgTempC,
+      avgWindMph,
+      avgRainMm,
       aspect: crag.aspect,
       rock: crag.rock,
       types: crag.types,
