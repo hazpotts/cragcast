@@ -1,5 +1,7 @@
 import { ref, type Ref } from 'vue'
 
+export const MAX_LOCATIONS = 5
+
 export type CustomCrag = {
   id: string
   name: string
@@ -36,7 +38,8 @@ export function useCustomCrags() {
     crags = ref<CustomCrag[]>(load())
   }
 
-  function add(crag: Omit<CustomCrag, 'id'>): CustomCrag {
+  function add(crag: Omit<CustomCrag, 'id'>): CustomCrag | null {
+    if (crags!.value.length >= MAX_LOCATIONS) return null
     const item: CustomCrag = { id: generateId(), ...crag }
     crags!.value = [...crags!.value, item]
     save(crags!.value)
