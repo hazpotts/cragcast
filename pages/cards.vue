@@ -16,24 +16,40 @@
         <SkeletonCard />
       </div>
       <div v-else>
-        <div v-if="activeItems[0]" class="mb-6">
-          <RegionCard
-            :regionId="activeItems[0].id"
-            :name="activeItems[0].name"
-            :score="activeItems[0].score"
-            :why="activeItems[0].why"
-            :warnings="activeItems[0].warnings"
-            :daily="activeItems[0].daily"
-            :distanceMins="Number(activeItems[0].distanceMins ?? 0)"
-            :ukcUrl="activeItems[0].ukcUrl"
-            :links="activeItems[0].links"
-            :avgTempC="activeItems[0].avgTempC"
-            :avgRainMm="activeItems[0].avgRainMm"
-            :avgWindMph="activeItems[0].avgWindMph"
-            :cragCount="activeItems[0].cragCount || 0"
+        <!-- Crag mode: show individual crag cards -->
+        <div v-if="isCragMode" class="grid grid-cols-2 gap-4">
+          <CragCard
+            v-for="crag in cragItems.slice(0, visibleCount)"
+            :key="crag.id"
+            :crag="crag"
           />
+          <p v-if="!prefs.where.value" class="col-span-2 text-sm text-gray-500">Add a location to get local results.</p>
+          <div v-if="hasMoreCards" class="col-span-2 flex justify-center mt-2">
+            <UButton variant="soft" @click="visibleCount += CARDS_PAGE_SIZE">
+              Show more
+            </UButton>
+          </div>
         </div>
-        <div class="grid grid-cols-2 gap-4">
+        <!-- Region / area mode -->
+        <div v-else>
+          <div v-if="activeItems[0]" class="mb-6">
+            <RegionCard
+              :regionId="activeItems[0].id"
+              :name="activeItems[0].name"
+              :score="activeItems[0].score"
+              :why="activeItems[0].why"
+              :warnings="activeItems[0].warnings"
+              :daily="activeItems[0].daily"
+              :distanceMins="Number(activeItems[0].distanceMins ?? 0)"
+              :ukcUrl="activeItems[0].ukcUrl"
+              :links="activeItems[0].links"
+              :avgTempC="activeItems[0].avgTempC"
+              :avgRainMm="activeItems[0].avgRainMm"
+              :avgWindMph="activeItems[0].avgWindMph"
+              :cragCount="activeItems[0].cragCount || 0"
+            />
+          </div>
+          <div class="grid grid-cols-2 gap-4">
             <RegionCard
               v-for="r in activeItems.slice(1, visibleCount + 1)"
               :key="r.id"
@@ -52,11 +68,12 @@
               :cragCount="r.cragCount || 0"
               compact
             />
-          <p v-if="!prefs.where.value" class="col-span-2 text-sm text-gray-500">Add a location to get local results.</p>
-          <div v-if="hasMoreCards" class="col-span-2 flex justify-center mt-2">
-            <UButton variant="soft" @click="visibleCount += CARDS_PAGE_SIZE">
-              Show more
-            </UButton>
+            <p v-if="!prefs.where.value" class="col-span-2 text-sm text-gray-500">Add a location to get local results.</p>
+            <div v-if="hasMoreCards" class="col-span-2 flex justify-center mt-2">
+              <UButton variant="soft" @click="visibleCount += CARDS_PAGE_SIZE">
+                Show more
+              </UButton>
+            </div>
           </div>
         </div>
       </div>
@@ -69,23 +86,35 @@ import { usePrefs } from '~/composables/usePrefs'
 import { useUnits } from '~/composables/useUnits'
 import { useRank } from '~/composables/useRank'
 import { useAreas } from '~/composables/useAreas'
+import { useCrags, type CragItem } from '~/composables/useCrags'
 import { formatShortDayLabel } from '~/utils/dates'
 import PrefsForm from '~/components/PrefsForm.vue'
 import SkeletonCard from '~/components/SkeletonCard.vue'
 import RegionCard from '~/components/RegionCard.vue'
+import CragCard from '~/components/CragCard.vue'
 import ResultsHeader from '~/components/ResultsHeader.vue'
 const prefs = usePrefs()
 const { items: rankItems, pending: rankPending, fetchRank } = useRank()
 const { items: areaItems, pending: areaPending, fetchAreas } = useAreas()
+const { fetchCrags } = useCrags()
 const showPrefs = ref(true)
 const CARDS_PAGE_SIZE = 4
 const visibleCount = ref(CARDS_PAGE_SIZE)
 
 const isAreaMode = computed(() => prefs.granularity.value === 'area')
-const activeItems = computed(() => isAreaMode.value ? areaItems.value : rankItems.value)
-const activePending = computed(() => isAreaMode.value ? areaPending.value : rankPending.value)
+const isCragMode = computed(() => prefs.granularity.value === 'crag')
 
-const hasMoreCards = computed(() => activeItems.value && activeItems.value.length > 1 && (visibleCount.value + 1) < activeItems.value.length)
+// Crag mode: flat list of all crags sorted by score
+const cragItems = ref<CragItem[]>([])
+const cragsPending = ref(false)
+
+const activeItems = computed(() => isAreaMode.value ? areaItems.value : rankItems.value)
+const activePending = computed(() => isCragMode.value ? cragsPending.value : (isAreaMode.value ? areaPending.value : rankPending.value))
+
+const hasMoreCards = computed(() => {
+  if (isCragMode.value) return cragItems.value.length > visibleCount.value
+  return activeItems.value && activeItems.value.length > 1 && (visibleCount.value + 1) < activeItems.value.length
+})
 const route = useRoute()
 const latestUpdatedAt = computed(() => {
   const all = (activeItems.value || []).filter((r: any) => r.updatedAt)
@@ -114,14 +143,38 @@ const distanceLabel = computed(() => {
   return `max ${units.convertDistance(max)} ${label}`
 })
 
+async function fetchAllCrags(snap: ReturnType<typeof prefs.snapshot>) {
+  cragsPending.value = true
+  cragItems.value = []
+  try {
+    const regionList = await $fetch<any[]>('/api/regions')
+    const all: CragItem[] = []
+    for (const r of regionList) {
+      const crags = await fetchCrags(r.id, {
+        lat: snap.lat,
+        lon: snap.lon,
+        dates: snap.dates.join(','),
+        minDriveMins: snap.minDriveMins > 0 ? snap.minDriveMins : undefined,
+        maxDriveMins: Number.isFinite(snap.maxDriveMins) ? snap.maxDriveMins : undefined
+      })
+      all.push(...crags)
+    }
+    all.sort((a, b) => b.score - a.score)
+    cragItems.value = all
+  } finally {
+    cragsPending.value = false
+  }
+}
+
 function fetchActive(snap: ReturnType<typeof prefs.snapshot>) {
   if (snap.granularity === 'area') fetchAreas(snap)
+  else if (snap.granularity === 'crag') fetchAllCrags(snap)
   else fetchRank(snap)
 }
 
 onMounted(() => {
   showPrefs.value = !hasUrlDates.value
-  if (hasUrlDates.value && !activeItems.value?.length) {
+  if (hasUrlDates.value && !activeItems.value?.length && !cragItems.value.length) {
     fetchActive(prefs.snapshot())
   }
 })
@@ -131,6 +184,7 @@ watch(() => route.query, () => {
   if (!showPrefs.value && hasUrlDates.value) {
     rankItems.value = [] as any
     areaItems.value = [] as any
+    cragItems.value = []
   }
   routeWatchTimer = setTimeout(() => {
     const has = hasUrlDates.value
@@ -141,6 +195,7 @@ watch(() => route.query, () => {
     } else {
       rankItems.value = [] as any
       areaItems.value = [] as any
+      cragItems.value = []
       visibleCount.value = CARDS_PAGE_SIZE
     }
   }, 150)
@@ -152,6 +207,7 @@ async function savePrefs() {
   visibleCount.value = CARDS_PAGE_SIZE
   rankItems.value = [] as any
   areaItems.value = [] as any
+  cragItems.value = []
   prefs.commit()
   fetchActive(snap)
 }
@@ -159,6 +215,7 @@ async function clearPrefs() {
   showPrefs.value = true
   rankItems.value = [] as any
   areaItems.value = [] as any
+  cragItems.value = []
   visibleCount.value = CARDS_PAGE_SIZE
   prefs.where.value = null
   prefs.maxDriveMins.value = null
