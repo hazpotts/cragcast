@@ -42,7 +42,7 @@
 </template>
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { usePrefs } from '~/composables/usePrefs'
+import { usePrefs, type PrefsSnapshot } from '~/composables/usePrefs'
 import { useUnits } from '~/composables/useUnits'
 import { useCustomCrags } from '~/composables/useCustomCrags'
 import CompareTable from '~/components/CompareTable.vue'
@@ -58,7 +58,6 @@ const hasUrlDates = computed(() => typeof route.query.dates === 'string' && (rou
 const showPrefs = ref(!hasUrlDates.value)
 const shrink = ref(false)
 const searchQuery = ref('')
-const ignoreNextWatch = ref(false)
 const units = useUnits()
 const distanceLabel = computed(() => {
   const min = prefs.minDriveMins.value
@@ -84,7 +83,7 @@ const latestUpdatedAt = computed(() => {
   return all.reduce((latest: string, r: any) => r.updatedAt > latest ? r.updatedAt : latest, all[0].updatedAt)
 })
 const containerClass = computed(() => ['space-y-6', 'px-4', shrink.value ? 'max-w-[1000px] mx-auto' : 'max-w-none'])
-const hasPrefs = computed(() => prefs.where.value || prefs.dates.value || prefs.maxDriveMins.value)
+const hasPrefs = computed(() => prefs.where.value || prefs.dates.value?.length || prefs.maxDriveMins.value)
 const customCragIds = computed(() => customCrags.value.map(c => c.id))
 // Favourites
 const favs = ref<string[]>([])
@@ -119,19 +118,21 @@ const filteredMainRows = computed(() => mainRows.value.filter(matchesSearch))
 // Simple client cache for compare
 const TTL_MS = 5 * 60 * 1000
 let routeWatchTimer: any = null
-function cacheKey() {
-  const w:any = prefs.where.value || {}
-  const latKey = Number.isFinite(Number(w.lat)) ? String(w.lat) : 'na'
-  const lonKey = Number.isFinite(Number(w.lon)) ? String(w.lon) : 'na'
-  const d = (prefs.dates.value || []).join(',')
-  const minKey = prefs.minDriveMins.value > 0 ? String(prefs.minDriveMins.value) : '0'
-  const distKey = Number.isFinite(prefs.maxDriveMins.value) ? String(prefs.maxDriveMins.value) : 'inf'
-  return `compare:${latKey}:${lonKey}:${minKey}-${distKey}:${d}`
+
+// AbortController for the sequential loadCompare loop
+let compareController: AbortController | null = null
+
+function compareCacheKey(snap: PrefsSnapshot) {
+  const latKey = snap.lat !== undefined && Number.isFinite(snap.lat) ? String(snap.lat) : 'na'
+  const lonKey = snap.lon !== undefined && Number.isFinite(snap.lon) ? String(snap.lon) : 'na'
+  const minKey = snap.minDriveMins > 0 ? String(snap.minDriveMins) : '0'
+  const distKey = Number.isFinite(snap.maxDriveMins) ? String(snap.maxDriveMins) : 'inf'
+  return `compare:${latKey}:${lonKey}:${minKey}-${distKey}:${snap.dates.join(',')}`
 }
-function readCache() {
+function readCache(snap: PrefsSnapshot) {
   if (!process.client) return null
   try {
-    const raw = localStorage.getItem(cacheKey())
+    const raw = localStorage.getItem(compareCacheKey(snap))
     if (!raw) return null
     const obj = JSON.parse(raw)
     if (!obj || typeof obj !== 'object') return null
@@ -139,37 +140,32 @@ function readCache() {
     return Array.isArray(obj.v) ? obj.v : null
   } catch { return null }
 }
-function writeCache() {
+function writeCache(snap: PrefsSnapshot) {
   if (!process.client) return
-  try { localStorage.setItem(cacheKey(), JSON.stringify({ t: Date.now(), v: items.value })) } catch {}
+  try { localStorage.setItem(compareCacheKey(snap), JSON.stringify({ t: Date.now(), v: items.value })) } catch {}
 }
 
 async function onCragAdded(crag: { name: string; lat: number; lon: number; rock: string[] }) {
   const added = addCustomCrag(crag)
-  // If we have dates loaded, immediately fetch weather for this crag
   if (hasUrlDates.value) {
-    await loadCustomCrag(added.id, crag.name, crag.lat, crag.lon, crag.rock)
+    await loadCustomCrag(added.id, crag.name, crag.lat, crag.lon, crag.rock, prefs.snapshot())
   }
 }
 
 function onRemoveCustom(id: string) {
   removeCustomCrag(id)
   customItems.value = customItems.value.filter(r => r.id !== id)
-  // Also remove from favourites
   const fi = favs.value.indexOf(id)
   if (fi !== -1) { favs.value.splice(fi, 1); saveFavs() }
 }
 
-async function loadCustomCrag(id: string, name: string, lat: number, lon: number, rock: string[]) {
-  // Add placeholder
+async function loadCustomCrag(id: string, name: string, lat: number, lon: number, rock: string[], snap: PrefsSnapshot) {
   customItems.value = [...customItems.value.filter(r => r.id !== id), { id, name, area: 'Custom', pending: true }]
 
-  const paramsBase: any = { dates: (prefs.dates.value || []).join(',') }
-  const w: any = prefs.where.value || {}
-  if (Number.isFinite(Number(w.lat))) paramsBase.lat = w.lat
-  if (Number.isFinite(Number(w.lon))) paramsBase.lon = w.lon
-  if (prefs.minDriveMins.value > 0) paramsBase.minDriveMins = prefs.minDriveMins.value
-  if (Number.isFinite(prefs.maxDriveMins.value)) paramsBase.maxDriveMins = prefs.maxDriveMins.value
+  const paramsBase: any = { dates: snap.dates.join(',') }
+  if (snap.lat !== undefined && Number.isFinite(snap.lat)) { paramsBase.lat = snap.lat; paramsBase.lon = snap.lon }
+  if (snap.minDriveMins > 0) paramsBase.minDriveMins = snap.minDriveMins
+  if (Number.isFinite(snap.maxDriveMins)) paramsBase.maxDriveMins = snap.maxDriveMins
 
   try {
     const row = await $fetch<any>('/api/custom-region', {
@@ -183,78 +179,95 @@ async function loadCustomCrag(id: string, name: string, lat: number, lon: number
   }
 }
 
-async function loadAllCustomCrags() {
+async function loadAllCustomCrags(snap: PrefsSnapshot) {
   customItems.value = []
   for (const crag of customCrags.value) {
-    await loadCustomCrag(crag.id, crag.name, crag.lat, crag.lon, crag.rock)
+    await loadCustomCrag(crag.id, crag.name, crag.lat, crag.lon, crag.rock, snap)
   }
 }
 
 onMounted(async () => {
   loadFavs()
   if (hasUrlDates.value && !items.value?.length) {
-    const cached = readCache()
+    const snap = prefs.snapshot()
+    const cached = readCache(snap)
     if (cached) items.value = cached
-    else await loadCompare()
-    await loadAllCustomCrags()
+    else await loadCompare(snap)
+    await loadAllCustomCrags(snap)
   }
 })
+
+// Handles browser back/forward, direct URL edits, and post-commit URL updates.
 watch(() => route.query, () => {
   if (routeWatchTimer) clearTimeout(routeWatchTimer)
+  // Immediately clear stale results to prevent flash of out-of-range content
+  if (!showPrefs.value && hasUrlDates.value) {
+    items.value = []
+    customItems.value = []
+  }
   routeWatchTimer = setTimeout(async () => {
-    if (ignoreNextWatch.value) { ignoreNextWatch.value = false; return }
-    if (showPrefs.value) return
     const has = hasUrlDates.value
     showPrefs.value = !has
     if (has) {
-      const cached = readCache()
+      const snap = prefs.snapshot()
+      const cached = readCache(snap)
       if (cached) items.value = cached
-      else await loadCompare()
-      await loadAllCustomCrags()
+      else await loadCompare(snap)
+      await loadAllCustomCrags(snap)
     } else {
       items.value = []
       customItems.value = []
     }
   }, 150)
 }, { deep: true })
+
 async function applyPrefs() {
-  ignoreNextWatch.value = true
+  // Capture snapshot BEFORE commit — includes pending prefs that haven't
+  // flushed to the URL yet, so there's no timing dependency on router.replace.
+  const snap = prefs.snapshot()
   showPrefs.value = false
-  // Load immediately using prefs (does not depend on route update timing)
-  await prefs.commit()
-  await loadCompare()
-  await loadAllCustomCrags()
+  items.value = []
+  customItems.value = []
+  // Flush prefs to URL (for bookmarkability) and load with explicit params
+  prefs.commit()
+  await loadCompare(snap)
+  await loadAllCustomCrags(snap)
 }
 async function clearTable() {
-  ignoreNextWatch.value = true
   showPrefs.value = true
   items.value = []
   customItems.value = []
+  // Cancel any in-flight compare
+  if (compareController) { compareController.abort(); compareController = null }
   prefs.where.value = null
   prefs.maxDriveMins.value = null
   prefs.dates.value = []
   await prefs.commit()
 }
 
-async function loadCompare() {
+async function loadCompare(snap: PrefsSnapshot) {
+  // Cancel any previous in-flight compare loop
+  if (compareController) compareController.abort()
+  const controller = new AbortController()
+  compareController = controller
+
   items.value = []
   // 1) Load region list (names & ids)
-  const regionList = await $fetch<any[]>('/api/regions')
+  const regionList = await $fetch<any[]>('/api/regions', { signal: controller.signal })
+  if (controller.signal.aborted) return
+
   // Prefill table with placeholder rows
   items.value = regionList.map(r => ({ id: r.id, name: r.name, area: (r as any).area, cragCount: (r as any).cragCount || 0, pending: true }))
 
-  const paramsBase: any = {
-    dates: (prefs.dates.value || []).join(',')
-  }
-  const w:any = prefs.where.value || {}
-  if (Number.isFinite(Number(w.lat))) paramsBase.lat = w.lat
-  if (Number.isFinite(Number(w.lon))) paramsBase.lon = w.lon
-  if (prefs.minDriveMins.value > 0) paramsBase.minDriveMins = prefs.minDriveMins.value
-  if (Number.isFinite(prefs.maxDriveMins.value)) paramsBase.maxDriveMins = prefs.maxDriveMins.value
+  const paramsBase: any = { dates: snap.dates.join(',') }
+  if (snap.lat !== undefined && Number.isFinite(snap.lat)) { paramsBase.lat = snap.lat; paramsBase.lon = snap.lon }
+  if (snap.minDriveMins > 0) paramsBase.minDriveMins = snap.minDriveMins
+  if (Number.isFinite(snap.maxDriveMins)) paramsBase.maxDriveMins = snap.maxDriveMins
 
   // 2) Fetch each region individually with a small delay to avoid rate limits
   for (const r of regionList) {
-    const controller = new AbortController()
+    if (controller.signal.aborted) return
+
     const timeoutId = setTimeout(() => controller.abort(), 10000) // 10s timeout per region
     try {
       const row = await $fetch<any>('/api/region', {
@@ -262,26 +275,29 @@ async function loadCompare() {
         signal: controller.signal
       })
       clearTimeout(timeoutId)
-      const unlimited = !Number.isFinite(prefs.maxDriveMins.value)
-      const tooFar = !unlimited && row.distanceMins > (prefs.maxDriveMins.value as number)
-      const tooClose = prefs.minDriveMins.value > 0 && row.distanceMins < prefs.minDriveMins.value
+      if (controller.signal.aborted) return
+
+      const unlimited = !Number.isFinite(snap.maxDriveMins)
+      const tooFar = !unlimited && row.distanceMins > snap.maxDriveMins
+      const tooClose = snap.minDriveMins > 0 && row.distanceMins < snap.minDriveMins
       if (tooFar || tooClose) {
-        // Remove placeholder when filtered out
         items.value = items.value.filter((x: any) => x.id !== r.id)
       } else {
         const idx = items.value.findIndex((x: any) => x.id === r.id)
         if (idx !== -1) items.value[idx] = row
       }
-      writeCache()
+      writeCache(snap)
       await new Promise(res => setTimeout(res, 120))
     } catch (e) {
       clearTimeout(timeoutId)
-      // Mark row as failed instead of leaving it pending
+      if (controller.signal.aborted) return
       const idx = items.value.findIndex((x: any) => x.id === r.id)
       if (idx !== -1) {
         items.value[idx] = { ...items.value[idx], pending: false, error: true }
       }
     }
   }
+
+  if (compareController === controller) compareController = null
 }
 </script>

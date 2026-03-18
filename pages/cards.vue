@@ -87,15 +87,6 @@ const latestUpdatedAt = computed(() => {
 })
 const hasUrlDates = computed(() => typeof route.query.dates === 'string' && route.query.dates.length > 0)
 let routeWatchTimer: any = null
-const ignoreNextWatch = ref(false)
-const hasValidLocation = computed(() => {
-  const w = prefs.where.value as any
-  if (!w) return false
-  const lat = Number(w.lat)
-  const lon = Number(w.lon)
-  const name = typeof w.name === 'string' ? w.name.trim() : ''
-  return Number.isFinite(lat) && Number.isFinite(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180 && name.length > 1
-})
 const labelWhen = computed(() => {
   const ds = (prefs.dates.value || []) as string[]
   if (!ds.length) return 'Dates'
@@ -116,26 +107,28 @@ const distanceLabel = computed(() => {
   return `max ${units.convertDistance(max)} ${label}`
 })
 
-onMounted(async () => {
+onMounted(() => {
   showPrefs.value = !hasUrlDates.value
-  if (hasUrlDates.value && !items.value?.length) await fetchRank()
+  if (hasUrlDates.value && !items.value?.length) {
+    fetchRank(prefs.snapshot())
+  }
 })
 
+// Handles browser back/forward, direct URL edits, and post-commit URL updates.
+// The AbortController in useRank ensures rapid triggers don't produce stale results.
 watch(() => route.query, () => {
-  if (ignoreNextWatch.value) { ignoreNextWatch.value = false; return }
   if (routeWatchTimer) clearTimeout(routeWatchTimer)
   // Immediately clear stale results to prevent flash of out-of-range content
   if (!showPrefs.value && hasUrlDates.value) {
     items.value = [] as any
   }
-  routeWatchTimer = setTimeout(async () => {
+  routeWatchTimer = setTimeout(() => {
     const has = hasUrlDates.value
     showPrefs.value = !has
     if (has) {
       visibleCount.value = CARDS_PAGE_SIZE
-      await fetchRank()
+      fetchRank(prefs.snapshot())
     } else {
-      // Clear list when no URL dates
       items.value = [] as any
       visibleCount.value = CARDS_PAGE_SIZE
     }
@@ -143,17 +136,17 @@ watch(() => route.query, () => {
 }, { deep: true })
 
 async function savePrefs() {
-  // Close form first so skeleton section can show immediately
-  ignoreNextWatch.value = true
+  // Capture snapshot BEFORE commit — includes pending prefs that haven't
+  // flushed to the URL yet, so there's no timing dependency on router.replace.
+  const snap = prefs.snapshot()
   showPrefs.value = false
   visibleCount.value = CARDS_PAGE_SIZE
-  // Ensure dates/maxDrive are flushed to URL before fetching
-  await prefs.commit()
-  // Trigger fetch without awaiting so pending state renders skeleton
-  fetchRank()
+  items.value = [] as any
+  // Flush prefs to URL (for bookmarkability) and fetch with explicit params
+  prefs.commit()
+  fetchRank(snap)
 }
 async function clearPrefs() {
-  ignoreNextWatch.value = true
   showPrefs.value = true
   items.value = [] as any
   visibleCount.value = CARDS_PAGE_SIZE
