@@ -1,33 +1,25 @@
 import { getForecast } from "~/server/utils/forecast"
 import { regions } from "~/server/utils/regions"
-import { presetDates, parseDate, formatDate } from "~/server/utils/dates"
-
-// Concurrency-limited parallel execution
-async function parallel<T, R>(items: T[], fn: (item: T) => Promise<R>, concurrency = 6): Promise<R[]> {
-  const results: R[] = []
-  const pending: Promise<void>[] = []
-  let index = 0
-
-  async function runNext(): Promise<void> {
-    const i = index++
-    if (i >= items.length) return
-    results[i] = await fn(items[i])
-    await runNext()
-  }
-
-  for (let i = 0; i < Math.min(concurrency, items.length); i++) {
-    pending.push(runNext())
-  }
-  await Promise.all(pending)
-  return results
-}
+import { parseDatesParam } from "~/server/utils/dates"
+import { parallel } from "~/server/utils/server-utils"
 
 export default defineEventHandler(async (event) => {
+  // Require the same ADMIN_API_KEY used by the import endpoint
+  const env = event.context?.cloudflare?.env || (event as any).platform?.env || {}
+  const adminKey = env.ADMIN_API_KEY
+  if (!adminKey) {
+    throw createError({ statusCode: 500, statusMessage: 'ADMIN_API_KEY not configured' })
+  }
+  const auth = getHeader(event, 'authorization')
+  if (auth !== `Bearer ${adminKey}`) {
+    throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
+  }
+
   const startTime = Date.now()
 
   // Get dates for next weekend + this weekend
-  const thisWeekend = presetDates('this-weekend').map(d => formatDate(parseDate(d)))
-  const nextWeekend = presetDates('next-weekend').map(d => formatDate(parseDate(d)))
+  const thisWeekend = parseDatesParam('', 'this-weekend')
+  const nextWeekend = parseDatesParam('', 'next-weekend')
   const allDates = [...new Set([...thisWeekend, ...nextWeekend])]
 
   const results: { region: string; success: boolean; error?: string }[] = []

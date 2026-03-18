@@ -1,4 +1,5 @@
 import type { MiniSeries } from './forecast'
+import { avg, max, sum } from './server-utils'
 
 export type WarningLevel = 'amber' | 'red'
 
@@ -7,10 +8,6 @@ export type WeatherWarning = {
   type: string
   message: string
 }
-
-function max(a: number[]) { return a.length ? Math.max(...a) : 0 }
-function avg(a: number[]) { return a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0 }
-function sum(a: number[]) { return a.reduce((s, x) => s + x, 0) }
 
 /**
  * Analyse a forecast mini-series and return any severe weather warnings.

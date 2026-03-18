@@ -1,46 +1,11 @@
-import { getForecast } from "~/server/utils/forecast"
+import { fetchForecastWithRetry } from "~/server/utils/forecast"
 import { areas, regions } from "~/server/utils/regions"
 import { haversineKm, driveMinutesApprox } from "~/server/utils/distance"
 import { scoreRegion } from "~/server/utils/score"
-import { presetDates, parseDate, formatDate } from "~/server/utils/dates"
+import { parseDatesParam } from "~/server/utils/dates"
 import { dailyIcons } from "~/server/utils/icons"
 import { checkWarnings } from "~/server/utils/warnings"
-
-function avg(a: number[]) { return a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0 }
-function sleep(ms: number) { return new Promise(res => setTimeout(res, ms)) }
-
-async function parallel<T, R>(items: T[], fn: (item: T) => Promise<R>, concurrency = 6): Promise<R[]> {
-  const results: R[] = []
-  const pending: Promise<void>[] = []
-  let index = 0
-  async function runNext(): Promise<void> {
-    const i = index++
-    if (i >= items.length) return
-    results[i] = await fn(items[i])
-    await runNext()
-  }
-  for (let i = 0; i < Math.min(concurrency, items.length); i++) pending.push(runNext())
-  await Promise.all(pending)
-  return results
-}
-
-async function fetchForecastWithRetry(event: any, lat: number, lon: number, dates: string[], attempts = 2) {
-  let lastErr: any
-  for (let i = 0; i < attempts; i++) {
-    try {
-      const out = await Promise.race([
-        getForecast(event, lat, lon, dates),
-        new Promise((_, rej) => setTimeout(() => rej(new Error('forecast-timeout')), 4000))
-      ]) as any
-      const mini = out?.mini
-      if (mini && Array.isArray(mini.hours) && mini.hours.length) return out
-      lastErr = new Error('empty-mini')
-    } catch (e: any) { lastErr = e }
-    if (i < attempts - 1) await sleep(200 * Math.pow(2, i))
-  }
-  console.warn('[areas] forecast failed', { lat, lon, err: String(lastErr) })
-  return null
-}
+import { avg, parallel } from "~/server/utils/server-utils"
 
 export default defineEventHandler(async (event) => {
   const q = getQuery(event)
@@ -48,16 +13,9 @@ export default defineEventHandler(async (event) => {
   const lon = Number(q.lon)
   const minDriveMins = q.minDriveMins ? Number(q.minDriveMins) : 0
   const maxDriveMins = q.maxDriveMins ? Number(q.maxDriveMins) : Infinity
-  const datesParam = (q.dates as string) || ''
   const hasHome = Number.isFinite(lat) && Number.isFinite(lon)
 
-  let dates: string[]
-  if (datesParam) {
-    dates = datesParam.split(',').map(s => s.trim()).filter(Boolean)
-  } else {
-    dates = presetDates('next-weekend')
-  }
-  dates = dates.map(d => formatDate(parseDate(d)))
+  const dates = parseDatesParam((q.dates as string) || '', 'next-weekend')
 
   // Collect rock types and region count per area (by area name)
   const rocksByArea: Record<string, Set<string>> = {}
@@ -86,7 +44,8 @@ export default defineEventHandler(async (event) => {
 
   // Fetch forecasts for all area centroids in parallel
   const forecasts = await parallel(candidateAreas, ({ area }) =>
-    fetchForecastWithRetry(event, area.lat, area.lon, dates, 2), 8)
+    fetchForecastWithRetry(event, area.lat, area.lon, dates, { attempts: 2, timeoutMs: 4000, backoffMs: 200, tag: 'areas' })
+  , 8)
 
   const results: any[] = []
   for (let i = 0; i < candidateAreas.length; i++) {

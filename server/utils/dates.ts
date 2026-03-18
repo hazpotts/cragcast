@@ -53,3 +53,14 @@ export function filterHoursByDates(times: string[], dates: string[]) {
   const set = new Set(dates)
   return times.map((t, i) => ({ t, i })).filter(({ t }) => set.has(t.slice(0, 10)))
 }
+
+/**
+ * Parse a comma-separated dates query param, normalising each entry through
+ * parseDate + formatDate.  Falls back to a preset when the param is absent.
+ */
+export function parseDatesParam(datesParam: string, defaultPreset: WhenPreset = 'next-weekend'): string[] {
+  const raw = datesParam
+    ? datesParam.split(',').map(s => s.trim()).filter(Boolean)
+    : presetDates(defaultPreset)
+  return raw.map(d => formatDate(parseDate(d)))
+}

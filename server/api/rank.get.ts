@@ -1,57 +1,12 @@
-import { getForecast } from "~/server/utils/forecast"
+import { getForecast, fetchForecastWithRetry } from "~/server/utils/forecast"
 import { regions } from "~/server/utils/regions"
 import { getCragCountsByRegion } from "~/server/utils/crag-db"
 import { haversineKm, driveMinutesApprox } from "~/server/utils/distance"
 import { scoreRegion } from "~/server/utils/score"
-import { presetDates, parseDate, formatDate } from "~/server/utils/dates"
+import { parseDatesParam } from "~/server/utils/dates"
 import { dailyIcons } from "~/server/utils/icons"
 import { checkWarnings } from "~/server/utils/warnings"
-
-function avg(a: number[]) { return a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0 }
-function sleep(ms: number) { return new Promise(res => setTimeout(res, ms)) }
-
-// Concurrency-limited parallel execution
-async function parallel<T, R>(items: T[], fn: (item: T) => Promise<R>, concurrency = 6): Promise<R[]> {
-  const results: R[] = []
-  const pending: Promise<void>[] = []
-  let index = 0
-
-  async function runNext(): Promise<void> {
-    const i = index++
-    if (i >= items.length) return
-    results[i] = await fn(items[i])
-    await runNext()
-  }
-
-  for (let i = 0; i < Math.min(concurrency, items.length); i++) {
-    pending.push(runNext())
-  }
-  await Promise.all(pending)
-  return results
-}
-
-async function fetchForecastWithRetry(event: any, lat: number, lon: number, dates: string[], attempts = 2) {
-  let lastErr: any
-  for (let i = 0; i < attempts; i++) {
-    try {
-      // Per-attempt timeout to prevent slow upstream from stalling the whole response
-      const ATTEMPT_TIMEOUT_MS = 4000
-      const out = await Promise.race([
-        getForecast(event, lat, lon, dates),
-        new Promise((_, rej) => setTimeout(() => rej(new Error('forecast-timeout')), ATTEMPT_TIMEOUT_MS))
-      ]) as any
-      const mini = out?.mini
-      if (mini && Array.isArray(mini.hours) && mini.hours.length) return out
-      lastErr = new Error('empty-mini')
-    } catch (e: any) {
-      lastErr = e
-    }
-    // Short backoff: 200ms, 400ms
-    if (i < attempts - 1) await sleep(200 * Math.pow(2, i))
-  }
-  console.warn('[rank] forecast failed after retries', { lat, lon, err: String(lastErr) })
-  return null
-}
+import { avg, parallel } from "~/server/utils/server-utils"
 
 export default defineEventHandler(async (event) => {
   const q = getQuery(event)
@@ -59,23 +14,16 @@ export default defineEventHandler(async (event) => {
   const lon = Number(q.lon)
   const minDriveMins = (q.minDriveMins !== undefined) ? Number(q.minDriveMins) : 0
   const maxDriveMins = (q.maxDriveMins !== undefined) ? Number(q.maxDriveMins) : Infinity
-  const datesParam = (q.dates as string) || ''
   const hasHome = Number.isFinite(lat) && Number.isFinite(lon)
 
-  let dates: string[]
-  if (datesParam) {
-    dates = datesParam.split(',').map(s => s.trim()).filter(Boolean)
-  } else {
-    dates = presetDates('next-weekend')
-  }
-  dates = dates.map(d => formatDate(parseDate(d)))
+  const dates = parseDatesParam((q.dates as string) || '', 'next-weekend')
 
   const home = { lat, lon }
 
   // Pre-filter regions by distance if home is set
   type RegionWithDistance = { region: typeof regions[0]; distanceMins: number; pt: { lat: number; lon: number } }
   const candidateRegions: RegionWithDistance[] = []
-  
+
   for (const r of regions) {
     const pt = r.points[0]
     let distanceMins = 0
@@ -98,9 +46,9 @@ export default defineEventHandler(async (event) => {
   }
 
   // Fetch forecasts in parallel with concurrency limit
-  const forecasts = await parallel(candidateRegions, async ({ pt }) => {
-    return fetchForecastWithRetry(event, pt.lat, pt.lon, dates, 2)
-  }, 8) // 8 concurrent requests
+  const forecasts = await parallel(candidateRegions, ({ pt }) =>
+    fetchForecastWithRetry(event, pt.lat, pt.lon, dates, { attempts: 2, timeoutMs: 4000, backoffMs: 200, tag: 'rank' })
+  , 8)
 
   // Get crag counts from D1
   const cragCounts = await getCragCountsByRegion(event)
@@ -110,7 +58,7 @@ export default defineEventHandler(async (event) => {
   for (let i = 0; i < candidateRegions.length; i++) {
     const { region: r, distanceMins, pt } = candidateRegions[i]
     const out = forecasts[i]
-    
+
     // Skip if forecast failed
     if (!out) continue
 
