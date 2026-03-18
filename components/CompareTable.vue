@@ -44,7 +44,7 @@
         </div>
       </template>
       <template #areaSort-data="{ row }">
-        {{ row.pending ? '…' : row.area }}
+        {{ row.pending ? '…' : (isCragGranularity ? row.region : row.area) }}
       </template>
       <template #score-header="{ column }">
         <UPopover>
@@ -180,7 +180,7 @@ async function toggleExpand(regionId: string) {
 }
 const rowsWithSort = computed(() => (props.rows || []).map((r: any) => ({
   ...r,
-  areaSort: `${r?.area ?? ''} | ${r?.name ?? ''}`
+  areaSort: `${(isCragGranularity.value ? r?.region : r?.area) ?? ''} | ${r?.name ?? ''}`
 })))
 function isFaved(id: string) { return Array.isArray(props.favourites) && props.favourites.includes(id) }
 function isRemovable(id: string) { return Array.isArray(props.removableIds) && props.removableIds.includes(id) }
@@ -198,7 +198,7 @@ const columns = computed(() => {
     { key: 'avgWindMph', label: `Wind (${units.windLabel.value})` },
     { key: 'avgRainMm', label: `Rain (${units.rainLabel.value})` },
     // distance inserted conditionally at index 6
-    { key: 'areaSort', label: 'Area', sortable: true },
+    { key: 'areaSort', label: isCragGranularity.value ? 'Region' : 'Area', sortable: true },
     { key: 'score', label: 'Score', sortable: true },
     { key: 'ukc', label: 'Links' },
     { key: 'fav', label: 'Favourite' }
