@@ -21,9 +21,9 @@
     <section v-else>
       <div class="space-y-6">
         <div class="max-w-sm">
-          <UInput v-model="searchQuery" :placeholder="isAreaMode ? 'Search areas...' : 'Search regions...'" icon="i-heroicons-magnifying-glass" size="sm" />
+          <UInput v-model="searchQuery" :placeholder="isAreaMode ? 'Search areas...' : (isCragMode ? 'Search crags...' : 'Search regions...')" icon="i-heroicons-magnifying-glass" size="sm" />
         </div>
-        <template v-if="!isAreaMode">
+        <template v-if="!isAreaMode && !isCragMode">
           <section v-if="filteredFavRows.length" aria-label="Favourites">
             <h3 class="text-base font-semibold mb-2">Favourites</h3>
             <CompareTable :rows="filteredFavRows" :favourites="favs" @toggle-favourite="toggleFav" :removable-ids="customCragIds" @remove="onRemoveCustom" />
@@ -33,10 +33,10 @@
             <CompareTable :rows="filteredCustomRows" :favourites="favs" @toggle-favourite="toggleFav" :removable-ids="customCragIds" @remove="onRemoveCustom" />
           </section>
         </template>
-        <section :aria-label="isAreaMode ? 'All areas' : 'All regions'">
-          <CompareTable :rows="filteredMainRows" :favourites="isAreaMode ? [] : favs" @toggle-favourite="toggleFav" :nameLabel="isAreaMode ? 'Area' : 'Region'" />
+        <section :aria-label="isAreaMode ? 'All areas' : (isCragMode ? 'All crags' : 'All regions')">
+          <CompareTable :rows="filteredMainRows" :favourites="isAreaMode || isCragMode ? [] : favs" @toggle-favourite="toggleFav" :nameLabel="isAreaMode ? 'Area' : (isCragMode ? 'Crag' : 'Region')" />
         </section>
-        <AddLocation v-if="!isAreaMode" :count="customCrags.length" @added="onLocationAdded" />
+        <AddLocation v-if="!isAreaMode && !isCragMode" :count="customCrags.length" @added="onLocationAdded" />
       </div>
     </section>
   </div>
@@ -48,6 +48,7 @@ import { usePrefs, type PrefsSnapshot } from '~/composables/usePrefs'
 import { useUnits } from '~/composables/useUnits'
 import { useCustomCrags } from '~/composables/useCustomCrags'
 import { useAreas } from '~/composables/useAreas'
+import { useCrags, type CragItem } from '~/composables/useCrags'
 import CompareTable from '~/components/CompareTable.vue'
 import PrefsForm from '~/components/PrefsForm.vue'
 import ResultsHeader from '~/components/ResultsHeader.vue'
@@ -55,10 +56,12 @@ import AddLocation from '~/components/AddLocation.vue'
 const prefs = usePrefs()
 const { crags: customCrags, add: addCustomCrag, remove: removeCustomCrag } = useCustomCrags()
 const { items: areaItems, fetchAreas } = useAreas()
+const { fetchCrags } = useCrags()
 const route = useRoute()
 const items = ref<any[]>([])
 const customItems = ref<any[]>([])
 const isAreaMode = computed(() => prefs.granularity.value === 'area')
+const isCragMode = computed(() => prefs.granularity.value === 'crag')
 const hasUrlDates = computed(() => typeof route.query.dates === 'string' && (route.query.dates as string).length > 0)
 const showPrefs = ref(!hasUrlDates.value)
 const shrink = ref(false)
@@ -138,7 +141,8 @@ function compareCacheKey(snap: PrefsSnapshot) {
   const lonKey = snap.lon !== undefined && Number.isFinite(snap.lon) ? String(snap.lon) : 'na'
   const minKey = snap.minDriveMins > 0 ? String(snap.minDriveMins) : '0'
   const distKey = Number.isFinite(snap.maxDriveMins) ? String(snap.maxDriveMins) : 'inf'
-  return `compare:${latKey}:${lonKey}:${minKey}-${distKey}:${snap.dates.join(',')}`
+  const granKey = snap.granularity === 'crag' ? 'crag' : 'region'
+  return `compare:${latKey}:${lonKey}:${minKey}-${distKey}:${snap.dates.join(',')}:${granKey}`
 }
 function readCache(snap: PrefsSnapshot) {
   if (!process.client) return null
@@ -208,7 +212,7 @@ onMounted(async () => {
       const cached = readCache(snap)
       if (cached) items.value = cached
       else await loadCompare(snap)
-      await loadAllCustomCrags(snap)
+      if (snap.granularity !== 'crag') await loadAllCustomCrags(snap)
     }
   }
 })
@@ -236,7 +240,7 @@ watch(() => route.query, () => {
         const cached = readCache(snap)
         if (cached) items.value = cached
         else await loadCompare(snap)
-        await loadAllCustomCrags(snap)
+        if (snap.granularity !== 'crag') await loadAllCustomCrags(snap)
       }
     } else {
       items.value = []
@@ -257,7 +261,7 @@ async function applyPrefs() {
     await fetchAreas(snap)
   } else {
     await loadCompare(snap)
-    await loadAllCustomCrags(snap)
+    if (snap.granularity !== 'crag') await loadAllCustomCrags(snap)
   }
 }
 async function clearTable() {
@@ -283,44 +287,79 @@ async function loadCompare(snap: PrefsSnapshot) {
   const regionList = await $fetch<any[]>('/api/regions', { signal: controller.signal })
   if (controller.signal.aborted) return
 
-  // Prefill table with placeholder rows
-  items.value = regionList.map(r => ({ id: r.id, name: r.name, area: (r as any).area, cragCount: (r as any).cragCount || 0, pending: true }))
-
   const paramsBase: any = { dates: snap.dates.join(',') }
   if (snap.lat !== undefined && Number.isFinite(snap.lat)) { paramsBase.lat = snap.lat; paramsBase.lon = snap.lon }
   if (snap.minDriveMins > 0) paramsBase.minDriveMins = snap.minDriveMins
   if (Number.isFinite(snap.maxDriveMins)) paramsBase.maxDriveMins = snap.maxDriveMins
 
-  // 2) Fetch each region individually with a small delay to avoid rate limits
-  for (const r of regionList) {
-    if (controller.signal.aborted) return
-
-    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10s timeout per region
-    try {
-      const row = await $fetch<any>('/api/region', {
-        params: { id: r.id, ...paramsBase },
-        signal: controller.signal
-      })
-      clearTimeout(timeoutId)
+  if (snap.granularity === 'crag') {
+    // Crag mode: load all crags as flat rows, using region weather data
+    for (const r of regionList) {
       if (controller.signal.aborted) return
-
-      const unlimited = !Number.isFinite(snap.maxDriveMins)
-      const tooFar = !unlimited && row.distanceMins > snap.maxDriveMins
-      const tooClose = snap.minDriveMins > 0 && row.distanceMins < snap.minDriveMins
-      if (tooFar || tooClose) {
-        items.value = items.value.filter((x: any) => x.id !== r.id)
-      } else {
-        const idx = items.value.findIndex((x: any) => x.id === r.id)
-        if (idx !== -1) items.value[idx] = row
+      try {
+        const [regionRow, cragItems] = await Promise.all([
+          $fetch<any>('/api/region', { params: { id: r.id, ...paramsBase }, signal: controller.signal }),
+          fetchCrags(r.id, {
+            lat: snap.lat,
+            lon: snap.lon,
+            dates: snap.dates.join(','),
+            minDriveMins: snap.minDriveMins > 0 ? snap.minDriveMins : undefined,
+            maxDriveMins: Number.isFinite(snap.maxDriveMins) ? snap.maxDriveMins : undefined
+          })
+        ])
+        if (controller.signal.aborted) return
+        const newRows = cragItems.map((crag: CragItem) => ({
+          ...crag,
+          region: r.name,
+          daily: regionRow.daily,
+          avgTempC: regionRow.avgTempC,
+          avgWindMph: regionRow.avgWindMph,
+          avgRainMm: regionRow.avgRainMm,
+          warnings: regionRow.warnings,
+          cragCount: 0,
+          pending: false
+        }))
+        items.value = [...items.value, ...newRows]
+        await new Promise(res => setTimeout(res, 120))
+      } catch (e) {
+        if (controller.signal.aborted) return
       }
-      writeCache(snap)
-      await new Promise(res => setTimeout(res, 120))
-    } catch (e) {
-      clearTimeout(timeoutId)
+    }
+  } else {
+    // Region mode: prefill table with placeholder rows, then load each region
+    items.value = regionList.map(r => ({ id: r.id, name: r.name, area: (r as any).area, cragCount: (r as any).cragCount || 0, pending: true }))
+
+    // 2) Fetch each region individually with a small delay to avoid rate limits
+    for (const r of regionList) {
       if (controller.signal.aborted) return
-      const idx = items.value.findIndex((x: any) => x.id === r.id)
-      if (idx !== -1) {
-        items.value[idx] = { ...items.value[idx], pending: false, error: true }
+
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10s timeout per region
+      try {
+        const row = await $fetch<any>('/api/region', {
+          params: { id: r.id, ...paramsBase },
+          signal: controller.signal
+        })
+        clearTimeout(timeoutId)
+        if (controller.signal.aborted) return
+
+        const unlimited = !Number.isFinite(snap.maxDriveMins)
+        const tooFar = !unlimited && row.distanceMins > snap.maxDriveMins
+        const tooClose = snap.minDriveMins > 0 && row.distanceMins < snap.minDriveMins
+        if (tooFar || tooClose) {
+          items.value = items.value.filter((x: any) => x.id !== r.id)
+        } else {
+          const idx = items.value.findIndex((x: any) => x.id === r.id)
+          if (idx !== -1) items.value[idx] = row
+        }
+        writeCache(snap)
+        await new Promise(res => setTimeout(res, 120))
+      } catch (e) {
+        clearTimeout(timeoutId)
+        if (controller.signal.aborted) return
+        const idx = items.value.findIndex((x: any) => x.id === r.id)
+        if (idx !== -1) {
+          items.value[idx] = { ...items.value[idx], pending: false, error: true }
+        }
       }
     }
   }
