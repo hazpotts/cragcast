@@ -10,6 +10,21 @@ import { checkWarnings } from "~/server/utils/warnings"
 function avg(a: number[]) { return a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0 }
 function sleep(ms: number) { return new Promise(res => setTimeout(res, ms)) }
 
+async function parallel<T, R>(items: T[], fn: (item: T) => Promise<R>, concurrency = 6): Promise<R[]> {
+  const results: R[] = []
+  const pending: Promise<void>[] = []
+  let index = 0
+  async function runNext(): Promise<void> {
+    const i = index++
+    if (i >= items.length) return
+    results[i] = await fn(items[i])
+    await runNext()
+  }
+  for (let i = 0; i < Math.min(concurrency, items.length); i++) pending.push(runNext())
+  await Promise.all(pending)
+  return results
+}
+
 async function fetchForecastWithRetry(event: any, lat: number, lon: number, dates: string[], attempts = 3) {
   let lastErr: any
   for (let i = 0; i < attempts; i++) {
@@ -30,6 +45,8 @@ async function fetchForecastWithRetry(event: any, lat: number, lon: number, date
   console.warn('[crags] forecast failed after retries', { lat, lon, err: String(lastErr) })
   return null
 }
+
+const coordKey = (lat: number, lon: number) => `${lat.toFixed(2)},${lon.toFixed(2)}`
 
 export default defineEventHandler(async (event) => {
   const q = getQuery(event)
@@ -62,39 +79,48 @@ export default defineEventHandler(async (event) => {
   }
   dates = dates.map(d => formatDate(parseDate(d)))
 
-  // Get the region-level forecast for the base score
-  const regionPt = region.points[0]
-  const regionForecast = await fetchForecastWithRetry(event, regionPt.lat, regionPt.lon, dates)
-  if (!regionForecast) {
-    throw createError({ statusCode: 503, statusMessage: 'forecast unavailable for region' })
+  // Deduplicate by rounded coordinates (~1.1km precision, matches forecast cache granularity)
+  const keyToCoord = new Map<string, { lat: number; lon: number }>()
+  for (const crag of regionCrags) {
+    const key = coordKey(crag.lat, crag.lon)
+    if (!keyToCoord.has(key)) keyToCoord.set(key, { lat: crag.lat, lon: crag.lon })
+  }
+  const uniqueCoords = [...keyToCoord.entries()].map(([key, coord]) => ({ key, ...coord }))
+
+  // Fetch forecasts for all unique crag coordinates in parallel
+  const forecastResults = await parallel(uniqueCoords, ({ lat: cLat, lon: cLon }) =>
+    fetchForecastWithRetry(event, cLat, cLon, dates), 8)
+
+  const forecastMap = new Map<string, any>()
+  for (let i = 0; i < uniqueCoords.length; i++) {
+    forecastMap.set(uniqueCoords[i].key, forecastResults[i])
   }
 
-  let regionDistanceMins = 0
-  if (hasHome) {
-    const km = haversineKm({ lat, lon }, { lat: regionPt.lat, lon: regionPt.lon })
-    regionDistanceMins = driveMinutesApprox(km)
-  }
-
-  const { score: regionScore } = scoreRegion(regionForecast.mini, {
-    rocks: region.rock,
-    distanceMins: regionDistanceMins,
-    minDriveMins,
-    maxDriveMins
-  })
-
-  // Score each crag using the region forecast (crags within a region share similar weather)
-  const results = regionCrags.map(crag => {
-    const { score, modifiers } = scoreCrag(regionScore, regionForecast.mini, {
-      aspect: crag.aspect,
-      rocks: crag.rock,
-      tags: crag.tags
-    })
+  // Score each crag using its own forecast and coordinates
+  const results: any[] = []
+  for (const crag of regionCrags) {
+    const key = coordKey(crag.lat, crag.lon)
+    const cragForecast = forecastMap.get(key)
+    if (!cragForecast) continue
 
     let distanceMins = 0
     if (hasHome) {
       const km = haversineKm({ lat, lon }, { lat: crag.lat, lon: crag.lon })
       distanceMins = driveMinutesApprox(km)
     }
+
+    const { score: baseScore } = scoreRegion(cragForecast.mini, {
+      rocks: crag.rock,
+      distanceMins,
+      minDriveMins,
+      maxDriveMins
+    })
+
+    const { score, modifiers } = scoreCrag(baseScore, cragForecast.mini, {
+      aspect: crag.aspect,
+      rocks: crag.rock,
+      tags: crag.tags
+    })
 
     const links = {
       bbc: `https://www.bbc.co.uk/weather?lat=${crag.lat}&lon=${crag.lon}`,
@@ -103,7 +129,7 @@ export default defineEventHandler(async (event) => {
       yrno: `https://www.yr.no/en/forecast/daily-table/${crag.lat.toFixed(4)},${crag.lon.toFixed(4)}`
     }
 
-    return {
+    results.push({
       id: crag.id,
       name: crag.name,
       regionId: crag.regionId,
@@ -118,8 +144,8 @@ export default defineEventHandler(async (event) => {
       distanceMins,
       ukcUrl: `https://www.ukclimbing.com/logbook/crags/?location=${encodeURIComponent(String(crag.lat))}%2C+${encodeURIComponent(String(crag.lon))}&distance=5`,
       links
-    }
-  })
+    })
+  }
 
   results.sort((a, b) => b.score - a.score)
   return results
