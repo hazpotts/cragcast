@@ -12,30 +12,30 @@
       <PrefsForm @confirm="savePrefs" @cancel="showPrefs=false" @clear="clearPrefs" />
     </section>
     <section v-else>
-      <div v-if="pending" class="space-y-4">
+      <div v-if="activePending" class="space-y-4">
         <SkeletonCard />
       </div>
       <div v-else>
-        <div v-if="items[0]" class="mb-6">
+        <div v-if="activeItems[0]" class="mb-6">
           <RegionCard
-            :regionId="items[0].id"
-            :name="items[0].name"
-            :score="items[0].score"
-            :why="items[0].why"
-            :warnings="items[0].warnings"
-            :daily="items[0].daily"
-            :distanceMins="Number(items[0].distanceMins ?? 0)"
-            :ukcUrl="items[0].ukcUrl"
-            :links="items[0].links"
-            :avgTempC="items[0].avgTempC"
-            :avgRainMm="items[0].avgRainMm"
-            :avgWindMph="items[0].avgWindMph"
-            :cragCount="items[0].cragCount || 0"
+            :regionId="activeItems[0].id"
+            :name="activeItems[0].name"
+            :score="activeItems[0].score"
+            :why="activeItems[0].why"
+            :warnings="activeItems[0].warnings"
+            :daily="activeItems[0].daily"
+            :distanceMins="Number(activeItems[0].distanceMins ?? 0)"
+            :ukcUrl="activeItems[0].ukcUrl"
+            :links="activeItems[0].links"
+            :avgTempC="activeItems[0].avgTempC"
+            :avgRainMm="activeItems[0].avgRainMm"
+            :avgWindMph="activeItems[0].avgWindMph"
+            :cragCount="activeItems[0].cragCount || 0"
           />
         </div>
         <div class="grid grid-cols-2 gap-4">
             <RegionCard
-              v-for="r in items.slice(1, visibleCount + 1)"
+              v-for="r in activeItems.slice(1, visibleCount + 1)"
               :key="r.id"
               :regionId="r.id"
               :name="r.name"
@@ -68,20 +68,27 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { usePrefs } from '~/composables/usePrefs'
 import { useUnits } from '~/composables/useUnits'
 import { useRank } from '~/composables/useRank'
+import { useAreas } from '~/composables/useAreas'
 import { formatShortDayLabel } from '~/utils/dates'
 import PrefsForm from '~/components/PrefsForm.vue'
 import SkeletonCard from '~/components/SkeletonCard.vue'
 import RegionCard from '~/components/RegionCard.vue'
 import ResultsHeader from '~/components/ResultsHeader.vue'
 const prefs = usePrefs()
-const { items, pending, fetchRank } = useRank()
+const { items: rankItems, pending: rankPending, fetchRank } = useRank()
+const { items: areaItems, pending: areaPending, fetchAreas } = useAreas()
 const showPrefs = ref(true)
 const CARDS_PAGE_SIZE = 4
 const visibleCount = ref(CARDS_PAGE_SIZE)
-const hasMoreCards = computed(() => items.value && items.value.length > 1 && (visibleCount.value + 1) < items.value.length)
+
+const isAreaMode = computed(() => prefs.granularity.value === 'area')
+const activeItems = computed(() => isAreaMode.value ? areaItems.value : rankItems.value)
+const activePending = computed(() => isAreaMode.value ? areaPending.value : rankPending.value)
+
+const hasMoreCards = computed(() => activeItems.value && activeItems.value.length > 1 && (visibleCount.value + 1) < activeItems.value.length)
 const route = useRoute()
 const latestUpdatedAt = computed(() => {
-  const all = (items.value || []).filter((r: any) => r.updatedAt)
+  const all = (activeItems.value || []).filter((r: any) => r.updatedAt)
   if (!all.length) return null
   return all.reduce((latest: string, r: any) => r.updatedAt > latest ? r.updatedAt : latest, all[0].updatedAt)
 })
@@ -107,48 +114,51 @@ const distanceLabel = computed(() => {
   return `max ${units.convertDistance(max)} ${label}`
 })
 
+function fetchActive(snap: ReturnType<typeof prefs.snapshot>) {
+  if (snap.granularity === 'area') fetchAreas(snap)
+  else fetchRank(snap)
+}
+
 onMounted(() => {
   showPrefs.value = !hasUrlDates.value
-  if (hasUrlDates.value && !items.value?.length) {
-    fetchRank(prefs.snapshot())
+  if (hasUrlDates.value && !activeItems.value?.length) {
+    fetchActive(prefs.snapshot())
   }
 })
 
-// Handles browser back/forward, direct URL edits, and post-commit URL updates.
-// The AbortController in useRank ensures rapid triggers don't produce stale results.
 watch(() => route.query, () => {
   if (routeWatchTimer) clearTimeout(routeWatchTimer)
-  // Immediately clear stale results to prevent flash of out-of-range content
   if (!showPrefs.value && hasUrlDates.value) {
-    items.value = [] as any
+    rankItems.value = [] as any
+    areaItems.value = [] as any
   }
   routeWatchTimer = setTimeout(() => {
     const has = hasUrlDates.value
     showPrefs.value = !has
     if (has) {
       visibleCount.value = CARDS_PAGE_SIZE
-      fetchRank(prefs.snapshot())
+      fetchActive(prefs.snapshot())
     } else {
-      items.value = [] as any
+      rankItems.value = [] as any
+      areaItems.value = [] as any
       visibleCount.value = CARDS_PAGE_SIZE
     }
   }, 150)
 }, { deep: true })
 
 async function savePrefs() {
-  // Capture snapshot BEFORE commit — includes pending prefs that haven't
-  // flushed to the URL yet, so there's no timing dependency on router.replace.
   const snap = prefs.snapshot()
   showPrefs.value = false
   visibleCount.value = CARDS_PAGE_SIZE
-  items.value = [] as any
-  // Flush prefs to URL (for bookmarkability) and fetch with explicit params
+  rankItems.value = [] as any
+  areaItems.value = [] as any
   prefs.commit()
-  fetchRank(snap)
+  fetchActive(snap)
 }
 async function clearPrefs() {
   showPrefs.value = true
-  items.value = [] as any
+  rankItems.value = [] as any
+  areaItems.value = [] as any
   visibleCount.value = CARDS_PAGE_SIZE
   prefs.where.value = null
   prefs.maxDriveMins.value = null

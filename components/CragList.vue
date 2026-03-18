@@ -59,15 +59,21 @@
         >{{ mod }}</span>
       </div>
 
-      <!-- UKC link -->
-      <a
-        :href="crag.ukcUrl"
-        target="_blank"
-        rel="noopener"
-        class="ml-auto text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 shrink-0"
-      >
-        UKC <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-0.5 h-3 w-3 inline" />
-      </a>
+      <!-- External links -->
+      <div class="ml-auto flex items-center gap-1 shrink-0">
+        <a v-if="crag.links?.windy" :href="crag.links.windy" target="_blank" rel="noopener"
+           class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          Windy <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-0.5 h-3 w-3 inline" />
+        </a>
+        <a v-if="crag.links?.yrno" :href="crag.links.yrno" target="_blank" rel="noopener"
+           class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          Yr <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-0.5 h-3 w-3 inline" />
+        </a>
+        <a :href="crag.ukcUrl" target="_blank" rel="noopener"
+           class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          UKC <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-0.5 h-3 w-3 inline" />
+        </a>
+      </div>
     </div>
   </div>
 </template>

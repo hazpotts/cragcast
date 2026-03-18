@@ -13,6 +13,25 @@ export type Region = {
   }
 }
 
+export type Area = {
+  id: string
+  name: string
+  lat: number
+  lon: number
+}
+
+// Representative centroid for each area (average of constituent region points)
+export const areas: Area[] = [
+  { id: 'peaks-manchester',          name: 'Peaks & Manchester',        lat: 53.40, lon: -1.95 },
+  { id: 'north-wales',               name: 'North Wales',               lat: 53.11, lon: -3.95 },
+  { id: 'lake-district',             name: 'Lake District',             lat: 54.47, lon: -3.11 },
+  { id: 'yorkshire-northumberland',  name: 'Yorkshire & Northumberland', lat: 54.32, lon: -1.70 },
+  { id: 'south-west-wales',          name: 'South & West Wales',        lat: 51.67, lon: -3.93 },
+  { id: 'scotland',                  name: 'Scotland',                  lat: 57.03, lon: -4.28 },
+  { id: 'south-west-england',        name: 'South West England',        lat: 50.81, lon: -4.22 },
+  { id: 'south-coast-england',       name: 'South Coast England',       lat: 50.75, lon: -1.41 },
+]
+
 export const regions: Region[] = [
   // --- Peak District ---
   {

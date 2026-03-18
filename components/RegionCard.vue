@@ -85,7 +85,7 @@
           UKC
         </a>
         <button
-          v-if="cragCount > 0"
+          v-if="cragCount > 0 && isCragGranularity"
           @click="toggleCrags"
           class="inline-flex items-center gap-0.5 px-2 py-1 rounded text-xs bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-200 dark:hover:bg-emerald-900/50"
         >
@@ -94,7 +94,7 @@
         </button>
       </div>
       <!-- Expandable crag list -->
-      <div v-if="showCrags && cragCount > 0" class="mt-1 border-t border-gray-100 dark:border-gray-700 pt-1">
+      <div v-if="showCrags && cragCount > 0 && isCragGranularity" class="mt-1 border-t border-gray-100 dark:border-gray-700 pt-1">
         <CragList :crags="cragItems" :pending="cragsPending" />
       </div>
     </div>
@@ -173,7 +173,7 @@
       </div>
     </div>
     <!-- Expandable crag list for full card -->
-    <div v-if="cragCount > 0" class="mt-3">
+    <div v-if="cragCount > 0 && isCragGranularity" class="mt-3">
       <button
         @click="toggleCrags"
         class="inline-flex items-center gap-1 text-sm text-emerald-700 hover:text-emerald-800 dark:text-emerald-300 dark:hover:text-emerald-200"
@@ -257,6 +257,7 @@ const { fetchCrags } = useCrags()
 const prefs = usePrefs()
 
 const cragCount = computed(() => props.cragCount || 0)
+const isCragGranularity = computed(() => prefs.granularity.value === 'crag')
 
 async function toggleCrags() {
   showCrags.value = !showCrags.value

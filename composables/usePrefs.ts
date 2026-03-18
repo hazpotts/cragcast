@@ -3,6 +3,8 @@ import { presetDates } from '~/utils/dates'
 
 export type Location = { lat: number; lon: number; name: string }
 
+export type Granularity = 'area' | 'region' | 'crag'
+
 export type PrefsSnapshot = {
   lat?: number
   lon?: number
@@ -10,6 +12,7 @@ export type PrefsSnapshot = {
   dates: string[]
   minDriveMins: number
   maxDriveMins: number
+  granularity: Granularity
 }
 
 type PrefsState = {
@@ -17,6 +20,7 @@ type PrefsState = {
   minDriveMins: Ref<number>
   maxDriveMins: Ref<number>
   dates: Ref<string[]>
+  granularity: Ref<Granularity>
   whenPreset: Ref<'today'|'tomorrow'|'this-weekend'|'next-weekend'|'custom'>
   commit: () => Promise<void>
   snapshot: () => PrefsSnapshot
@@ -71,6 +75,7 @@ export const usePrefs = () => {
       const ds = typeof q.dates === 'string' ? q.dates.split(',').map((x: string) => x.trim()).filter(Boolean) : []
       const minN = q.minDriveMins !== undefined ? Number(q.minDriveMins) : NaN
       const maxN = q.maxDriveMins !== undefined ? Number(q.maxDriveMins) : NaN
+      const gran = q.granularity === 'crag' ? 'crag' : q.granularity === 'area' ? 'area' : 'region'
       return {
         lat: Number.isFinite(lat) ? lat : undefined,
         lon: Number.isFinite(lon) ? lon : undefined,
@@ -78,6 +83,7 @@ export const usePrefs = () => {
         dates: ds,
         minDriveMins: Number.isFinite(minN) && minN > 0 ? minN : 0,
         maxDriveMins: Number.isFinite(maxN) ? maxN : Infinity,
+        granularity: gran as Granularity,
       }
     }
 
@@ -139,9 +145,21 @@ export const usePrefs = () => {
       }
     }) as unknown as Ref<string[]>
 
+    const granularity = computed<Granularity>({
+      get() {
+        const q = route.query as any
+        if (q.granularity === 'crag') return 'crag'
+        if (q.granularity === 'area') return 'area'
+        return 'region'
+      },
+      set(v: Granularity) {
+        updateQuery({ granularity: v === 'region' ? null : v })
+      }
+    }) as unknown as Ref<Granularity>
+
     const whenPreset = ref<'today'|'tomorrow'|'this-weekend'|'next-weekend'|'custom'>('this-weekend')
 
-    return { where, minDriveMins, maxDriveMins, dates, whenPreset, commit, snapshot }
+    return { where, minDriveMins, maxDriveMins, dates, granularity, whenPreset, commit, snapshot }
   }
 
   if (process.client) {

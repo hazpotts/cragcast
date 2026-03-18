@@ -51,6 +51,13 @@
       <UButton size="sm" :color="!Number.isFinite(selectedMax as any)?'primary':'gray'" label="No limit" @click="setMax(Infinity as any)" />
     </div>
 
+    <h2 class="text-xl font-semibold">Detail level</h2>
+    <div class="flex flex-wrap gap-2">
+      <UButton size="sm" :color="selectedGranularity==='area'?'primary':'gray'" label="Area" @click="selectedGranularity='area'" />
+      <UButton size="sm" :color="selectedGranularity==='region'?'primary':'gray'" label="Region" @click="selectedGranularity='region'" />
+      <UButton size="sm" :color="selectedGranularity==='crag'?'primary':'gray'" label="Crag" @click="selectedGranularity='crag'" />
+    </div>
+
     <div class="flex items-center gap-2 pt-6">
       <UButton :disabled="isDisabled" :aria-disabled="isDisabled" label="Show" @click="onConfirm"
         class="px-6 py-2 bg-sky-600 text-white hover:bg-sky-500 disabled:opacity-50 dark:bg-sky-500 dark:hover:bg-sky-400" />
@@ -91,6 +98,7 @@ const hasValidLocation = computed(() => {
 const isDisabled = computed(() => !mounted.value)
 const selectedWhenPreset = ref<'today'|'tomorrow'|'this-weekend'|'next-weekend'|'custom'>('this-weekend')
 const selectedMax = ref<number>(prefs.maxDriveMins.value)
+const selectedGranularity = ref<'area'|'region'|'crag'>(prefs.granularity.value)
 const selectedLocation = ref<Location | null>(null)
 const next7 = computed(() => {
   const out: { iso: string; label: string }[] = []
@@ -153,14 +161,16 @@ function onConfirm() {
   if (selectedLocation.value) {
     prefs.where.value = selectedLocation.value
   }
-  // Apply max distance on confirm
+  // Apply max distance and granularity on confirm
   prefs.maxDriveMins.value = selectedMax.value
+  prefs.granularity.value = selectedGranularity.value
   emit('confirm')
 }
 function onClear() {
   selectedLocation.value = null
   selectedMax.value = Infinity
   selectedWhenPreset.value = 'this-weekend'
+  selectedGranularity.value = 'region'  // default on clear
   emit('clear')
 }
 </script>
