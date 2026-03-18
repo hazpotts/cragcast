@@ -93,9 +93,15 @@
           {{ cragCount }} crags
         </button>
       </div>
-      <!-- Expandable crag list -->
-      <div v-if="showCrags && cragCount > 0 && isCragGranularity" class="mt-1 border-t border-gray-100 dark:border-gray-700 pt-1">
-        <CragList :crags="cragItems" :pending="cragsPending" />
+      <!-- Expandable crag cards -->
+      <div v-if="showCrags && cragCount > 0 && isCragGranularity" class="mt-1 border-t border-gray-100 dark:border-gray-700 pt-2">
+        <div v-if="cragsPending" class="flex items-center gap-2 py-2 text-sm text-gray-500">
+          <Icon name="heroicons:arrow-path" class="h-4 w-4 animate-spin" />Loading crags…
+        </div>
+        <div v-else-if="!cragItems.length" class="py-2 text-sm text-gray-400">No crag data available</div>
+        <div v-else class="grid grid-cols-1 gap-2">
+          <CragCard v-for="crag in cragItems" :key="crag.id" :crag="crag" />
+        </div>
       </div>
     </div>
   </UCard>
@@ -151,9 +157,9 @@
       </div>
       <!-- Right: large weather icons + stats -->
       <div class="w-full sm:w-auto sm:flex-1 flex justify-center">
-        <div class="flex flex-wrap gap-2 items-start justify-center sm:justify-end">
+        <div class="flex flex-wrap gap-3 items-start justify-center sm:justify-end">
           <template v-for="d in daily" :key="d.date">
-            <div class="flex items-center sm:flex-col sm:items-center text-sm text-gray-600 dark:text-gray-300">
+            <div class="flex flex-col items-center text-sm text-gray-600 dark:text-gray-300">
               <div class="bg-slate-400 rounded p-1">
                 <img
                   :src="iconSrc(d.icon)"
@@ -162,7 +168,7 @@
                   class="h-20 w-20 sm:h-24 sm:w-24"
                 />
               </div>
-              <div class="flex sm:flex-col ml-3 sm:ml-0 mt-0 sm:mt-1 sm:mb-2 text-left sm:text-center text-gray-600 dark:text-gray-300">
+              <div class="flex flex-col mt-1 mb-1 items-center text-center text-gray-600 dark:text-gray-300">
                 <div v-if="Number.isFinite(d.tempAvgC as any)" class="inline-flex items-center gap-0.5"><Icon name="lucide:thermometer" class="h-3.5 w-3.5 text-current" />{{ units.convertTemp(d.tempAvgC) }}{{ units.tempLabel.value }}</div>
                 <div v-if="Number.isFinite(d.rainSumMm as any)" class="inline-flex items-center gap-0.5"><Icon name="lucide:droplets" class="h-3.5 w-3.5 text-current" />{{ units.convertRain(d.rainSumMm) }} {{ units.rainLabel.value }}</div>
                 <div v-if="Number.isFinite(d.windAvgMph as any)" class="inline-flex items-center gap-0.5"><Icon name="lucide:wind" class="h-3.5 w-3.5 text-current" />{{ units.convertWind(d.windAvgMph) }} {{ units.windLabel.value }}</div>
@@ -181,8 +187,14 @@
         <Icon :name="showCrags ? 'heroicons:chevron-up' : 'heroicons:chevron-down'" class="h-4 w-4" />
         {{ showCrags ? 'Hide' : 'Show' }} {{ cragCount }} crags in this region
       </button>
-      <div v-if="showCrags" class="mt-2 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-        <CragList :crags="cragItems" :pending="cragsPending" />
+      <div v-if="showCrags" class="mt-3">
+        <div v-if="cragsPending" class="flex items-center gap-2 py-2 text-sm text-gray-500">
+          <Icon name="heroicons:arrow-path" class="h-4 w-4 animate-spin" />Loading crags…
+        </div>
+        <div v-else-if="!cragItems.length" class="py-2 text-sm text-gray-400">No crag data available</div>
+        <div v-else class="grid grid-cols-2 gap-3">
+          <CragCard v-for="crag in cragItems" :key="crag.id" :crag="crag" />
+        </div>
       </div>
     </div>
     <!-- Footer: table link + external links -->
@@ -223,7 +235,7 @@ import { useLocalStorage } from '@vueuse/core'
 import { useUnits } from '~/composables/useUnits'
 import { usePrefs } from '~/composables/usePrefs'
 import { useCrags, type CragItem } from '~/composables/useCrags'
-import CragList from '~/components/CragList.vue'
+import CragCard from '~/components/CragCard.vue'
 const units = useUnits()
 const router = useRouter()
 const route = useRoute()

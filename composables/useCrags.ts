@@ -6,6 +6,12 @@ export type CragItem = {
   regionId: string
   score: number
   modifiers: string[]
+  why: string[]
+  warnings?: { level: string; type: string; message: string }[]
+  daily: { date: string; icon: string; tempAvgC: number; windAvgMph: number; rainSumMm: number }[]
+  avgTempC: number
+  avgWindMph: number
+  avgRainMm: number
   aspect: string | null
   rock: string[]
   types: { trad?: number; sport?: number; boulder?: number }
