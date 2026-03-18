@@ -9,7 +9,7 @@
     />
 
     <section v-if="showPrefs" class="space-y-4">
-      <PrefsForm @confirm="savePrefs" @cancel="showPrefs=false" />
+      <PrefsForm @confirm="savePrefs" @cancel="showPrefs=false" @clear="clearPrefs" />
     </section>
     <section v-else>
       <div v-if="pending" class="space-y-4">
@@ -124,11 +124,15 @@ onMounted(async () => {
 watch(() => route.query, () => {
   if (ignoreNextWatch.value) { ignoreNextWatch.value = false; return }
   if (routeWatchTimer) clearTimeout(routeWatchTimer)
+  // Immediately clear stale results to prevent flash of out-of-range content
+  if (!showPrefs.value && hasUrlDates.value) {
+    items.value = [] as any
+  }
   routeWatchTimer = setTimeout(async () => {
-    if (showPrefs.value) return
     const has = hasUrlDates.value
     showPrefs.value = !has
     if (has) {
+      visibleCount.value = CARDS_PAGE_SIZE
       await fetchRank()
     } else {
       // Clear list when no URL dates
@@ -147,5 +151,15 @@ async function savePrefs() {
   await prefs.commit()
   // Trigger fetch without awaiting so pending state renders skeleton
   fetchRank()
+}
+async function clearPrefs() {
+  ignoreNextWatch.value = true
+  showPrefs.value = true
+  items.value = [] as any
+  visibleCount.value = CARDS_PAGE_SIZE
+  prefs.where.value = null
+  prefs.maxDriveMins.value = null
+  prefs.dates.value = []
+  await prefs.commit()
 }
 </script>

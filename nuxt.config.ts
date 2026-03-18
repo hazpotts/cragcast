@@ -5,6 +5,10 @@ export default defineNuxtConfig({
   nitro: {
     preset: 'cloudflare-pages'
   },
+  routeRules: {
+    '/recommend': { redirect: '/' },
+    '/compare': { redirect: '/' },
+  },
   modules: [
     '@nuxt/ui',
     '@nuxtjs/tailwindcss',
