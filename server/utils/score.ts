@@ -1,9 +1,6 @@
 import type { MiniSeries } from './forecast'
 import type { Aspect } from './crags'
-
-function avg(a: number[]) { return a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0 }
-function max(a: number[]) { return a.length ? Math.max(...a) : 0 }
-function sum(a: number[]) { return a.length ? a.reduce((s, x) => s + x, 0) : 0 }
+import { avg, max, sum } from './server-utils'
 
 export type RockKind = 'gritstone' | 'limestone' | 'sandstone' | 'volcanic' | 'rhyolite' | 'andesite' | 'other'
 

@@ -1,32 +1,9 @@
-import { getForecast } from "~/server/utils/forecast"
+import { fetchForecastWithRetry } from "~/server/utils/forecast"
 import { haversineKm, driveMinutesApprox } from "~/server/utils/distance"
 import { scoreRegion } from "~/server/utils/score"
-import { parseDate, formatDate } from "~/server/utils/dates"
+import { parseDatesParam } from "~/server/utils/dates"
 import { dailyIcons } from "~/server/utils/icons"
-
-function avg(a: number[]) { return a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0 }
-function sleep(ms: number) { return new Promise(res => setTimeout(res, ms)) }
-
-async function fetchForecastWithRetry(event: any, lat: number, lon: number, dates: string[], attempts = 4) {
-  let lastErr: any
-  for (let i = 0; i < attempts; i++) {
-    try {
-      const ATTEMPT_TIMEOUT_MS = 3500
-      const out = await Promise.race([
-        getForecast(event, lat, lon, dates),
-        new Promise((_, rej) => setTimeout(() => rej(new Error('forecast-timeout')), ATTEMPT_TIMEOUT_MS))
-      ]) as any
-      const mini = out?.mini
-      if (mini && Array.isArray(mini.hours) && mini.hours.length) return out
-      lastErr = new Error('empty-mini')
-    } catch (e: any) {
-      lastErr = e
-    }
-    await sleep(300 * Math.pow(2, i))
-  }
-  console.warn('[custom-region] forecast failed after retries', { lat, lon, err: String(lastErr) })
-  throw createError({ statusCode: 503, statusMessage: `forecast unavailable: ${String(lastErr)}` })
-}
+import { avg } from "~/server/utils/server-utils"
 
 /** Reverse-geocode lat/lon to nearest town name via Nominatim */
 async function reverseGeocode(lat: number, lon: number): Promise<string> {
@@ -60,18 +37,8 @@ export default defineEventHandler(async (event) => {
   const hasHome = Number.isFinite(homeLat) && Number.isFinite(homeLon)
   const minDriveMins = q.minDriveMins ? Number(q.minDriveMins) : 0
   const maxDriveMins = q.maxDriveMins ? Number(q.maxDriveMins) : Infinity
-  const datesParam = (q.dates as string) || ''
 
-  let dates: string[]
-  if (datesParam) {
-    dates = datesParam.split(',').map(s => s.trim()).filter(Boolean)
-  } else {
-    const d = new Date()
-    d.setDate(d.getDate() + 1)
-    const s = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
-    dates = [s]
-  }
-  dates = dates.map(d => formatDate(parseDate(d)))
+  const dates = parseDatesParam((q.dates as string) || '', 'tomorrow')
 
   let distanceMins = 0
   if (hasHome) {
@@ -79,8 +46,11 @@ export default defineEventHandler(async (event) => {
     distanceMins = driveMinutesApprox(km)
   }
 
-  const out = await fetchForecastWithRetry(event, cragLat, cragLon, dates, 4)
-  const { mini, updatedAt } = out
+  // Single-crag endpoint: more retries are acceptable; throw on final failure
+  const out = await fetchForecastWithRetry(event, cragLat, cragLon, dates, {
+    attempts: 4, timeoutMs: 3500, backoffMs: 300, tag: 'custom-region', throwOnFailure: true
+  })
+  const { mini, updatedAt } = out!
   const { score, why } = scoreRegion(mini, {
     rocks: rocks.length ? rocks : ['other'],
     distanceMins: Number.isFinite(distanceMins) ? distanceMins : 0,

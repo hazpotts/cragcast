@@ -1,4 +1,5 @@
 import { filterHoursByDates } from './dates'
+import { sleep } from './server-utils'
 
 export type MiniSeries = {
   hours: string[]
@@ -150,6 +151,56 @@ export async function getForecast(event: any, lat: number, lon: number, dates: s
     const empty: MiniSeries = { hours: [], rainMm: [], pop: [], wind: [], gust: [], temp: [], cloud: [] }
     return { mini: empty, updatedAt: new Date().toISOString(), error: true }
   }
+}
+
+/**
+ * Fetch a forecast with retry and per-attempt timeout.
+ * Shared by all API endpoints; callers vary only in attempt count, timeout, and backoff.
+ *
+ * @param throwOnFailure - if true, throws on final failure (single-region endpoints);
+ *                         if false, returns null (bulk/parallel endpoints)
+ */
+export async function fetchForecastWithRetry(
+  event: any,
+  lat: number,
+  lon: number,
+  dates: string[],
+  opts: {
+    attempts?: number
+    timeoutMs?: number
+    backoffMs?: number
+    tag?: string
+    throwOnFailure?: boolean
+  } = {}
+): Promise<ForecastResult | null> {
+  const attempts = opts.attempts ?? 2
+  const timeoutMs = opts.timeoutMs ?? 4000
+  const backoffMs = opts.backoffMs ?? 200
+  const tag = opts.tag ?? 'forecast'
+  const throwOnFailure = opts.throwOnFailure ?? false
+
+  let lastErr: any
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const out = await Promise.race([
+        getForecast(event, lat, lon, dates),
+        new Promise<never>((_, rej) => setTimeout(() => rej(new Error('forecast-timeout')), timeoutMs))
+      ])
+      const mini = out?.mini
+      if (mini && Array.isArray(mini.hours) && mini.hours.length) return out
+      lastErr = new Error('empty-mini')
+    } catch (e: any) {
+      lastErr = e
+    }
+    if (i < attempts - 1) await sleep(backoffMs * Math.pow(2, i))
+  }
+
+  console.warn(`[${tag}] forecast failed after retries`, { lat, lon, err: String(lastErr) })
+
+  if (throwOnFailure) {
+    throw createError({ statusCode: 503, statusMessage: `forecast unavailable: ${String(lastErr)}` })
+  }
+  return null
 }
 
 async function refreshInBackground(event: any, lat: number, lon: number, dates: string[], key: string, kv: KV | null) {

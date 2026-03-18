@@ -13,14 +13,15 @@ import { importCragsToDb } from '~/server/utils/crag-db'
  *   ?dryRun=1  — preview data without writing to DB
  */
 export default defineEventHandler(async (event) => {
-  // Check admin API key
+  // Check admin API key — fail closed: if the key is not configured, refuse all requests
   const env = event.context?.cloudflare?.env || (event as any).platform?.env || {}
   const adminKey = env.ADMIN_API_KEY
-  if (adminKey) {
-    const auth = getHeader(event, 'authorization')
-    if (auth !== `Bearer ${adminKey}`) {
-      throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
-    }
+  if (!adminKey) {
+    throw createError({ statusCode: 500, statusMessage: 'ADMIN_API_KEY not configured' })
+  }
+  const auth = getHeader(event, 'authorization')
+  if (auth !== `Bearer ${adminKey}`) {
+    throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
   }
 
   const q = getQuery(event)

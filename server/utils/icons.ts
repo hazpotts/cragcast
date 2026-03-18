@@ -1,12 +1,5 @@
-type MiniSeries = {
-  hours: string[]
-  rainMm: number[]
-  pop: number[]
-  gust: number[]
-  cloud: number[]
-  temp: number[]
-  wind: number[]
-}
+import type { MiniSeries } from './forecast'
+import { avg, max, sum } from './server-utils'
 
 type DailyIcon = {
   date: string
@@ -14,18 +7,6 @@ type DailyIcon = {
   tempAvgC: number
   windAvgMph: number
   rainSumMm: number
-}
-
-function sum(a: number[]) {
-  return a.reduce((s, x) => s + x, 0)
-}
-
-function avg(a: number[]) {
-  return a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0
-}
-
-function max(a: number[]) {
-  return a.length ? Math.max(...a) : 0
 }
 
 /**
@@ -86,8 +67,7 @@ export function dailyIcons(mini: MiniSeries, dates: string[]): DailyIcon[] {
     else if (cloudAvg < 40) icon = 'hazy-sun'
     else if (cloudAvg < 60) icon = 'light-cloud'
     else if (cloudAvg >= 85) icon = 'dark-cloud'
-    else if (cloudAvg >= 60) icon = 'mostly-cloudy'
-    else icon = 'cloud'
+    else icon = 'mostly-cloudy'
 
     icons.push({
       date: d,
