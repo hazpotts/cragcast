@@ -117,7 +117,5 @@
 ---
 
 ## Bugs
-- **Distance filter doesn't update UI on URL param change:** When changing distance (e.g. 120 → 60 mins), the URL updates but the displayed results don't re-filter until a hard refresh. The route watcher or computed state isn't reacting to the `maxDriveMins` query param change.
-- **Filtered results flash before hiding:** When the distance filter is active, results outside the range briefly appear then disappear as the page loads. Results should never render if they fall outside the distance filter — apply the filter before/during initial render, not after.
-- fix show more
-- logo
+- ✅ **Distance filter doesn't update UI on URL param change:** Fixed — removed the `showPrefs` guard from the route watcher so distance changes always trigger a re-fetch regardless of form state.
+- ✅ **Filtered results flash before hiding:** Fixed — stale items are cleared immediately when the route query changes (before the debounce timer), preventing out-of-range results from rendering.

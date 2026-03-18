@@ -124,11 +124,15 @@ onMounted(async () => {
 watch(() => route.query, () => {
   if (ignoreNextWatch.value) { ignoreNextWatch.value = false; return }
   if (routeWatchTimer) clearTimeout(routeWatchTimer)
+  // Immediately clear stale results to prevent flash of out-of-range content
+  if (!showPrefs.value && hasUrlDates.value) {
+    items.value = [] as any
+  }
   routeWatchTimer = setTimeout(async () => {
-    if (showPrefs.value) return
     const has = hasUrlDates.value
     showPrefs.value = !has
     if (has) {
+      visibleCount.value = CARDS_PAGE_SIZE
       await fetchRank()
     } else {
       // Clear list when no URL dates
