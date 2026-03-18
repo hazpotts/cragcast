@@ -15,7 +15,7 @@
     </ResultsHeader>
 
     <section v-if="showPrefs" class="space-y-4">
-      <PrefsForm @confirm="applyPrefs" @cancel="showPrefs=false" />
+      <PrefsForm @confirm="applyPrefs" @cancel="showPrefs=false" @clear="clearTable" />
     </section>
 
     <section v-else>
@@ -224,6 +224,16 @@ async function applyPrefs() {
   await prefs.commit()
   await loadCompare()
   await loadAllCustomCrags()
+}
+async function clearTable() {
+  ignoreNextWatch.value = true
+  showPrefs.value = true
+  items.value = []
+  customItems.value = []
+  prefs.where.value = null
+  prefs.maxDriveMins.value = null
+  prefs.dates.value = []
+  await prefs.commit()
 }
 
 async function loadCompare() {

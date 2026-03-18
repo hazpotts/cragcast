@@ -9,7 +9,7 @@
     />
 
     <section v-if="showPrefs" class="space-y-4">
-      <PrefsForm @confirm="savePrefs" @cancel="showPrefs=false" />
+      <PrefsForm @confirm="savePrefs" @cancel="showPrefs=false" @clear="clearPrefs" />
     </section>
     <section v-else>
       <div v-if="pending" class="space-y-4">
@@ -151,5 +151,15 @@ async function savePrefs() {
   await prefs.commit()
   // Trigger fetch without awaiting so pending state renders skeleton
   fetchRank()
+}
+async function clearPrefs() {
+  ignoreNextWatch.value = true
+  showPrefs.value = true
+  items.value = [] as any
+  visibleCount.value = CARDS_PAGE_SIZE
+  prefs.where.value = null
+  prefs.maxDriveMins.value = null
+  prefs.dates.value = []
+  await prefs.commit()
 }
 </script>

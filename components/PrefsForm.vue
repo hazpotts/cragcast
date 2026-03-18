@@ -162,14 +162,8 @@ function onConfirm() {
   emit('confirm')
 }
 function onClear() {
-  // Clear URL params
-  const router = useRouter()
-  router.replace({ query: {} })
-  prefs.where.value = null
-  prefs.maxDriveMins.value = null
-  prefs.dates.value = []
   selectedLocation.value = null
-  selectedMax.value = prefs.maxDriveMins.value
+  selectedMax.value = Infinity
   selectedWhenPreset.value = 'this-weekend'
   emit('clear')
 }
