@@ -106,32 +106,33 @@
     </div>
   </UCard>
   <!-- Full card layout -->
-  <UCard v-else>
+  <UCard v-else :ui="{ base: 'relative' }">
+    <!-- Score badge – absolute top right -->
+    <div class="absolute top-3 right-3 flex items-center gap-1 z-10">
+      <span
+        class="text-lg font-bold px-3 py-1 rounded-full"
+        :class="score >= 70
+          ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200'
+          : score >= 40
+            ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200'
+            : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200'"
+      >{{ score }}</span>
+      <UPopover>
+        <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+          <Icon name="heroicons:information-circle" class="h-4 w-4" />
+        </button>
+        <template #panel>
+          <div class="p-3 max-w-[280px] text-sm text-gray-700 dark:text-gray-200">
+            A combined score out of 100 reflecting overall climbing conditions, including weather, distance, and other factors.
+          </div>
+        </template>
+      </UPopover>
+    </div>
     <div class="flex gap-4 items-start flex-col sm:flex-row">
       <!-- Left: content -->
       <div class="flex-1 min-w-0 space-y-2">
-        <div class="flex items-start justify-between">
-          <h3 class="text-lg font-semibold truncate">{{ name }}</h3>
-          <div class="flex items-center gap-1.5 ml-2 shrink-0">
-            <span
-              class="text-base font-bold px-2.5 py-1 rounded-full"
-              :class="score >= 70
-                ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200'
-                : score >= 40
-                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200'
-                  : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200'"
-            >{{ score }}</span>
-            <UPopover>
-              <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                <Icon name="heroicons:information-circle" class="h-4 w-4" />
-              </button>
-              <template #panel>
-                <div class="p-3 max-w-[280px] text-sm text-gray-700 dark:text-gray-200">
-                  A combined score out of 100 reflecting overall climbing conditions, including weather, distance, and other factors.
-                </div>
-              </template>
-            </UPopover>
-          </div>
+        <div>
+          <h3 class="text-lg font-semibold truncate pr-20">{{ name }}</h3>
         </div>
         <div v-if="warnings?.length" class="space-y-1">
           <div

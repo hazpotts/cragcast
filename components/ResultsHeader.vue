@@ -15,9 +15,6 @@
         Updated {{ new Date(updatedAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' }) }}
       </div>
     </button>
-    <div v-else-if="updatedAt" class="flex-1 text-xs text-gray-400 self-center">
-      Updated {{ new Date(updatedAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' }) }}
-    </div>
     <div class="flex items-center gap-2">
       <UButton
         v-if="hasPrefs"
@@ -26,7 +23,7 @@
         @click="$emit('update:modelValue', !modelValue)"
         class="text-sky-700 hover:text-sky-800 dark:text-sky-200 dark:hover:text-sky-100"
       >
-        <Icon name="heroicons-solid:adjustments-horizontal" class="mr-1 h-5 w-5" />
+        <Icon name="heroicons-solid:adjustments-horizontal" class="sm:mr-1 h-5 w-5" />
         <span class="hidden sm:inline">{{ modelValue ? 'Close' : 'Adjust' }}</span>
       </UButton>
       <slot name="right" />
