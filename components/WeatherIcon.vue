@@ -1,12 +1,10 @@
 <template>
-  <div class="relative inline-block" ref="container">
+  <div class="relative inline-flex cursor-pointer select-none" ref="container" @click.stop="toggleLabel">
     <UTooltip :text="tooltipText">
       <img
         :src="src"
         :alt="label"
         :class="imgClass"
-        class="cursor-pointer select-none"
-        @click.stop="toggleLabel"
       />
     </UTooltip>
     <Transition
