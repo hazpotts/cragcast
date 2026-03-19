@@ -3,13 +3,13 @@
   <UCard v-if="compact" :ui="{ body: { padding: 'p-0 sm:p-0' } }">
     <!-- Weather icons – full-width header -->
     <div class="flex items-center gap-2 bg-slate-400 rounded-t-md px-2 py-1.5 justify-center">
-      <img
+      <WeatherIcon
         v-for="d in daily"
         :key="d.date"
         :src="iconSrc(d.icon)"
-        :alt="iconLabel(d.icon)"
-        :title="`${iconLabel(d.icon)} – ${d.date}`"
-        class="h-12 w-12"
+        :label="iconLabel(d.icon)"
+        :date="d.date"
+        img-class="h-12 w-12"
       />
     </div>
     <div class="flex flex-col gap-1.5 px-3 py-2.5">
@@ -173,11 +173,11 @@
           <template v-for="d in daily" :key="d.date">
             <div class="flex flex-col items-center text-sm text-gray-600 dark:text-gray-300">
               <div class="bg-slate-400 rounded p-1">
-                <img
+                <WeatherIcon
                   :src="iconSrc(d.icon)"
-                  :alt="iconLabel(d.icon)"
-                  :title="`${iconLabel(d.icon)} – ${d.date}`"
-                  class="h-20 w-20 sm:h-24 sm:w-24"
+                  :label="iconLabel(d.icon)"
+                  :date="d.date"
+                  img-class="h-20 w-20 sm:h-24 sm:w-24"
                 />
               </div>
               <div class="flex flex-col mt-1 mb-1 items-center text-center text-gray-600 dark:text-gray-300">
@@ -248,6 +248,7 @@ import { useUnits } from '~/composables/useUnits'
 import { usePrefs } from '~/composables/usePrefs'
 import { useCrags, type CragItem } from '~/composables/useCrags'
 import CragCard from '~/components/CragCard.vue'
+import WeatherIcon from '~/components/WeatherIcon.vue'
 const units = useUnits()
 const router = useRouter()
 const route = useRoute()
