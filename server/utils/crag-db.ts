@@ -20,6 +20,7 @@ export type Crag = {
   types: { trad?: number; sport?: number; boulder?: number }
   routeCount: number
   tags: string[]
+  ukcId: string | null
 }
 
 type D1Database = {
@@ -59,6 +60,7 @@ type CragRow = {
   boulder: number
   route_count: number
   tags: string
+  ukc_id: string | null
   openbeta_id: string | null
   source: string
   imported_at: string
@@ -85,7 +87,8 @@ function rowToCrag(row: CragRow): Crag {
       ...(row.boulder > 0 ? { boulder: row.boulder } : {})
     },
     routeCount: row.route_count,
-    tags: JSON.parse(row.tags || '[]')
+    tags: JSON.parse(row.tags || '[]'),
+    ukcId: row.ukc_id || null
   }
 }
 
