@@ -4,7 +4,7 @@
       <div>© {{ year }} CragCast · Open source</div>
       <nav class="flex flex-wrap items-center gap-4">
         <NuxtLink to="/privacy" class="hover:underline">Privacy policy</NuxtLink>
-        <a href="https://github.com/hazpotts/cragcast/issues" target="_blank" rel="noopener" class="hover:underline">Feedback</a>
+        <a href="https://forms.gle/XbvfUwM1X6QZXexM6" target="_blank" rel="noopener" class="hover:underline">Feedback</a>
         <a href="https://github.com/hazpotts/cragcast" target="_blank" rel="noopener" class="hover:underline">Contribute</a>
       </nav>
     </div>
