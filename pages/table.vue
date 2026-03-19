@@ -8,7 +8,7 @@
       :updatedAt="latestUpdatedAt"
     >
       <template #right>
-        <UButton v-if="hasPrefs" class="text-sky-700 hover:text-sky-800 dark:text-sky-200 dark:hover:text-sky-100" variant="ghost" @click="shrink=!shrink" :aria-label="shrink ? 'Expand to full width' : 'Shrink to 1000px'">
+        <UButton v-if="hasPrefs" class="hidden sm:inline-flex text-sky-700 hover:text-sky-800 dark:text-sky-200 dark:hover:text-sky-100" variant="ghost" @click="shrink=!shrink" :aria-label="shrink ? 'Expand to full width' : 'Shrink to 1000px'">
           <Icon :name="shrink ? 'heroicons-solid:arrows-pointing-out' : 'heroicons-solid:arrows-pointing-in'" class="h-5 w-5" />
         </UButton>
       </template>

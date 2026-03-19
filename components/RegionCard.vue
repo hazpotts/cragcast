@@ -110,11 +110,11 @@
     <div class="flex gap-4 items-start flex-col sm:flex-row">
       <!-- Left: content -->
       <div class="flex-1 min-w-0 space-y-2">
-        <div class="flex items-center justify-between">
+        <div class="flex items-start justify-between">
           <h3 class="text-lg font-semibold truncate">{{ name }}</h3>
-          <div class="flex items-center gap-1.5 ml-2">
+          <div class="flex items-center gap-1.5 ml-2 shrink-0">
             <span
-              class="text-sm font-bold px-2 py-0.5 rounded-full"
+              class="text-base font-bold px-2.5 py-1 rounded-full"
               :class="score >= 70
                 ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200'
                 : score >= 40
