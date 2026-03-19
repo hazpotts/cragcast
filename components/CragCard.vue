@@ -60,13 +60,13 @@
 
       <!-- Warnings -->
       <div v-if="crag.warnings?.length" class="flex items-center gap-1">
-        <UTooltip v-for="(w, i) in crag.warnings" :key="i" :text="w.message">
+        <TapTooltip v-for="(w, i) in crag.warnings" :key="i" :text="w.message">
           <Icon
             name="heroicons:exclamation-triangle-20-solid"
             class="h-4 w-4"
             :class="w.level === 'red' ? 'text-red-500' : 'text-amber-500'"
           />
-        </UTooltip>
+        </TapTooltip>
       </div>
 
       <!-- Modifiers -->
@@ -109,6 +109,7 @@
 import { useUnits } from '~/composables/useUnits'
 import type { CragItem } from '~/composables/useCrags'
 import WeatherIcon from '~/components/WeatherIcon.vue'
+import TapTooltip from '~/components/TapTooltip.vue'
 
 defineProps<{ crag: CragItem }>()
 

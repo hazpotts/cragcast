@@ -1,34 +1,12 @@
 <template>
-  <div class="relative inline-block" ref="container">
-    <UTooltip :text="tooltipText">
-      <img
-        :src="src"
-        :alt="label"
-        :class="imgClass"
-        class="cursor-pointer select-none"
-        @click.stop="toggleLabel"
-      />
-    </UTooltip>
-    <Transition
-      enter-active-class="transition-opacity duration-150"
-      enter-from-class="opacity-0"
-      leave-active-class="transition-opacity duration-150"
-      leave-to-class="opacity-0"
-    >
-      <div
-        v-if="showLabel"
-        class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 text-xs font-medium rounded bg-gray-900 text-white whitespace-nowrap z-50 pointer-events-none dark:bg-gray-700"
-      >
-        {{ tooltipText }}
-        <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700" />
-      </div>
-    </Transition>
-  </div>
+  <TapTooltip :text="tooltipText">
+    <img :src="src" :alt="label" :class="imgClass" />
+  </TapTooltip>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onUnmounted } from 'vue'
-import { onClickOutside } from '@vueuse/core'
+import { computed } from 'vue'
+import TapTooltip from '~/components/TapTooltip.vue'
 
 const props = defineProps<{
   src: string
@@ -40,27 +18,4 @@ const props = defineProps<{
 const tooltipText = computed(() =>
   props.date ? `${props.label} – ${props.date}` : props.label
 )
-
-const showLabel = ref(false)
-const container = ref<HTMLElement | null>(null)
-let closeTimer: ReturnType<typeof setTimeout> | null = null
-
-function toggleLabel() {
-  if (showLabel.value) {
-    showLabel.value = false
-    if (closeTimer) clearTimeout(closeTimer)
-  } else {
-    showLabel.value = true
-    closeTimer = setTimeout(() => { showLabel.value = false }, 2500)
-  }
-}
-
-onClickOutside(container, () => {
-  showLabel.value = false
-  if (closeTimer) clearTimeout(closeTimer)
-})
-
-onUnmounted(() => {
-  if (closeTimer) clearTimeout(closeTimer)
-})
 </script>
