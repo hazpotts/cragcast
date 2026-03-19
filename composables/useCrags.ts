@@ -20,7 +20,7 @@ export type CragItem = {
   coords: { lat: number; lon: number }
   distanceMins: number
   ukcUrl: string
-  links?: { bbc: string; metoffice: string; windy: string; yrno: string }
+  links?: { windy: string; yrno: string }
 }
 
 // Per-region cache of crag data

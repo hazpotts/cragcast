@@ -76,8 +76,6 @@ export default defineEventHandler(async (event) => {
     })
 
     const links = {
-      bbc: `https://www.bbc.co.uk/weather?lat=${crag.lat}&lon=${crag.lon}`,
-      metoffice: `https://www.metoffice.gov.uk/weather/search?query=${encodeURIComponent(crag.name)}`,
       windy: `https://www.windy.com/${crag.lat.toFixed(3)}/${crag.lon.toFixed(3)}?${crag.lat.toFixed(3)},${crag.lon.toFixed(3)},12`,
       yrno: `https://www.yr.no/en/forecast/daily-table/${crag.lat.toFixed(4)},${crag.lon.toFixed(4)}`
     }
@@ -107,7 +105,9 @@ export default defineEventHandler(async (event) => {
       tags: crag.tags,
       coords: { lat: crag.lat, lon: crag.lon },
       distanceMins,
-      ukcUrl: `https://www.ukclimbing.com/logbook/crags/?location=${encodeURIComponent(String(crag.lat))}%2C+${encodeURIComponent(String(crag.lon))}&distance=5`,
+      ukcUrl: crag.ukcId
+        ? `https://www.ukclimbing.com/logbook/crags/${crag.ukcId}/`
+        : `https://www.ukclimbing.com/logbook/crags/?query=${encodeURIComponent(crag.name)}`,
       links
     })
   }
