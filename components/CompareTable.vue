@@ -62,13 +62,13 @@
       <template #warnings-data="{ row }">
         <template v-if="!row.pending && !row.error && row.warnings?.length">
           <div class="flex flex-col gap-1">
-            <UTooltip v-for="(w, i) in row.warnings" :key="i" :text="w.message">
+            <TapTooltip v-for="(w, i) in row.warnings" :key="i" :text="w.message">
               <Icon
                 name="heroicons:exclamation-triangle-20-solid"
                 class="h-5 w-5"
                 :class="w.level === 'red' ? 'text-red-500' : 'text-amber-500'"
               />
-            </UTooltip>
+            </TapTooltip>
           </div>
         </template>
       </template>
@@ -144,6 +144,7 @@ import { useUnits } from '~/composables/useUnits'
 import { useCrags, type CragItem } from '~/composables/useCrags'
 import CragList from '~/components/CragList.vue'
 import WeatherIcon from '~/components/WeatherIcon.vue'
+import TapTooltip from '~/components/TapTooltip.vue'
 const props = defineProps<{ rows: any[]; favourites?: string[]; removableIds?: string[]; nameLabel?: string }>()
 const emit = defineEmits<{ (e:'toggle-favourite', id: string): void; (e:'remove', id: string): void }>()
 

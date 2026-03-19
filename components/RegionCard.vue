@@ -54,13 +54,13 @@
       </div>
       <!-- Warnings -->
       <div v-if="warnings?.length" class="flex items-center gap-1">
-        <UTooltip v-for="(w, i) in warnings" :key="i" :text="w.message">
+        <TapTooltip v-for="(w, i) in warnings" :key="i" :text="w.message">
           <Icon
             name="heroicons:exclamation-triangle-20-solid"
             class="h-4 w-4"
             :class="w.level === 'red' ? 'text-red-500' : 'text-amber-500'"
           />
-        </UTooltip>
+        </TapTooltip>
       </div>
       <!-- Links – shortened labels, single row -->
       <div class="flex flex-wrap items-center gap-1">
@@ -249,6 +249,7 @@ import { usePrefs } from '~/composables/usePrefs'
 import { useCrags, type CragItem } from '~/composables/useCrags'
 import CragCard from '~/components/CragCard.vue'
 import WeatherIcon from '~/components/WeatherIcon.vue'
+import TapTooltip from '~/components/TapTooltip.vue'
 const units = useUnits()
 const router = useRouter()
 const route = useRoute()
