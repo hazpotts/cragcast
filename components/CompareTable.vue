@@ -111,19 +111,19 @@
         </template>
         <template v-else>
           <div class="flex items-center gap-2">
-            <a :href="row.links?.bbc" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-700 underline flex items-center">
+            <a v-if="row.links?.bbc" :href="row.links.bbc" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-700 underline flex items-center">
               BBC <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-1 h-4 w-4" />
             </a>
-            <a :href="row.links?.metoffice" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-700 underline flex items-center">
+            <a v-if="row.links?.metoffice" :href="row.links.metoffice" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-700 underline flex items-center">
               Met Office <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-1 h-4 w-4" />
             </a>
-            <a :href="row.links?.windy" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-700 underline flex items-center">
+            <a v-if="row.links?.windy" :href="row.links.windy" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-700 underline flex items-center">
               Windy <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-1 h-4 w-4" />
             </a>
             <a v-if="row.links?.yrno" :href="row.links.yrno" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-700 underline flex items-center">
               Yr <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-1 h-4 w-4" />
             </a>
-            <a :href="row.ukcUrl" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-700 underline flex items-center">
+            <a v-if="row.ukcUrl" :href="row.ukcUrl" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-700 underline flex items-center">
               UKC <Icon name="heroicons-solid:arrow-top-right-on-square" class="ml-1 h-4 w-4" />
             </a>
           </div>
