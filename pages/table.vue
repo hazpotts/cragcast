@@ -251,29 +251,16 @@ watch(() => route.query, () => {
 }, { deep: true })
 
 async function applyPrefs() {
-  const snap = prefs.snapshot()
   showPrefs.value = false
   items.value = []
   customItems.value = []
   areaItems.value = [] as any
-  prefs.commit()
-  if (snap.granularity === 'area') {
-    await fetchAreas(snap)
-  } else {
-    await loadCompare(snap)
-    if (snap.granularity !== 'crag') await loadAllCustomCrags(snap)
-  }
-}
-async function clearTable() {
-  showPrefs.value = true
-  items.value = []
-  customItems.value = []
-  areaItems.value = [] as any
-  if (compareController) { compareController.abort(); compareController = null }
-  prefs.where.value = null
-  prefs.maxDriveMins.value = null
-  prefs.dates.value = []
   await prefs.commit()
+  // Route watcher fires after commit and handles the fetch
+}
+function clearTable() {
+  if (compareController) compareController.abort()
+  if (process.client) window.location.replace('/table')
 }
 
 async function loadCompare(snap: PrefsSnapshot) {
