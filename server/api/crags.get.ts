@@ -107,7 +107,7 @@ export default defineEventHandler(async (event) => {
       distanceMins,
       ukcUrl: crag.ukcId
         ? `https://www.ukclimbing.com/logbook/crags/${crag.ukcId}/`
-        : `https://www.ukclimbing.com/logbook/crags/?query=${encodeURIComponent(crag.name)}`,
+        : `https://www.ukclimbing.com/logbook/crags/?name=${encodeURIComponent(crag.name)}`,
       links
     })
   }
