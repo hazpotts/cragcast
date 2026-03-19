@@ -202,24 +202,15 @@ watch(() => route.query, () => {
 }, { deep: true })
 
 async function savePrefs() {
-  const snap = prefs.snapshot()
   showPrefs.value = false
   visibleCount.value = CARDS_PAGE_SIZE
   rankItems.value = [] as any
   areaItems.value = [] as any
   cragItems.value = []
-  prefs.commit()
-  fetchActive(snap)
-}
-async function clearPrefs() {
-  showPrefs.value = true
-  rankItems.value = [] as any
-  areaItems.value = [] as any
-  cragItems.value = []
-  visibleCount.value = CARDS_PAGE_SIZE
-  prefs.where.value = null
-  prefs.maxDriveMins.value = null
-  prefs.dates.value = []
   await prefs.commit()
+  // Route watcher fires after commit and handles the fetch
+}
+function clearPrefs() {
+  if (process.client) window.location.replace('/')
 }
 </script>
