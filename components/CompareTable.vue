@@ -84,7 +84,12 @@
           <template v-else>
             <div class="flex items-center gap-2">
               <template v-for="d in row.daily" :key="d.date">
-                <img :src="iconSrc(d.icon)" :alt="iconLabel(d.icon)" :title="`${iconLabel(d.icon)} – ${d.date}`" class="h-7 w-7 shrink-0" />
+                <WeatherIcon
+                  :src="iconSrc(d.icon)"
+                  :label="iconLabel(d.icon)"
+                  :date="d.date"
+                  img-class="h-7 w-7 shrink-0"
+                />
               </template>
             </div>
           </template>
@@ -138,6 +143,7 @@ import { usePrefs } from '~/composables/usePrefs'
 import { useUnits } from '~/composables/useUnits'
 import { useCrags, type CragItem } from '~/composables/useCrags'
 import CragList from '~/components/CragList.vue'
+import WeatherIcon from '~/components/WeatherIcon.vue'
 const props = defineProps<{ rows: any[]; favourites?: string[]; removableIds?: string[]; nameLabel?: string }>()
 const emit = defineEmits<{ (e:'toggle-favourite', id: string): void; (e:'remove', id: string): void }>()
 

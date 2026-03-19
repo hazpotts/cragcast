@@ -2,13 +2,13 @@
   <UCard :ui="{ body: { padding: 'p-0 sm:p-0' } }">
     <!-- Weather icons – full-width header -->
     <div class="flex items-center gap-2 bg-slate-400 rounded-t-md px-2 py-1.5 justify-center">
-      <img
+      <WeatherIcon
         v-for="d in crag.daily"
         :key="d.date"
         :src="iconSrc(d.icon)"
-        :alt="iconLabel(d.icon)"
-        :title="`${iconLabel(d.icon)} – ${d.date}`"
-        class="h-12 w-12"
+        :label="iconLabel(d.icon)"
+        :date="d.date"
+        img-class="h-12 w-12"
       />
     </div>
     <div class="flex flex-col gap-1.5 px-3 py-2.5">
@@ -108,6 +108,7 @@
 <script setup lang="ts">
 import { useUnits } from '~/composables/useUnits'
 import type { CragItem } from '~/composables/useCrags'
+import WeatherIcon from '~/components/WeatherIcon.vue'
 
 defineProps<{ crag: CragItem }>()
 
