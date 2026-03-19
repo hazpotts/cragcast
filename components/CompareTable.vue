@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="overflow-x-auto">
     <UTable :rows="rowsWithSort" :columns="columns" :sort="sort" @update:sort="onSort">
       <template #name-data="{ row }">
         <div class="flex items-center gap-1">
@@ -134,13 +134,10 @@
 </template>
 <script setup lang="ts">
 import { reactive, computed, ref } from 'vue'
-import { useWindowSize } from '@vueuse/core'
 import { usePrefs } from '~/composables/usePrefs'
 import { useUnits } from '~/composables/useUnits'
 import { useCrags, type CragItem } from '~/composables/useCrags'
 import CragList from '~/components/CragList.vue'
-const { width } = useWindowSize({ initialWidth: 1024 })
-const isMobile = computed(() => width.value < 640)
 const props = defineProps<{ rows: any[]; favourites?: string[]; removableIds?: string[]; nameLabel?: string }>()
 const emit = defineEmits<{ (e:'toggle-favourite', id: string): void; (e:'remove', id: string): void }>()
 
@@ -194,13 +191,6 @@ const isAreaGranularity = computed(() => prefs.granularity.value === 'area')
 // Show distance column when any distance filter is active
 const showDistance = computed(() => Number.isFinite(prefs.maxDriveMins.value) || prefs.minDriveMins.value > 0)
 const columns = computed(() => {
-  if (isMobile.value) {
-    return [
-      { key: 'name', label: props.nameLabel ?? 'Region', sortable: true },
-      { key: 'weather', label: 'Weather' },
-      { key: 'score', label: 'Score', sortable: true },
-    ] as any[]
-  }
   const cols = [
     { key: 'name', label: props.nameLabel ?? 'Region', sortable: true },
     { key: 'warnings', label: '' },
