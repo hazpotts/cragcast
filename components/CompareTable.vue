@@ -13,7 +13,7 @@
           >
             <Icon :name="isExpanded(row.id) ? 'heroicons:chevron-down' : 'heroicons:chevron-right'" class="h-4 w-4" />
           </UButton>
-          <span :class="{ 'ml-5': !row.cragCount || !isCragGranularity }">{{ row.name }}</span>
+          <span :class="{ 'ml-2': !row.cragCount || !isCragGranularity }">{{ row.name }}</span>
           <span v-if="row.cragCount > 0 && isCragGranularity" class="text-xs text-gray-400 dark:text-gray-500">({{ row.cragCount }})</span>
         </div>
         <div v-if="isExpanded(row.id) && isCragGranularity" class="mt-1">
@@ -187,23 +187,27 @@ function isRemovable(id: string) { return Array.isArray(props.removableIds) && p
 function toggle(id: string) { emit('toggle-favourite', id) }
 const units = useUnits()
 const isCragGranularity = computed(() => prefs.granularity.value === 'crag')
+const isAreaGranularity = computed(() => prefs.granularity.value === 'area')
 // Show distance column when any distance filter is active
 const showDistance = computed(() => Number.isFinite(prefs.maxDriveMins.value) || prefs.minDriveMins.value > 0)
 const columns = computed(() => {
   const cols = [
-    { key: 'name', label: props.nameLabel ?? 'Region' },
+    { key: 'name', label: props.nameLabel ?? 'Region', sortable: true },
     { key: 'warnings', label: '' },
     { key: 'weather', label: 'Weather' },
     { key: 'avgTempC', label: `Temp (${units.tempLabel.value})` },
     { key: 'avgWindMph', label: `Wind (${units.windLabel.value})` },
     { key: 'avgRainMm', label: `Rain (${units.rainLabel.value})` },
     // distance inserted conditionally at index 6
-    { key: 'areaSort', label: isCragGranularity.value ? 'Region' : 'Area', sortable: true },
+    ...(!isAreaGranularity.value ? [{ key: 'areaSort', label: isCragGranularity.value ? 'Region' : 'Area', sortable: true }] : []),
     { key: 'score', label: 'Score', sortable: true },
     { key: 'ukc', label: 'Links' },
     { key: 'fav', label: 'Favourite' }
   ] as any[]
-  if (showDistance.value) cols.splice(6, 0, { key: 'distanceMins', label: `Distance (${units.distanceLabel.value})`, sortable: true })
+  if (showDistance.value) {
+    const insertIdx = cols.findIndex((c: any) => c.key === 'score')
+    cols.splice(insertIdx, 0, { key: 'distanceMins', label: `Distance (${units.distanceLabel.value})`, sortable: true })
+  }
   return cols
 })
 let sort = reactive({ column: 'score', direction: 'desc' as const })
