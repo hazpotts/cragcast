@@ -10,3 +10,8 @@ binding = "AI"
 binding = "CRAG_DB"
 database_name = "cragcast-crags"
 database_id = "c025a032-20eb-4505-bf22-7875f4ae4ad8"
+
+# Vectorize index for RAG (climbing knowledge + semantic crag search)
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "cragcast-knowledge"
