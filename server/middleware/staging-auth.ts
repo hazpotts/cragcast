@@ -5,6 +5,10 @@ export default defineEventHandler((event) => {
 
   if (!isStaging) return
 
+  // Skip basic auth for admin API routes (they use Bearer token auth)
+  const url = getRequestURL(event)
+  if (url.pathname.startsWith('/api/admin/')) return
+
   const auth = getRequestHeader(event, 'authorization')
   if (auth) {
     const [scheme, encoded] = auth.split(' ')
