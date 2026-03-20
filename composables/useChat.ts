@@ -59,7 +59,7 @@ export function useChat() {
       } else {
         stopThinking()
       }
-    }, 5000)
+    }, 10000)
   }
 
   function addMessage(role: 'user' | 'assistant', content: string): ChatMsg {
