@@ -134,10 +134,7 @@ export async function runOrchestrator(
         try {
           response = await ai.run(MODEL, { messages, temperature: 0 })
           const forced = response?.response || ''
-          if (forced) {
-            fullResponse = forced
-            callbacks.onToken?.(forced)
-          }
+          if (forced) fullResponse = forced
         } catch { /* fall through */ }
         break
       }
@@ -161,7 +158,7 @@ export async function runOrchestrator(
 
       messages.push({
         role: 'user',
-        content: `[System: Here are the results from the tools you called. First verify the data makes sense, then use it to answer the user's question with practical climbing advice. Do NOT call the same tools again — you already have the data you need.]\n\n${resultSummary}${ragSection}`
+        content: `[System: Here are the results from the tools you called. Use this data to answer the user's question. Do NOT call the same tools again.\n\nIMPORTANT FORMAT: Start with a **bold headline**. Use short paragraphs (2-3 sentences) separated by blank lines. Use bullet points for tips. Never write a wall of text.]\n\n${resultSummary}${ragSection}`
       })
 
       continue
@@ -184,17 +181,12 @@ export async function runOrchestrator(
         knowledgeContext = ''
         try {
           const refined = await ai.run(MODEL, { messages, temperature: 0 })
-          const refinedText = refined?.response || textResponse
-          fullResponse = refinedText
-          callbacks.onToken?.(refinedText)
+          fullResponse = refined?.response || textResponse
         } catch {
-          // Fall back to the original response
           fullResponse = textResponse
-          callbacks.onToken?.(textResponse)
         }
       } else {
         fullResponse = textResponse
-        callbacks.onToken?.(textResponse)
       }
     }
 
@@ -212,7 +204,6 @@ export async function runOrchestrator(
       const text = fallback?.response || ''
       if (text) {
         fullResponse = text
-        callbacks.onToken?.(text)
       } else {
         const errMsg = 'Sorry, I wasn\'t able to get a response. Please try again.'
         callbacks.onError?.(errMsg)
@@ -225,8 +216,53 @@ export async function runOrchestrator(
     }
   }
 
+  // Post-process: ensure the response has paragraph breaks, then send to UI
+  fullResponse = ensureParagraphs(fullResponse)
+  callbacks.onToken?.(fullResponse)
+
   callbacks.onDone?.()
   return fullResponse
+}
+
+/**
+ * Post-process LLM output to ensure paragraph breaks exist.
+ * Llama often outputs a wall of text despite formatting instructions.
+ */
+function ensureParagraphs(text: string): string {
+  if (!text) return text
+
+  // If the text already has double newlines (proper paragraphs), leave it alone
+  if (text.includes('\n\n')) return text
+
+  // Split on single newlines — if there are some, that's fine
+  if (text.includes('\n')) {
+    // Convert single newlines between substantial content into double newlines
+    return text.replace(/\n(?=[A-Z*\-•])/g, '\n\n')
+  }
+
+  // Wall of text with no newlines at all — insert paragraph breaks at natural points
+  let result = text
+
+  // Break before bold markers (likely new topics)
+  result = result.replace(/([.!?]) (\*\*)/g, '$1\n\n$2')
+
+  // Break before "However," "On the plus side," "Overall," etc.
+  result = result.replace(/([.!?]) (However|Overall|On the plus side|That said|On the downside|In summary|Alternatively|If you're|Keep in mind|Worth noting|One thing|Be aware|Top tip|Pro tip)/g, '$1\n\n$2')
+
+  // Break before bullet-like patterns: "* " at sentence boundaries
+  result = result.replace(/([.!?]) \* /g, '$1\n\n- ')
+
+  // If still no breaks, force break every 2-3 sentences
+  if (!result.includes('\n\n')) {
+    let sentenceCount = 0
+    result = result.replace(/([.!?]) /g, (match) => {
+      sentenceCount++
+      if (sentenceCount % 3 === 0) return match.trim() + '\n\n'
+      return match
+    })
+  }
+
+  return result
 }
 
 /**
