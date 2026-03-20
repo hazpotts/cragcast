@@ -231,26 +231,32 @@ export async function runOrchestrator(
 function ensureParagraphs(text: string): string {
   if (!text) return text
 
-  // If the text already has double newlines (proper paragraphs), leave it alone
-  if (text.includes('\n\n')) return text
+  let result = text
 
-  // Split on single newlines — if there are some, that's fine
-  if (text.includes('\n')) {
-    // Convert single newlines between substantial content into double newlines
-    return text.replace(/\n(?=[A-Z*\-•])/g, '\n\n')
+  // Always: break after bold headlines that run into the next sentence
+  // e.g. "**Stanage Edge**Stanage is expected..." → "**Stanage Edge**\n\nStanage is expected..."
+  result = result.replace(/(\*\*[^*]+\*\*)(?=[A-Z])/g, '$1\n\n')
+  // Also catch: "**Stanage Edge** — verdict.Next sentence" (no space before next sentence)
+  result = result.replace(/(\*\*[^*]+\*\*[^.\n]*[.!?])(?=\s*[A-Z])/g, '$1\n\n')
+
+  // Convert inline "* item" bullet patterns to proper list items on their own lines
+  result = result.replace(/([.!?]) \* /g, '$1\n- ')
+
+  // If the text already has double newlines (proper paragraphs), we're done
+  if (result.includes('\n\n')) return result
+
+  // Convert single newlines between substantial content into double newlines
+  if (result.includes('\n')) {
+    return result.replace(/\n(?=[A-Z*\-•])/g, '\n\n')
   }
 
   // Wall of text with no newlines at all — insert paragraph breaks at natural points
-  let result = text
 
   // Break before bold markers (likely new topics)
   result = result.replace(/([.!?]) (\*\*)/g, '$1\n\n$2')
 
-  // Break before "However," "On the plus side," "Overall," etc.
-  result = result.replace(/([.!?]) (However|Overall|On the plus side|That said|On the downside|In summary|Alternatively|If you're|Keep in mind|Worth noting|One thing|Be aware|Top tip|Pro tip)/g, '$1\n\n$2')
-
-  // Break before bullet-like patterns: "* " at sentence boundaries
-  result = result.replace(/([.!?]) \* /g, '$1\n\n- ')
+  // Break before transitional phrases
+  result = result.replace(/([.!?]) (However|Overall|On the plus side|That said|On the downside|In summary|Alternatively|If you're|Keep in mind|Worth noting|One thing|Be aware|Top tip|Pro tip|Make sure|Consider)/g, '$1\n\n$2')
 
   // If still no breaks, force break every 2-3 sentences
   if (!result.includes('\n\n')) {

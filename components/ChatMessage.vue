@@ -51,16 +51,16 @@ function renderMarkdown(text: string): string {
   // Bold **text**
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
 
-  // Italic *text*
-  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>')
+  // Italic *text* (but not list markers like "* item")
+  html = html.replace(/(?<!\n)\*([^\n*]+?)\*/g, '<em>$1</em>')
 
   // Inline code `text`
   html = html.replace(/`(.+?)`/g, '<code class="bg-gray-200 dark:bg-gray-700 px-1 rounded text-xs">$1</code>')
 
-  // Bullet lists (- item or * item at start of line)
-  html = html.replace(/^[*-] (.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
+  // Bullet lists (- item at start of line)
+  html = html.replace(/^- (.+)$/gm, '<li>$1</li>')
   // Wrap consecutive <li> in <ul>
-  html = html.replace(/((?:<li[^>]*>.*<\/li>\n?)+)/g, '<ul class="my-1">$1</ul>')
+  html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul class="my-2 ml-4 list-disc space-y-1">$1</ul>')
 
   // Paragraphs: convert double newlines to paragraph breaks
   html = html.replace(/\n\n+/g, '</p><p class="mt-2">')
@@ -71,8 +71,8 @@ function renderMarkdown(text: string): string {
   // Wrap in paragraph
   html = `<p>${html}</p>`
 
-  // Clean up empty paragraphs
-  html = html.replace(/<p>\s*<\/p>/g, '')
+  // Clean up empty paragraphs and whitespace-only paragraphs
+  html = html.replace(/<p>(\s|<br>)*<\/p>/g, '')
 
   return html
 }
