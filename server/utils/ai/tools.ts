@@ -146,7 +146,18 @@ type ToolContext = {
   event: any
 }
 
+/** Replace any past dates with today's date — the forecast API only returns future data. */
+function fixPastDates(dates: string[] | undefined): string[] | undefined {
+  if (!dates?.length) return dates
+  const today = new Date().toISOString().slice(0, 10)
+  return dates.map(d => (d < today ? today : d))
+}
+
 export async function executeTool(name: string, args: Record<string, any>, ctx: ToolContext): Promise<string> {
+  // Guard: fix past dates before any tool sees them
+  if (args.dates) {
+    args.dates = fixPastDates(args.dates)
+  }
   switch (name) {
     case 'get_weather_forecast':
       return executeGetWeatherForecast(args, ctx)
