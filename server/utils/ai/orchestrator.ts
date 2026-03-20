@@ -12,7 +12,7 @@ import { buildSystemPrompt } from './system-prompt'
 import { toolDefinitions, executeTool } from './tools'
 
 const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
-const MAX_TOOL_ROUNDS = 3
+const MAX_TOOL_ROUNDS = 5
 
 type OrchestratorCallbacks = {
   onToken?: (token: string) => void
@@ -56,6 +56,7 @@ export async function runOrchestrator(
     try {
       response = await ai.run(MODEL, {
         messages,
+        temperature: 0,
         ...(isLastRound ? {} : { tools: toolDefinitions })
       })
     } catch (e: any) {
@@ -123,7 +124,7 @@ export async function runOrchestrator(
         })
         // Run one more time without tools to force text
         try {
-          response = await ai.run(MODEL, { messages })
+          response = await ai.run(MODEL, { messages, temperature: 0 })
           const forced = response?.response || ''
           if (forced) {
             fullResponse = forced
@@ -141,7 +142,7 @@ export async function runOrchestrator(
 
       messages.push({
         role: 'user',
-        content: `[System: Here are the results from the tools you called. Use this data to answer the user's question. Do NOT call the same tools again.]\n\n${resultSummary}`
+        content: `[System: Here are the results from the tools you called. First verify the data makes sense, then use it to answer the user's question with practical climbing advice. Do NOT call the same tools again — you already have the data you need.]\n\n${resultSummary}`
       })
 
       continue
@@ -163,7 +164,7 @@ export async function runOrchestrator(
         role: 'user',
         content: '[System: Please respond to the user now based on any data you have gathered. If you could not find the information, say so.]'
       })
-      const fallback = await ai.run(MODEL, { messages })
+      const fallback = await ai.run(MODEL, { messages, temperature: 0 })
       const text = fallback?.response || ''
       if (text) {
         fullResponse = text
