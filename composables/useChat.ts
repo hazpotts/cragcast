@@ -3,7 +3,7 @@
  * to the /api/chat endpoint.
  */
 
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 
 export type ChatMsg = {
   id: string
@@ -11,12 +11,56 @@ export type ChatMsg = {
   content: string
   toolCalls?: string[]  // friendly names of tools being called
   streaming?: boolean
+  thinkingPhrase?: string  // cycling loading message
 }
+
+const THINKING_PHRASES = [
+  'Reading the topo…',
+  'Checking the forecast…',
+  'Scanning the skyline…',
+  'Chalking up…',
+  'Studying the guidebook…',
+  'Eyeing up the crux…',
+  'Racking up gear…',
+  'Checking the seepage…',
+  'Looking for dry rock…',
+  'Consulting the crag oracle…',
+  'Tying in…',
+  'Feeling the friction…',
+]
 
 export function useChat() {
   const messages = ref<ChatMsg[]>([])
   const isStreaming = ref(false)
   const error = ref<string | null>(null)
+  let thinkingTimer: ReturnType<typeof setInterval> | null = null
+
+  function stopThinking() {
+    if (thinkingTimer) {
+      clearInterval(thinkingTimer)
+      thinkingTimer = null
+    }
+  }
+
+  onUnmounted(stopThinking)
+
+  function startThinking(msgId: string) {
+    // Pick a random starting phrase
+    let phraseIdx = Math.floor(Math.random() * THINKING_PHRASES.length)
+    const idx = messages.value.findIndex(m => m.id === msgId)
+    if (idx !== -1) messages.value[idx].thinkingPhrase = THINKING_PHRASES[phraseIdx]
+
+    // Cycle every 2.5s
+    thinkingTimer = setInterval(() => {
+      phraseIdx = (phraseIdx + 1) % THINKING_PHRASES.length
+      const i = messages.value.findIndex(m => m.id === msgId)
+      if (i !== -1 && messages.value[i].streaming) {
+        messages.value[i].thinkingPhrase = THINKING_PHRASES[phraseIdx]
+      } else {
+        stopThinking()
+      }
+    }, 2500)
+  }
 
   function addMessage(role: 'user' | 'assistant', content: string): ChatMsg {
     const msg: ChatMsg = {
@@ -46,6 +90,9 @@ export function useChat() {
     assistantMsg.streaming = true
     assistantMsg.toolCalls = []
     isStreaming.value = true
+
+    // Start cycling thinking phrases
+    startThinking(assistantMsg.id)
 
     try {
       const res = await fetch('/api/chat', {
@@ -93,6 +140,8 @@ export function useChat() {
 
             if (eventType === 'token') {
               messages.value[idx].content = data
+              messages.value[idx].thinkingPhrase = undefined
+              stopThinking()
             } else if (eventType === 'tool_call') {
               if (!messages.value[idx].toolCalls) messages.value[idx].toolCalls = []
               messages.value[idx].toolCalls!.push(data)
@@ -111,15 +160,18 @@ export function useChat() {
       const finalIdx = messages.value.findIndex(m => m.id === assistantMsg.id)
       if (finalIdx !== -1) {
         messages.value[finalIdx].streaming = false
+        messages.value[finalIdx].thinkingPhrase = undefined
       }
     } catch (e: any) {
       const finalIdx = messages.value.findIndex(m => m.id === assistantMsg.id)
       if (finalIdx !== -1) {
         messages.value[finalIdx].content = e.message || 'Connection failed. Please try again.'
         messages.value[finalIdx].streaming = false
+        messages.value[finalIdx].thinkingPhrase = undefined
       }
       error.value = e.message
     } finally {
+      stopThinking()
       isStreaming.value = false
     }
   }
