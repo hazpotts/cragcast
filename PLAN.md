@@ -1,10 +1,11 @@
 # CragCast Project Plan
 
 ## Next Actions
-1. Add granularity selector buttons (Crag / Region / Area) to the initial form so users can choose the level of detail in results — requires storing lat/lng and metadata for areas and crags to support this
-2. Add issue tracker (use GitHub Issues if possible)
-3. Expand seed data to ~500 UK crags with lat/lng and metadata to support area/region/crag granularity
-4. Allow add to desktop
+1. Expand seed data to ~500 UK crags with lat/lng and metadata
+2. Add granularity selector buttons (Crag / Region / Area) to the initial form
+3. Add issue tracker (use GitHub Issues if possible)
+4. Allow add to desktop (PWA)
+5. Improve AI chat reliability (model quality, error recovery, streaming)
 
 ---
 
@@ -14,41 +15,33 @@
 
 **Goal:** Import individual crag data so the scoring system can make finer-grained recommendations at the crag level rather than only at the region level.
 
-**Status:** Substantially complete. OpenBeta was the original data source but has no UK climbing data, so we switched to a curated UK seed data approach (~100 crags in `server/utils/uk-crags-seed.ts`). The OpenBeta import infrastructure remains in place (`server/utils/openbeta.ts`) for potential future use with other countries.
-
 **What was built:**
-- ✅ D1 database schema (`migrations/0001_create_crags.sql`) with `crags` and `import_log` tables
-- ✅ Crag data model: `{ id, name, regionId, lat, lon, aspect, rock[], types: {trad, sport, boulder}, routeCount, tags[] }`
-- ✅ Admin import endpoint (`POST /api/admin/import-crags`) with auth, batch processing, UPSERT
-- ✅ Crags auto-assigned to closest region by haversine distance
-- ✅ `scoreCrag()` function (`server/utils/score.ts`) with aspect+temp, aspect+wind, exposure/shelter, drying speed modifiers
-- ✅ `GET /api/crags?regionId=x` endpoint returning scored crags with distance
-- ✅ Expandable crag list in `RegionCard.vue` (accordion) and `CompareTable.vue` (indented sub-rows)
-- ✅ `CragList.vue` component showing name, score, aspect, rock types, route count, climb types, modifiers, UKC link
+- D1 database schema (`migrations/0001_create_crags.sql`, `0002_add_ukc_id.sql`) with `crags` and `import_log` tables
+- Crag data model: `{ id, name, regionId, lat, lon, aspect, rock[], types: {trad, sport, boulder}, routeCount, tags[], ukcId }`
+- Admin import endpoint (`POST /api/admin/import-crags`) with auth, batch processing, UPSERT
+- Crags auto-assigned to closest region by haversine distance
+- `scoreCrag()` function with aspect+temp, aspect+wind, exposure/shelter, drying speed modifiers
+- `GET /api/crags?regionId=x` endpoint returning scored crags with distance
+- Expandable crag list in `RegionCard.vue` (accordion) and `CompareTable.vue` (indented sub-rows)
+- `CragList.vue` component showing name, score, aspect, rock types, route count, climb types, modifiers, UKC link
 
 **Remaining work:**
-- Expand seed data from ~100 to ~500 UK crags (see Next Actions #6)
-- Optional "All crags" flat view (not yet needed)
-- Rock type + temperature scoring not yet implemented (grit best at 6-12°C, limestone at 12-18°C, etc.)
+- Expand seed data from ~100 to ~500 UK crags
 
-### Phase 2 – MWIS & External Forecast Sources
+### Phase 2 – MWIS & External Forecast Sources (Partial)
 
-**Goal:** Pull in Mountain Weather Information Service (MWIS) forecasts to enrich recommendations and surface relevant mountain weather context.
+**Goal:** Pull in Mountain Weather Information Service forecasts to enrich recommendations.
 
-**Data to use:**
-- MWIS area forecasts (text summaries, freezing level, cloud base, visibility)
-- Map MWIS areas to CragCast regions
-- Use MWIS data to improve scoring for mountain/upland regions (cloud base below crag altitude = bad, visibility warnings, freezing level info)
+**What was built:**
+- MWIS HTML scraping tool for the AI chat (`get_mwis_forecast` in tools.ts)
+- Covers 9 UK mountain areas (Lake District, Snowdonia, Peak District, etc.)
+- Extracts: summary text, freezing level, cloud base, summit winds, visibility
 
-**Scoring impact:**
-- Cloud base below crag altitude → penalty (especially for mountain crags)
-- Visibility poor → small penalty
-- MWIS "good day" language → small bonus
-
-**UI:**
-- Show MWIS summary text on region cards when available (collapsible)
-- Link to full MWIS report
-- MWIS badge/icon on regions that have mountain weather data
+**Remaining work:**
+- Cron-based MWIS ingestion (currently fetched on-demand by AI)
+- MWIS data in KV cache for use by scoring engine
+- MWIS badge/icon on region cards
+- Scoring impact: cloud base below crag altitude, visibility penalties
 
 ### Phase 3 – User Accounts & UKC Logbook Import
 
@@ -61,61 +54,53 @@
 
 **UKC logbook integration:**
 - Upload UKC logbook CSV/export
-- Parse logbook to extract: crags visited, grades climbed, styles (trad/sport/boulder), dates, star ratings
+- Parse logbook to extract: crags visited, grades climbed, styles, dates, star ratings
 - Store parsed logbook per user
 
 **Scoring impact from logbook:**
-- **Familiarity bonus:** Crags the user has visited before get a small bonus (known approach, beta)
-- **Novelty mode (optional toggle):** Invert the bonus — suggest crags the user hasn't been to
-- **Grade-appropriate crags:** Boost crags where the available grades match the user's climbing range
+- **Familiarity bonus:** Crags the user has visited before get a small bonus
+- **Novelty mode (optional toggle):** Suggest crags the user hasn't been to
+- **Grade-appropriate crags:** Boost crags where available grades match user's range
 - **Style match:** If user logs mostly trad, boost trad-heavy crags
 
 ### Phase 4 – User Preferences Form
 
-**Goal:** Let users fill in a preferences form that persistently influences recommendations, without needing a logbook.
+**Goal:** Let users fill in a preferences form that persistently influences recommendations.
 
 **Preferences to capture:**
-- **Climbing type:** Trad, sport, bouldering, mountaineering, ice climbing, scrambling (multi-select with weighting)
-- **Experience level:** Beginner / intermediate / advanced (affects grade-matching)
-- **Grade range:** Optional min-max grade input per discipline
-- **Rock type preference:** Optional preference for grit, limestone, etc.
-- **Conditions preference:** E.g. "I don't mind rain" or "I prefer dry only"
-- **Shelter preference:** Exposed vs sheltered
-- **Willingness to walk in:** Short approach vs happy with long walk-ins
+- Climbing type (multi-select with weighting)
+- Experience level: Beginner / intermediate / advanced
+- Grade range per discipline
+- Rock type preference
+- Conditions tolerance (rain/wind)
+- Shelter preference
+- Willingness to walk in
 
-**Scoring impact:**
-- Type affinity weights are applied to crags that have matching climb types
-- Rock preference adds a small bonus to preferred rock types
-- Condition tolerance adjusts the rain/wind penalty thresholds
-- All preferences are saved to user profile (Phase 3) or localStorage (if no account)
+### Phase 5 – AI Chat Interface ✅ DONE
 
-**UI:**
-- New preferences page/modal accessible from settings
-- Sliders or pill-selectors for multi-select options
-- "How much does this matter?" weighting per preference (low / medium / high)
-- Preview: show top 3 recommendations changing in real-time as prefs are adjusted
+**Goal:** Add a conversational AI assistant that uses weather, crag, and region data to answer natural-language questions about where to climb.
 
-### Phase 5 – AI Chat Interface
+**What was built:**
+- Chat page (`/chat`) with streaming message interface
+- AI orchestrator with tool-use loop (max 5 rounds per turn)
+- 7 tools: `lookup_crag`, `get_crag_score`, `get_weather_forecast`, `search_crags`, `rank_regions`, `get_region_info`, `get_mwis_forecast`
+- System prompt with tool selection guide (picks simplest tool for each question type)
+- SSE streaming with token, tool_call, done, error events
+- `useChat.ts` composable managing message state and SSE parsing
+- Climbing-themed thinking phrases cycling every 5s while loading
+- Tool call indicators in the UI
+- Suggested prompts for first-time users
+- `ChatMessage.vue` with bouncing dot animation and tool indicators
+- `ChatInput.vue` text input bar
 
-**Goal:** Add a conversational AI assistant that uses all the data from Phases 1–4 to answer natural-language questions about where to climb.
-
-**Approach:**
-- Chat page with a simple message interface
-- AI has access to: weather forecasts, crag data, MWIS summaries, user preferences, user logbook
-- Locked down to climbing/weather advisory only
-- Example queries:
-  - "Where should I go this weekend for sport climbing?"
-  - "What's the best gritstone crag tomorrow that I haven't been to?"
-  - "Is Stanage going to be dry on Saturday?"
-
-**Implementation:**
-- Feed system prompt with user prefs, top-ranked crags/regions, and current weather context
-- Return structured data (crag suggestions with scores) alongside natural language
-- Cache initial context per session and rate-limit API calls
-- Surface MWIS info, weather warnings, and crag details inline in chat responses
+**Remaining work:**
+- Improve Llama model reliability (error recovery, refusal handling)
+- Inject user preferences/location from `usePrefs` as context
+- Rate limiting (planned but not yet implemented)
+- Session persistence (currently in-memory only)
 
 ---
 
 ## Bugs
-- ✅ **Distance filter doesn't update UI on URL param change:** Fixed — removed the `showPrefs` guard from the route watcher so distance changes always trigger a re-fetch regardless of form state.
-- ✅ **Filtered results flash before hiding:** Fixed — stale items are cleared immediately when the route query changes (before the debounce timer), preventing out-of-range results from rendering.
+- ✅ **Distance filter doesn't update UI on URL param change:** Fixed — removed the `showPrefs` guard from the route watcher.
+- ✅ **Filtered results flash before hiding:** Fixed — stale items are cleared immediately when the route query changes.
