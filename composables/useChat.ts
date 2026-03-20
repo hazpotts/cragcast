@@ -143,8 +143,9 @@ export function useChat() {
               messages.value[idx].thinkingPhrase = undefined
               stopThinking()
             } else if (eventType === 'tool_call') {
-              if (!messages.value[idx].toolCalls) messages.value[idx].toolCalls = []
-              messages.value[idx].toolCalls!.push(data)
+              // Tool calls now just update the thinking phrase
+              // to show what's happening (no separate indicators)
+              messages.value[idx].thinkingPhrase = data
             } else if (eventType === 'done') {
               messages.value[idx].streaming = false
             } else if (eventType === 'error') {
