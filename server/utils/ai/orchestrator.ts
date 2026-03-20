@@ -10,6 +10,7 @@
 import type { ChatMessage, ToolCall } from './types'
 import { buildSystemPrompt } from './system-prompt'
 import { toolDefinitions, executeTool } from './tools'
+import { retrieveKnowledge } from './rag'
 
 const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
 const MAX_TOOL_ROUNDS = 5
@@ -44,6 +45,13 @@ export async function runOrchestrator(
 
   let fullResponse = ''
   const calledTools = new Set<string>() // track tool+args combos to detect loops
+
+  // Retrieve relevant climbing knowledge via RAG (runs in parallel with first LLM call)
+  const lastUserMsg = userMessages.filter(m => m.role === 'user').pop()?.content || ''
+  let knowledgeContext = ''
+  const knowledgePromise = retrieveKnowledge(event, lastUserMsg)
+    .then(ctx => { knowledgeContext = ctx })
+    .catch(e => console.warn('[orchestrator] RAG retrieval failed:', e.message))
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     // On the final round, don't offer tools — force a text response
@@ -140,9 +148,20 @@ export async function runOrchestrator(
         `[Tool result from ${tr.name}]:\n${tr.result}`
       ).join('\n\n')
 
+      // On the first round of tool results, inject RAG knowledge context
+      let ragSection = ''
+      if (round === 0 && !knowledgeContext) {
+        // Ensure RAG retrieval has completed
+        await knowledgePromise
+      }
+      if (knowledgeContext) {
+        ragSection = `\n\n${knowledgeContext}`
+        knowledgeContext = '' // only inject once
+      }
+
       messages.push({
         role: 'user',
-        content: `[System: Here are the results from the tools you called. First verify the data makes sense, then use it to answer the user's question with practical climbing advice. Do NOT call the same tools again — you already have the data you need.]\n\n${resultSummary}`
+        content: `[System: Here are the results from the tools you called. First verify the data makes sense, then use it to answer the user's question with practical climbing advice. Do NOT call the same tools again — you already have the data you need.]\n\n${resultSummary}${ragSection}`
       })
 
       continue
@@ -150,8 +169,33 @@ export async function runOrchestrator(
 
     // No tool calls — we have a final text response
     if (textResponse) {
-      fullResponse = textResponse
-      callbacks.onToken?.(textResponse)
+      // If this is the first round and we have RAG knowledge that wasn't injected
+      // (because no tools were called), re-run with knowledge context for a better answer
+      if (round === 0 && !knowledgeContext) {
+        await knowledgePromise
+      }
+      if (round === 0 && knowledgeContext) {
+        // Inject knowledge and let the model refine its answer
+        messages.push({ role: 'assistant', content: textResponse })
+        messages.push({
+          role: 'user',
+          content: `[System: Here is additional climbing knowledge that may be relevant to your answer. If it improves your advice, incorporate it — otherwise keep your response as-is.]\n\n${knowledgeContext}`
+        })
+        knowledgeContext = ''
+        try {
+          const refined = await ai.run(MODEL, { messages, temperature: 0 })
+          const refinedText = refined?.response || textResponse
+          fullResponse = refinedText
+          callbacks.onToken?.(refinedText)
+        } catch {
+          // Fall back to the original response
+          fullResponse = textResponse
+          callbacks.onToken?.(textResponse)
+        }
+      } else {
+        fullResponse = textResponse
+        callbacks.onToken?.(textResponse)
+      }
     }
 
     break
