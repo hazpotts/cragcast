@@ -6,7 +6,7 @@
 
 import type { ToolDefinition } from './types'
 import { fetchForecastWithRetry } from '../forecast'
-import { getCragsByRegion } from '../crag-db'
+import { getCragsByRegion, searchCragByName } from '../crag-db'
 import { regions, areas } from '../regions'
 import { scoreRegion, scoreCrag } from '../score'
 import { haversineKm, driveMinutesApprox } from '../distance'
@@ -209,6 +209,34 @@ async function executeSearchCrags(args: Record<string, any>, ctx: ToolContext): 
 
   let crags = await getCragsByRegion(ctx.event, region_id)
 
+  // Fallback to seed data if D1 returned nothing
+  if (crags.length === 0) {
+    const { ukCragsSeed } = await import('../uk-crags-seed')
+    const { findClosestRegionForCrag } = await import('../crag-db')
+    crags = ukCragsSeed
+      .filter(c => {
+        const rId = findClosestRegionForCrag(c.lat, c.lon)
+        return rId === region_id
+      })
+      .map(c => ({
+        id: c.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        name: c.name,
+        regionId: region_id,
+        lat: c.lat,
+        lon: c.lon,
+        aspect: null,
+        rock: [],
+        types: {
+          ...(c.trad > 0 ? { trad: c.trad } : {}),
+          ...(c.sport > 0 ? { sport: c.sport } : {}),
+          ...(c.boulder > 0 ? { boulder: c.boulder } : {})
+        },
+        routeCount: c.totalClimbs,
+        tags: [],
+        ukcId: null
+      }))
+  }
+
   if (climb_type) {
     crags = crags.filter(c => {
       const t = c.types as Record<string, number>
@@ -298,22 +326,15 @@ async function executeLookupCrag(args: Record<string, any>, ctx: ToolContext): P
   const { crag_name, dates } = args
   if (!crag_name) return JSON.stringify({ error: 'crag_name required' })
 
-  const needle = crag_name.toLowerCase()
-  let foundCrag: any = null
-  let foundRegion: any = null
-
-  for (const r of regions) {
-    const crags = await getCragsByRegion(ctx.event, r.id)
-    const match = crags.find(c => c.name.toLowerCase().includes(needle))
-    if (match) {
-      foundCrag = match
-      foundRegion = r
-      break
-    }
+  // Single query search (D1 with seed data fallback)
+  const foundCrag = await searchCragByName(ctx.event, crag_name)
+  if (!foundCrag) {
+    return JSON.stringify({ error: `Crag "${crag_name}" not found in database. Try search_crags to find crags by region.` })
   }
 
-  if (!foundCrag || !foundRegion) {
-    return JSON.stringify({ error: `Crag "${crag_name}" not found in database. Try search_crags to find crags by region.` })
+  const foundRegion = regions.find(r => r.id === foundCrag.regionId)
+  if (!foundRegion) {
+    return JSON.stringify({ error: `Region not found for crag "${crag_name}"` })
   }
 
   const result: Record<string, any> = {
@@ -366,23 +387,15 @@ async function executeGetCragScore(args: Record<string, any>, ctx: ToolContext):
   const { crag_name, dates } = args
   if (!crag_name || !dates?.length) return JSON.stringify({ error: 'crag_name and dates required' })
 
-  // Search all regions for the crag by name (case-insensitive partial match)
-  const needle = crag_name.toLowerCase()
-  let foundCrag: any = null
-  let foundRegion: any = null
-
-  for (const r of regions) {
-    const crags = await getCragsByRegion(ctx.event, r.id)
-    const match = crags.find(c => c.name.toLowerCase().includes(needle))
-    if (match) {
-      foundCrag = match
-      foundRegion = r
-      break
-    }
+  // Single query search (D1 with seed data fallback)
+  const foundCrag = await searchCragByName(ctx.event, crag_name)
+  if (!foundCrag) {
+    return JSON.stringify({ error: `Crag "${crag_name}" not found in database. Try search_crags to find crags by region.` })
   }
 
-  if (!foundCrag || !foundRegion) {
-    return JSON.stringify({ error: `Crag "${crag_name}" not found in database. Try search_crags to find crags by region.` })
+  const foundRegion = regions.find(r => r.id === foundCrag.regionId)
+  if (!foundRegion) {
+    return JSON.stringify({ error: `Region not found for crag "${crag_name}"` })
   }
 
   const pt = foundRegion.points[0]
