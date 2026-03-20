@@ -2,11 +2,9 @@
  * AI orchestrator: tool-use loop that calls Cloudflare Workers AI
  * and iteratively resolves tool calls until a text response is produced.
  *
- * Workers AI tool calling format:
- * - Tools: { name, description, parameters }
- * - Response: { response?: string, tool_calls?: [{ name, arguments }] }
- * - Tool results sent back as: { role: 'tool', content: JSON.stringify(result) }
- * - Assistant tool selection sent as: { role: 'assistant', content: JSON.stringify(tool_calls) }
+ * Workers AI + Llama can struggle with the standard role:'tool' message
+ * format, so we synthesise tool results into a user-style message that
+ * the model understands reliably.
  */
 
 import type { ChatMessage, ToolCall } from './types'
@@ -14,7 +12,7 @@ import { buildSystemPrompt } from './system-prompt'
 import { toolDefinitions, executeTool } from './tools'
 
 const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
-const MAX_TOOL_ROUNDS = 5
+const MAX_TOOL_ROUNDS = 3
 
 type OrchestratorCallbacks = {
   onToken?: (token: string) => void
@@ -45,14 +43,18 @@ export async function runOrchestrator(
   ]
 
   let fullResponse = ''
+  const calledTools = new Set<string>() // track tool+args combos to detect loops
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+    // On the final round, don't offer tools — force a text response
+    const isLastRound = round === MAX_TOOL_ROUNDS - 1
+
     let response: any
 
     try {
       response = await ai.run(MODEL, {
         messages,
-        tools: toolDefinitions
+        ...(isLastRound ? {} : { tools: toolDefinitions })
       })
     } catch (e: any) {
       const errMsg = `AI model error: ${e.message || String(e)}`
@@ -65,17 +67,12 @@ export async function runOrchestrator(
     const textResponse: string = response?.response || ''
 
     // If there are tool calls, execute them and loop
-    if (toolCalls.length > 0) {
-      // Add the assistant's tool selection as a message
-      messages.push({
-        role: 'assistant',
-        content: JSON.stringify(toolCalls)
-      })
+    if (toolCalls.length > 0 && !isLastRound) {
+      // Collect all tool results for this round
+      const toolResults: Array<{ name: string; result: string }> = []
 
-      // Execute each tool call and add results
       for (const tc of toolCalls) {
         const toolName = tc.name || 'unknown'
-        callbacks.onToolCall?.(toolName)
 
         let args: Record<string, any> = {}
         try {
@@ -86,6 +83,16 @@ export async function runOrchestrator(
           args = {}
         }
 
+        // Detect duplicate tool calls (same tool + same args)
+        const callKey = `${toolName}:${JSON.stringify(args)}`
+        if (calledTools.has(callKey)) {
+          // Already called this exact tool — skip and force response
+          continue
+        }
+        calledTools.add(callKey)
+
+        callbacks.onToolCall?.(toolName)
+
         let result: string
         try {
           result = await executeTool(toolName, args, { event })
@@ -93,13 +100,38 @@ export async function runOrchestrator(
           result = JSON.stringify({ error: `Tool execution failed: ${e.message}` })
         }
 
-        messages.push({
-          role: 'tool',
-          content: result
-        })
+        toolResults.push({ name: toolName, result })
       }
 
-      // Continue the loop — the AI will see the tool results
+      // If all tool calls were duplicates, break and force a response
+      if (toolResults.length === 0) {
+        messages.push({
+          role: 'user',
+          content: '[System: You already have the data you need from your previous tool calls. Please answer the user\'s question now based on that data.]'
+        })
+        // Run one more time without tools to force text
+        try {
+          response = await ai.run(MODEL, { messages })
+          const forced = response?.response || ''
+          if (forced) {
+            fullResponse = forced
+            callbacks.onToken?.(forced)
+          }
+        } catch { /* fall through */ }
+        break
+      }
+
+      // Synthesise tool results as a user-style message that Llama understands.
+      // This is more reliable than role:'tool' which Llama often ignores.
+      const resultSummary = toolResults.map(tr =>
+        `[Tool result from ${tr.name}]:\n${tr.result}`
+      ).join('\n\n')
+
+      messages.push({
+        role: 'user',
+        content: `[System: Here are the results from the tools you called. Use this data to answer the user's question. Do NOT call the same tools again.]\n\n${resultSummary}`
+      })
+
       continue
     }
 
@@ -110,6 +142,30 @@ export async function runOrchestrator(
     }
 
     break
+  }
+
+  // If we exhausted rounds with no response, make one final attempt without tools
+  if (!fullResponse) {
+    try {
+      messages.push({
+        role: 'user',
+        content: '[System: Please respond to the user now based on any data you have gathered. If you could not find the information, say so.]'
+      })
+      const fallback = await ai.run(MODEL, { messages })
+      const text = fallback?.response || ''
+      if (text) {
+        fullResponse = text
+        callbacks.onToken?.(text)
+      } else {
+        const errMsg = 'Sorry, I wasn\'t able to get a response. Please try again.'
+        callbacks.onError?.(errMsg)
+        return errMsg
+      }
+    } catch (e: any) {
+      const errMsg = 'Sorry, something went wrong. Please try again.'
+      callbacks.onError?.(errMsg)
+      return errMsg
+    }
   }
 
   callbacks.onDone?.()
