@@ -49,6 +49,8 @@ export async function runOrchestrator(
     // On the final round, don't offer tools — force a text response
     const isLastRound = round === MAX_TOOL_ROUNDS - 1
 
+    console.log(`[orchestrator] round=${round}/${MAX_TOOL_ROUNDS} isLastRound=${isLastRound}`)
+
     let response: any
 
     try {
@@ -58,6 +60,7 @@ export async function runOrchestrator(
       })
     } catch (e: any) {
       const errMsg = `AI model error: ${e.message || String(e)}`
+      console.error(`[orchestrator] model error:`, e.message || String(e))
       callbacks.onError?.(errMsg)
       return errMsg
     }
@@ -65,6 +68,11 @@ export async function runOrchestrator(
     // Workers AI response: { response?: string, tool_calls?: [{ name, arguments }] }
     const toolCalls: ToolCall[] = response?.tool_calls || []
     const textResponse: string = response?.response || ''
+
+    console.log(`[orchestrator] round=${round} tool_calls=${toolCalls.length} hasText=${!!textResponse}`)
+    if (toolCalls.length > 0) {
+      console.log(`[orchestrator] tool calls:`, JSON.stringify(toolCalls.map(tc => ({ name: tc.name, args: tc.arguments }))))
+    }
 
     // If there are tool calls, execute them and loop
     if (toolCalls.length > 0 && !isLastRound) {
@@ -80,12 +88,14 @@ export async function runOrchestrator(
             ? JSON.parse(tc.arguments)
             : tc.arguments || {}
         } catch {
+          console.warn(`[orchestrator] failed to parse args for ${toolName}:`, tc.arguments)
           args = {}
         }
 
         // Detect duplicate tool calls (same tool + same args)
         const callKey = `${toolName}:${JSON.stringify(args)}`
         if (calledTools.has(callKey)) {
+          console.log(`[orchestrator] skipping duplicate call: ${callKey}`)
           // Already called this exact tool — skip and force response
           continue
         }
@@ -97,9 +107,11 @@ export async function runOrchestrator(
         try {
           result = await executeTool(toolName, args, { event })
         } catch (e: any) {
+          console.error(`[orchestrator] tool ${toolName} threw:`, e.message)
           result = JSON.stringify({ error: `Tool execution failed: ${e.message}` })
         }
 
+        console.log(`[orchestrator] ${toolName} result (${result.length} chars):`, result.slice(0, 300))
         toolResults.push({ name: toolName, result })
       }
 

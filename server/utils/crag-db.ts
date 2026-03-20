@@ -284,9 +284,11 @@ export async function importCragsToDb(
  */
 export async function searchCragByName(event: any, name: string): Promise<Crag | null> {
   const needle = name.toLowerCase()
+  console.log(`[searchCragByName] query="${name}" needle="${needle}"`)
 
   // Try D1 first
   const db = getDb(event)
+  console.log(`[searchCragByName] D1 available=${!!db}`)
   if (db) {
     try {
       const result = await db
@@ -294,18 +296,26 @@ export async function searchCragByName(event: any, name: string): Promise<Crag |
         .bind(`%${needle}%`)
         .all<CragRow>()
 
+      console.log(`[searchCragByName] D1 returned ${result.results?.length ?? 0} results`)
       if (result.results?.length) {
+        console.log(`[searchCragByName] D1 match: "${result.results[0].name}"`)
         return rowToCrag(result.results[0])
       }
-    } catch {
+    } catch (e: any) {
+      console.error(`[searchCragByName] D1 query failed:`, e.message || String(e))
       // D1 query failed, fall through to seed data
     }
   }
 
   // Fallback: search in-memory seed data
+  console.log(`[searchCragByName] falling back to seed data`)
   const { ukCragsSeed } = await import('./uk-crags-seed')
   const match = ukCragsSeed.find(c => c.name.toLowerCase().includes(needle))
-  if (!match) return null
+  if (!match) {
+    console.warn(`[searchCragByName] no match in seed data for "${needle}" (${ukCragsSeed.length} crags checked)`)
+    return null
+  }
+  console.log(`[searchCragByName] seed match: "${match.name}"`)
 
   // Convert seed data format to Crag
   const regionId = findClosestRegion(match.lat, match.lon)
@@ -334,9 +344,11 @@ export async function searchCragByName(event: any, name: string): Promise<Crag |
  */
 export async function searchCragsByName(event: any, name: string, limit = 5): Promise<Crag[]> {
   const needle = name.toLowerCase()
+  console.log(`[searchCragsByName] query="${name}" needle="${needle}" limit=${limit}`)
 
   // Try D1 first
   const db = getDb(event)
+  console.log(`[searchCragsByName] D1 available=${!!db}`)
   if (db) {
     try {
       const result = await db
@@ -344,13 +356,17 @@ export async function searchCragsByName(event: any, name: string, limit = 5): Pr
         .bind(`%${needle}%`, limit)
         .all<CragRow>()
 
+      console.log(`[searchCragsByName] D1 returned ${result.results?.length ?? 0} results`)
       if (result.results?.length) {
         return result.results.map(rowToCrag)
       }
-    } catch {
+    } catch (e: any) {
+      console.error(`[searchCragsByName] D1 query failed:`, e.message || String(e))
       // Fall through to seed data
     }
   }
+
+  console.log(`[searchCragsByName] falling back to seed data`)
 
   // Fallback: search in-memory seed data
   const { ukCragsSeed } = await import('./uk-crags-seed')

@@ -202,15 +202,21 @@ async function executeGetWeatherForecast(args: Record<string, any>, ctx: ToolCon
 
 async function executeSearchCrags(args: Record<string, any>, ctx: ToolContext): Promise<string> {
   const { region_id, climb_type, limit = 10 } = args
+  console.log(`[search_crags] region="${region_id}" type=${climb_type || 'any'} limit=${limit}`)
   if (!region_id) return JSON.stringify({ error: 'region_id required' })
 
   const region = regions.find(r => r.id === region_id)
-  if (!region) return JSON.stringify({ error: `Unknown region: ${region_id}. Use get_region_info to list regions.` })
+  if (!region) {
+    console.warn(`[search_crags] unknown region: "${region_id}"`)
+    return JSON.stringify({ error: `Unknown region: ${region_id}. Use get_region_info to list regions.` })
+  }
 
   let crags = await getCragsByRegion(ctx.event, region_id)
+  console.log(`[search_crags] D1 returned ${crags.length} crags for region "${region_id}"`)
 
   // Fallback to seed data if D1 returned nothing
   if (crags.length === 0) {
+    console.log(`[search_crags] falling back to seed data for region "${region_id}"`)
     const { ukCragsSeed } = await import('../uk-crags-seed')
     const { findClosestRegionForCrag } = await import('../crag-db')
     crags = ukCragsSeed
@@ -324,13 +330,16 @@ async function executeRankRegions(args: Record<string, any>, ctx: ToolContext): 
 
 async function executeLookupCrag(args: Record<string, any>, ctx: ToolContext): Promise<string> {
   const { crag_name, dates } = args
+  console.log(`[lookup_crag] searching for "${crag_name}" dates=${JSON.stringify(dates)}`)
   if (!crag_name) return JSON.stringify({ error: 'crag_name required' })
 
   // Single query search (D1 with seed data fallback)
   const foundCrag = await searchCragByName(ctx.event, crag_name)
   if (!foundCrag) {
+    console.warn(`[lookup_crag] crag "${crag_name}" NOT FOUND`)
     return JSON.stringify({ error: `Crag "${crag_name}" not found in database. Try search_crags to find crags by region.` })
   }
+  console.log(`[lookup_crag] found: "${foundCrag.name}" region=${foundCrag.regionId} lat=${foundCrag.lat} lon=${foundCrag.lon}`)
 
   const foundRegion = regions.find(r => r.id === foundCrag.regionId)
   if (!foundRegion) {
@@ -385,13 +394,16 @@ async function executeLookupCrag(args: Record<string, any>, ctx: ToolContext): P
 
 async function executeGetCragScore(args: Record<string, any>, ctx: ToolContext): Promise<string> {
   const { crag_name, dates } = args
+  console.log(`[get_crag_score] scoring "${crag_name}" dates=${JSON.stringify(dates)}`)
   if (!crag_name || !dates?.length) return JSON.stringify({ error: 'crag_name and dates required' })
 
   // Single query search (D1 with seed data fallback)
   const foundCrag = await searchCragByName(ctx.event, crag_name)
   if (!foundCrag) {
+    console.warn(`[get_crag_score] crag "${crag_name}" NOT FOUND`)
     return JSON.stringify({ error: `Crag "${crag_name}" not found in database. Try search_crags to find crags by region.` })
   }
+  console.log(`[get_crag_score] found: "${foundCrag.name}" region=${foundCrag.regionId}`)
 
   const foundRegion = regions.find(r => r.id === foundCrag.regionId)
   if (!foundRegion) {
