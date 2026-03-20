@@ -71,8 +71,24 @@ export const toolDefinitions: ToolDefinition[] = [
     }
   },
   {
+    name: 'lookup_crag',
+    description: 'Look up a crag by name. Returns crag details (aspect, rock type, tags, lat/lon, region) and the weather forecast for given dates. Use this for simple questions like "is X dry?" or "what\'s the weather at X?". Does NOT score — use get_crag_score only when the user wants a conditions rating.',
+    parameters: {
+      type: 'object',
+      properties: {
+        crag_name: { type: 'string', description: 'Name of the crag (e.g. "Stanage", "Tremadog")' },
+        dates: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Dates to check in YYYY-MM-DD format'
+        }
+      },
+      required: ['crag_name', 'dates']
+    }
+  },
+  {
     name: 'get_crag_score',
-    description: 'Get the weather score for a specific crag on given dates. Returns the score (0-100), modifiers, and detailed weather data.',
+    description: 'Score a specific crag\'s climbing conditions (0-100) for given dates. Use this only when the user explicitly wants a score or rating, or asks "how good" conditions are. For simple weather lookups, use lookup_crag instead.',
     parameters: {
       type: 'object',
       properties: {
@@ -138,6 +154,8 @@ export async function executeTool(name: string, args: Record<string, any>, ctx: 
       return executeSearchCrags(args, ctx)
     case 'rank_regions':
       return executeRankRegions(args, ctx)
+    case 'lookup_crag':
+      return executeLookupCrag(args, ctx)
     case 'get_crag_score':
       return executeGetCragScore(args, ctx)
     case 'get_region_info':
@@ -274,6 +292,74 @@ async function executeRankRegions(args: Record<string, any>, ctx: ToolContext): 
     dates,
     topRegions: ranked.slice(0, topN)
   })
+}
+
+async function executeLookupCrag(args: Record<string, any>, ctx: ToolContext): Promise<string> {
+  const { crag_name, dates } = args
+  if (!crag_name) return JSON.stringify({ error: 'crag_name required' })
+
+  const needle = crag_name.toLowerCase()
+  let foundCrag: any = null
+  let foundRegion: any = null
+
+  for (const r of regions) {
+    const crags = await getCragsByRegion(ctx.event, r.id)
+    const match = crags.find(c => c.name.toLowerCase().includes(needle))
+    if (match) {
+      foundCrag = match
+      foundRegion = r
+      break
+    }
+  }
+
+  if (!foundCrag || !foundRegion) {
+    return JSON.stringify({ error: `Crag "${crag_name}" not found in database. Try search_crags to find crags by region.` })
+  }
+
+  const result: Record<string, any> = {
+    crag: {
+      name: foundCrag.name,
+      region: foundRegion.name,
+      regionId: foundRegion.id,
+      aspect: foundCrag.aspect,
+      rock: foundCrag.rock,
+      types: foundCrag.types,
+      routeCount: foundCrag.routeCount,
+      tags: foundCrag.tags,
+      lat: foundCrag.lat,
+      lon: foundCrag.lon
+    }
+  }
+
+  // Fetch weather if dates provided
+  if (dates?.length) {
+    const pt = foundRegion.points[0]
+    const forecast = await fetchForecastWithRetry(ctx.event, pt.lat, pt.lon, dates, {
+      attempts: 2, timeoutMs: 5000, tag: 'ai-lookup', throwOnFailure: false
+    })
+
+    if (forecast?.mini?.hours?.length) {
+      const m = forecast.mini
+      const warnings = checkWarnings(m, dates)
+      result.weather = {
+        dates,
+        avgTempC: Math.round(avg(m.temp) * 10) / 10,
+        minTempC: Math.round(Math.min(...m.temp) * 10) / 10,
+        maxTempC: Math.round(Math.max(...m.temp) * 10) / 10,
+        totalRainMm: Math.round(sum(m.rainMm) * 10) / 10,
+        maxRainProbPct: Math.round(max(m.pop)),
+        avgWindMph: Math.round(avg(m.wind) * 10) / 10,
+        maxGustMph: Math.round(max(m.gust) * 10) / 10,
+        avgCloudPct: Math.round(avg(m.cloud))
+      }
+      if (warnings.length) result.weather.warnings = warnings
+      result.weather.updatedAt = forecast.updatedAt
+    } else {
+      result.weather = { error: 'Could not fetch forecast' }
+    }
+  }
+
+  return JSON.stringify(result)
 }
 
 async function executeGetCragScore(args: Record<string, any>, ctx: ToolContext): Promise<string> {
