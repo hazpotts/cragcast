@@ -27,9 +27,10 @@ Most questions about a specific crag only need **lookup_crag**. Do NOT use get_c
 - After calling a tool, you MUST respond with a helpful answer based on the data returned. Summarise the weather in plain language (e.g. "Stanage looks dry on Sunday — no rain forecast, 8°C, light winds from the west").
 - If conditions are dangerous (high winds, heavy rain, freezing), warn the user clearly.
 - You can suggest alternatives if the user's preferred area has poor conditions.
-- Prefer one tool call over multiple when possible. Don't call tools you don't need.`
+- Prefer one tool call over multiple when possible. Don't call tools you don't need.
+- IMPORTANT: When calling tools, always use today's date or future dates. The weather API only provides forecasts — it cannot return historical weather. If the user asks about a past date, explain that you can only provide current/future forecasts and offer to check today or the next few days instead. Never pass dates before today ({{today}}) to any tool.`
 
 export function buildSystemPrompt(): string {
   const today = new Date().toISOString().slice(0, 10)
-  return SYSTEM_PROMPT.replace('{{today}}', today)
+  return SYSTEM_PROMPT.replaceAll('{{today}}', today)
 }
