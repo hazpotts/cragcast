@@ -21,20 +21,9 @@
         <span class="transition-opacity duration-300">{{ msg.thinkingPhrase }}</span>
       </div>
 
-      <!-- Tool call indicators -->
-      <div v-if="msg.toolCalls?.length" class="space-y-1" :class="{ 'mb-2': msg.content }">
-        <div
-          v-for="(tool, i) in msg.toolCalls"
-          :key="i"
-          class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400"
-        >
-          <span class="inline-block h-2.5 w-2.5 rounded-full bg-sky-400 dark:bg-sky-500" :class="{ 'animate-pulse': msg.streaming }" />
-          {{ tool }}
-        </div>
-      </div>
-
-      <!-- Message content -->
-      <div v-if="msg.content" class="whitespace-pre-wrap break-words">{{ msg.content }}</div>
+      <!-- Message content (rendered as markdown for assistant messages) -->
+      <div v-if="msg.content && msg.role === 'assistant'" class="prose-chat break-words" v-html="renderMarkdown(msg.content)" />
+      <div v-else-if="msg.content" class="whitespace-pre-wrap break-words">{{ msg.content }}</div>
     </div>
   </div>
 </template>
@@ -42,6 +31,51 @@
 <script setup lang="ts">
 import type { ChatMsg } from '~/composables/useChat'
 defineProps<{ msg: ChatMsg }>()
+
+/**
+ * Lightweight markdown renderer for chat messages.
+ * Handles: **bold**, *italic*, `code`, line breaks, bullet lists, headings.
+ * No external dependencies.
+ */
+function renderMarkdown(text: string): string {
+  // Escape HTML
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+
+  // Headings (### or ##) — only at start of line
+  html = html.replace(/^### (.+)$/gm, '<h4 class="font-semibold mt-3 mb-1">$1</h4>')
+  html = html.replace(/^## (.+)$/gm, '<h3 class="font-semibold text-base mt-3 mb-1">$1</h3>')
+
+  // Bold **text**
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+
+  // Italic *text*
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>')
+
+  // Inline code `text`
+  html = html.replace(/`(.+?)`/g, '<code class="bg-gray-200 dark:bg-gray-700 px-1 rounded text-xs">$1</code>')
+
+  // Bullet lists (- item or * item at start of line)
+  html = html.replace(/^[*-] (.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
+  // Wrap consecutive <li> in <ul>
+  html = html.replace(/((?:<li[^>]*>.*<\/li>\n?)+)/g, '<ul class="my-1">$1</ul>')
+
+  // Paragraphs: convert double newlines to paragraph breaks
+  html = html.replace(/\n\n+/g, '</p><p class="mt-2">')
+
+  // Single newlines to <br> (within paragraphs)
+  html = html.replace(/\n/g, '<br>')
+
+  // Wrap in paragraph
+  html = `<p>${html}</p>`
+
+  // Clean up empty paragraphs
+  html = html.replace(/<p>\s*<\/p>/g, '')
+
+  return html
+}
 </script>
 
 <style scoped>
