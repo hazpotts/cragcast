@@ -3,25 +3,19 @@
 export type ChatMessage = {
   role: 'user' | 'assistant' | 'system' | 'tool'
   content: string
-  tool_call_id?: string
 }
 
+/** Workers AI tool call shape: { name, arguments } */
 export type ToolCall = {
-  id: string
-  type: 'function'
-  function: {
-    name: string
-    arguments: string
-  }
+  name: string
+  arguments: Record<string, any> | string
 }
 
+/** Workers AI tool definition: { name, description, parameters } */
 export type ToolDefinition = {
-  type: 'function'
-  function: {
-    name: string
-    description: string
-    parameters: Record<string, unknown>
-  }
+  name: string
+  description: string
+  parameters: Record<string, unknown>
 }
 
 export type SSEEvent =

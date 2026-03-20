@@ -18,126 +18,108 @@ import { avg, sum, max } from '../server-utils'
 
 export const toolDefinitions: ToolDefinition[] = [
   {
-    type: 'function',
-    function: {
-      name: 'get_weather_forecast',
-      description: 'Get hourly weather forecast for a specific UK location. Returns temperature, rain, wind, and cloud data. Use this when a user asks about conditions at a specific place.',
-      parameters: {
-        type: 'object',
-        properties: {
-          lat: { type: 'number', description: 'Latitude of the location' },
-          lon: { type: 'number', description: 'Longitude of the location' },
-          dates: {
-            type: 'array',
-            items: { type: 'string' },
-            description: 'Dates to check in YYYY-MM-DD format. Use today\'s date or upcoming dates.'
-          }
-        },
-        required: ['lat', 'lon', 'dates']
-      }
+    name: 'get_weather_forecast',
+    description: 'Get hourly weather forecast for a specific UK location. Returns temperature, rain, wind, and cloud data. Use this when a user asks about conditions at a specific place.',
+    parameters: {
+      type: 'object',
+      properties: {
+        lat: { type: 'number', description: 'Latitude of the location' },
+        lon: { type: 'number', description: 'Longitude of the location' },
+        dates: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Dates to check in YYYY-MM-DD format. Use today\'s date or upcoming dates.'
+        }
+      },
+      required: ['lat', 'lon', 'dates']
     }
   },
   {
-    type: 'function',
-    function: {
-      name: 'search_crags',
-      description: 'Search for climbing crags in a specific region. Returns crag names, types (trad/sport/boulder), rock type, aspect, and route count. Use region IDs like "peak-n", "nwales-n", "lakes-c", etc.',
-      parameters: {
-        type: 'object',
-        properties: {
-          region_id: { type: 'string', description: 'Region ID to search crags in (e.g. "peak-n", "nwales-n", "lakes-c")' },
-          climb_type: {
-            type: 'string',
-            enum: ['trad', 'sport', 'boulder'],
-            description: 'Optional: filter by climbing type'
-          },
-          limit: { type: 'number', description: 'Max crags to return (default 10)' }
+    name: 'search_crags',
+    description: 'Search for climbing crags in a specific region. Returns crag names, types (trad/sport/boulder), rock type, aspect, and route count. Use region IDs like "peak-n", "nwales-n", "lakes-c", etc.',
+    parameters: {
+      type: 'object',
+      properties: {
+        region_id: { type: 'string', description: 'Region ID to search crags in (e.g. "peak-n", "nwales-n", "lakes-c")' },
+        climb_type: {
+          type: 'string',
+          enum: ['trad', 'sport', 'boulder'],
+          description: 'Optional: filter by climbing type'
         },
-        required: ['region_id']
-      }
+        limit: { type: 'number', description: 'Max crags to return (default 10)' }
+      },
+      required: ['region_id']
     }
   },
   {
-    type: 'function',
-    function: {
-      name: 'rank_regions',
-      description: 'Rank all UK climbing regions by weather conditions for given dates. Returns scored and sorted regions with weather summaries. Optionally filter by distance from a location.',
-      parameters: {
-        type: 'object',
-        properties: {
-          dates: {
-            type: 'array',
-            items: { type: 'string' },
-            description: 'Dates to rank for in YYYY-MM-DD format'
-          },
-          lat: { type: 'number', description: 'Optional: user latitude for distance filtering' },
-          lon: { type: 'number', description: 'Optional: user longitude for distance filtering' },
-          max_drive_mins: { type: 'number', description: 'Optional: max drive time in minutes' },
-          top_n: { type: 'number', description: 'Number of top regions to return (default 5)' }
+    name: 'rank_regions',
+    description: 'Rank all UK climbing regions by weather conditions for given dates. Returns scored and sorted regions with weather summaries. Optionally filter by distance from a location.',
+    parameters: {
+      type: 'object',
+      properties: {
+        dates: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Dates to rank for in YYYY-MM-DD format'
         },
-        required: ['dates']
-      }
+        lat: { type: 'number', description: 'Optional: user latitude for distance filtering' },
+        lon: { type: 'number', description: 'Optional: user longitude for distance filtering' },
+        max_drive_mins: { type: 'number', description: 'Optional: max drive time in minutes' },
+        top_n: { type: 'number', description: 'Number of top regions to return (default 5)' }
+      },
+      required: ['dates']
     }
   },
   {
-    type: 'function',
-    function: {
-      name: 'get_crag_score',
-      description: 'Get the weather score for a specific crag on given dates. Returns the score (0-100), modifiers, and detailed weather data.',
-      parameters: {
-        type: 'object',
-        properties: {
-          crag_name: { type: 'string', description: 'Name of the crag to score (e.g. "Stanage", "Tremadog")' },
-          dates: {
-            type: 'array',
-            items: { type: 'string' },
-            description: 'Dates to score in YYYY-MM-DD format'
-          }
-        },
-        required: ['crag_name', 'dates']
-      }
+    name: 'get_crag_score',
+    description: 'Get the weather score for a specific crag on given dates. Returns the score (0-100), modifiers, and detailed weather data.',
+    parameters: {
+      type: 'object',
+      properties: {
+        crag_name: { type: 'string', description: 'Name of the crag to score (e.g. "Stanage", "Tremadog")' },
+        dates: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Dates to score in YYYY-MM-DD format'
+        }
+      },
+      required: ['crag_name', 'dates']
     }
   },
   {
-    type: 'function',
-    function: {
-      name: 'get_region_info',
-      description: 'Get information about a climbing region including rock types, tags, and links to external weather services. Also lists available regions if no ID given.',
-      parameters: {
-        type: 'object',
-        properties: {
-          region_id: { type: 'string', description: 'Optional: specific region ID. Omit to list all regions.' }
-        },
-        required: []
-      }
+    name: 'get_region_info',
+    description: 'Get information about a climbing region including rock types, tags, and links to external weather services. Also lists available regions if no ID given.',
+    parameters: {
+      type: 'object',
+      properties: {
+        region_id: { type: 'string', description: 'Optional: specific region ID. Omit to list all regions.' }
+      },
+      required: []
     }
   },
   {
-    type: 'function',
-    function: {
-      name: 'get_mwis_forecast',
-      description: 'Fetch Mountain Weather Information Service forecast for a UK mountain area. Provides detailed mountain weather including cloud base, freezing level, visibility, and wind. Use for mountain/upland regions like Snowdonia, Lake District, Scottish Highlands.',
-      parameters: {
-        type: 'object',
-        properties: {
-          area: {
-            type: 'string',
-            enum: [
-              'lake-district',
-              'snowdonia-national-park',
-              'brecon-beacons',
-              'peak-district',
-              'yorkshire-dales',
-              'north-pennines',
-              'scottish-highlands-west',
-              'scottish-highlands-east',
-              'scottish-highlands-north'
-            ],
-            description: 'MWIS area to fetch forecast for'
-          }
-        },
-        required: ['area']
-      }
+    name: 'get_mwis_forecast',
+    description: 'Fetch Mountain Weather Information Service forecast for a UK mountain area. Provides detailed mountain weather including cloud base, freezing level, visibility, and wind. Use for mountain/upland regions like Snowdonia, Lake District, Scottish Highlands.',
+    parameters: {
+      type: 'object',
+      properties: {
+        area: {
+          type: 'string',
+          enum: [
+            'lake-district',
+            'snowdonia-national-park',
+            'brecon-beacons',
+            'peak-district',
+            'yorkshire-dales',
+            'north-pennines',
+            'scottish-highlands-west',
+            'scottish-highlands-east',
+            'scottish-highlands-north'
+          ],
+          description: 'MWIS area to fetch forecast for'
+        }
+      },
+      required: ['area']
     }
   }
 ]
