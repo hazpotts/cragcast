@@ -6,6 +6,7 @@
 3. Add issue tracker (use GitHub Issues if possible)
 4. Allow add to desktop (PWA)
 5. Improve AI chat reliability (model quality, error recovery, streaming)
+6. Semantic crag search for AI chat — vector embeddings so natural-language queries like "that gritstone edge near Sheffield" resolve to Stanage without needing an exact name match
 
 ---
 

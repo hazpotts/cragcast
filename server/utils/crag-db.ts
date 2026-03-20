@@ -128,6 +128,7 @@ export async function getCragCountsByRegion(event: any): Promise<Record<string, 
 /**
  * Find the closest region for a given coordinate.
  */
+export { findClosestRegion as findClosestRegionForCrag }
 function findClosestRegion(lat: number, lon: number): string {
   let bestId = regions[0].id
   let bestDist = Infinity
@@ -274,6 +275,125 @@ export async function importCragsToDb(
   }
 
   return { imported, updated, errors }
+}
+
+/**
+ * Search for a crag by name (case-insensitive partial match).
+ * Uses a single SQL LIKE query instead of scanning all regions.
+ * Falls back to in-memory seed data when D1 is unavailable.
+ */
+export async function searchCragByName(event: any, name: string): Promise<Crag | null> {
+  const needle = name.toLowerCase()
+  console.log(`[searchCragByName] query="${name}" needle="${needle}"`)
+
+  // Try D1 first
+  const db = getDb(event)
+  console.log(`[searchCragByName] D1 available=${!!db}`)
+  if (db) {
+    try {
+      const result = await db
+        .prepare("SELECT * FROM crags WHERE LOWER(name) LIKE ? ORDER BY route_count DESC LIMIT 1")
+        .bind(`%${needle}%`)
+        .all<CragRow>()
+
+      console.log(`[searchCragByName] D1 returned ${result.results?.length ?? 0} results`)
+      if (result.results?.length) {
+        console.log(`[searchCragByName] D1 match: "${result.results[0].name}"`)
+        return rowToCrag(result.results[0])
+      }
+    } catch (e: any) {
+      console.error(`[searchCragByName] D1 query failed:`, e.message || String(e))
+      // D1 query failed, fall through to seed data
+    }
+  }
+
+  // Fallback: search in-memory seed data
+  console.log(`[searchCragByName] falling back to seed data`)
+  const { ukCragsSeed } = await import('./uk-crags-seed')
+  const match = ukCragsSeed.find(c => c.name.toLowerCase().includes(needle))
+  if (!match) {
+    console.warn(`[searchCragByName] no match in seed data for "${needle}" (${ukCragsSeed.length} crags checked)`)
+    return null
+  }
+  console.log(`[searchCragByName] seed match: "${match.name}"`)
+
+  // Convert seed data format to Crag
+  const regionId = findClosestRegion(match.lat, match.lon)
+  return {
+    id: slugify(match.name, match.cragPath),
+    name: match.name,
+    regionId,
+    lat: match.lat,
+    lon: match.lon,
+    aspect: null,
+    rock: [],
+    types: {
+      ...(match.trad > 0 ? { trad: match.trad } : {}),
+      ...(match.sport > 0 ? { sport: match.sport } : {}),
+      ...(match.boulder > 0 ? { boulder: match.boulder } : {})
+    },
+    routeCount: match.totalClimbs,
+    tags: [],
+    ukcId: null
+  }
+}
+
+/**
+ * Search for multiple crags by name (case-insensitive partial match).
+ * Returns up to `limit` results.
+ */
+export async function searchCragsByName(event: any, name: string, limit = 5): Promise<Crag[]> {
+  const needle = name.toLowerCase()
+  console.log(`[searchCragsByName] query="${name}" needle="${needle}" limit=${limit}`)
+
+  // Try D1 first
+  const db = getDb(event)
+  console.log(`[searchCragsByName] D1 available=${!!db}`)
+  if (db) {
+    try {
+      const result = await db
+        .prepare("SELECT * FROM crags WHERE LOWER(name) LIKE ? ORDER BY route_count DESC LIMIT ?")
+        .bind(`%${needle}%`, limit)
+        .all<CragRow>()
+
+      console.log(`[searchCragsByName] D1 returned ${result.results?.length ?? 0} results`)
+      if (result.results?.length) {
+        return result.results.map(rowToCrag)
+      }
+    } catch (e: any) {
+      console.error(`[searchCragsByName] D1 query failed:`, e.message || String(e))
+      // Fall through to seed data
+    }
+  }
+
+  console.log(`[searchCragsByName] falling back to seed data`)
+
+  // Fallback: search in-memory seed data
+  const { ukCragsSeed } = await import('./uk-crags-seed')
+  const matches = ukCragsSeed
+    .filter(c => c.name.toLowerCase().includes(needle))
+    .slice(0, limit)
+
+  return matches.map(match => {
+    const regionId = findClosestRegion(match.lat, match.lon)
+    return {
+      id: slugify(match.name, match.cragPath),
+      name: match.name,
+      regionId,
+      lat: match.lat,
+      lon: match.lon,
+      aspect: null,
+      rock: [],
+      types: {
+        ...(match.trad > 0 ? { trad: match.trad } : {}),
+        ...(match.sport > 0 ? { sport: match.sport } : {}),
+        ...(match.boulder > 0 ? { boulder: match.boulder } : {})
+      },
+      routeCount: match.totalClimbs,
+      tags: [],
+      ukcId: null
+    }
+  })
 }
 
 /**
