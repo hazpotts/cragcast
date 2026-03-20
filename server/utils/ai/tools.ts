@@ -166,8 +166,12 @@ function fixPastDates(dates: string[] | undefined): string[] | undefined {
 }
 
 export async function executeTool(name: string, args: Record<string, any>, ctx: ToolContext): Promise<string> {
+  // Guard: parse dates if the model sent a JSON string instead of an array
+  if (args.dates && typeof args.dates === 'string') {
+    try { args.dates = JSON.parse(args.dates) } catch { args.dates = [args.dates] }
+  }
   // Guard: fix past dates before any tool sees them
-  if (args.dates) {
+  if (Array.isArray(args.dates)) {
     args.dates = fixPastDates(args.dates)
   }
   switch (name) {
