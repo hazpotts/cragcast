@@ -1,6 +1,10 @@
 name = "cragcast"
 compatibility_date = "2024-09-19"
 
+# Workers AI binding for conversational AI
+[ai]
+binding = "AI"
+
 # D1 database for crag data (used by wrangler pages dev and migrations)
 [[d1_databases]]
 binding = "CRAG_DB"
