@@ -7,6 +7,11 @@
       </a>
       <div class="flex items-center gap-3">
         <ModeToggle />
+        <NuxtLink to="/chat" aria-label="AI chat">
+          <UButton variant="ghost" size="sm" :class="$route.path === '/chat' ? 'text-sky-700 dark:text-sky-300' : ''">
+            <Icon name="heroicons-solid:chat-bubble-left-right" class="h-5 w-5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" />
+          </UButton>
+        </NuxtLink>
         <UPopover>
           <UButton variant="ghost" size="sm" aria-label="Units settings">
             <Icon name="heroicons-solid:cog-6-tooth" class="h-5 w-5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" />
