@@ -19,7 +19,7 @@ export type VectorMetadata = {
 }
 
 type VectorizeIndex = {
-  upsert: (vectors: Array<{ id: string; values: number[]; metadata?: Record<string, any> }>) => Promise<{ count: number }>
+  upsert: (vectors: Array<{ id: string; values: number[]; metadata?: Record<string, any> }>) => Promise<{ mutationId?: string }>
   query: (vector: number[], options: { topK: number; filter?: Record<string, any>; returnMetadata?: boolean | string }) => Promise<{ matches: Array<{ id: string; score: number; metadata?: Record<string, any> }> }>
   getByIds: (ids: string[]) => Promise<Array<{ id: string; values: number[]; metadata?: Record<string, any> }>>
   deleteByIds: (ids: string[]) => Promise<{ count: number }>
@@ -68,8 +68,8 @@ export async function upsertVectors(
       metadata: v.metadata as Record<string, any>
     }))
 
-    const result = await vectorize.upsert(vectorData)
-    indexed += result.count
+    await vectorize.upsert(vectorData)
+    indexed += batch.length
   }
 
   return { indexed }
