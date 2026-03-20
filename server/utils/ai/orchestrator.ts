@@ -124,6 +124,7 @@ export function friendlyToolName(name: string): string {
     get_weather_forecast: 'Checking weather',
     search_crags: 'Searching crags',
     rank_regions: 'Ranking regions',
+    lookup_crag: 'Looking up crag',
     get_crag_score: 'Scoring crag',
     get_region_info: 'Looking up region',
     get_mwis_forecast: 'Checking mountain weather'

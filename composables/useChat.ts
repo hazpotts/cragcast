@@ -50,7 +50,7 @@ export function useChat() {
     const idx = messages.value.findIndex(m => m.id === msgId)
     if (idx !== -1) messages.value[idx].thinkingPhrase = THINKING_PHRASES[phraseIdx]
 
-    // Cycle every 2.5s
+    // Cycle every 5s
     thinkingTimer = setInterval(() => {
       phraseIdx = (phraseIdx + 1) % THINKING_PHRASES.length
       const i = messages.value.findIndex(m => m.id === msgId)
@@ -59,7 +59,7 @@ export function useChat() {
       } else {
         stopThinking()
       }
-    }, 2500)
+    }, 5000)
   }
 
   function addMessage(role: 'user' | 'assistant', content: string): ChatMsg {
