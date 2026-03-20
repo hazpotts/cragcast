@@ -18,69 +18,19 @@ import { avg, sum, max } from '../server-utils'
 
 export const toolDefinitions: ToolDefinition[] = [
   {
-    name: 'get_weather_forecast',
-    description: 'Get hourly weather forecast for a specific UK location. Returns temperature, rain, wind, and cloud data. Use this when a user asks about conditions at a specific place.',
-    parameters: {
-      type: 'object',
-      properties: {
-        lat: { type: 'number', description: 'Latitude of the location' },
-        lon: { type: 'number', description: 'Longitude of the location' },
-        dates: {
-          type: 'array',
-          items: { type: 'string' },
-          description: 'Dates to check in YYYY-MM-DD format. Use today\'s date or upcoming dates.'
-        }
-      },
-      required: ['lat', 'lon', 'dates']
-    }
-  },
-  {
-    name: 'search_crags',
-    description: 'Search for climbing crags in a specific region. Returns crag names, types (trad/sport/boulder), rock type, aspect, and route count. Use region IDs like "peak-n", "nwales-n", "lakes-c", etc.',
-    parameters: {
-      type: 'object',
-      properties: {
-        region_id: { type: 'string', description: 'Region ID to search crags in (e.g. "peak-n", "nwales-n", "lakes-c")' },
-        climb_type: {
-          type: 'string',
-          enum: ['trad', 'sport', 'boulder'],
-          description: 'Optional: filter by climbing type'
-        },
-        limit: { type: 'number', description: 'Max crags to return (default 10)' }
-      },
-      required: ['region_id']
-    }
-  },
-  {
-    name: 'rank_regions',
-    description: 'Rank all UK climbing regions by weather conditions for given dates. Returns scored and sorted regions with weather summaries. Optionally filter by distance from a location.',
-    parameters: {
-      type: 'object',
-      properties: {
-        dates: {
-          type: 'array',
-          items: { type: 'string' },
-          description: 'Dates to rank for in YYYY-MM-DD format'
-        },
-        lat: { type: 'number', description: 'Optional: user latitude for distance filtering' },
-        lon: { type: 'number', description: 'Optional: user longitude for distance filtering' },
-        max_drive_mins: { type: 'number', description: 'Optional: max drive time in minutes' },
-        top_n: { type: 'number', description: 'Number of top regions to return (default 5)' }
-      },
-      required: ['dates']
-    }
-  },
-  {
     name: 'lookup_crag',
-    description: 'Look up a crag by name. Returns crag details (aspect, rock type, tags, lat/lon, region) and the weather forecast for given dates. Use this for simple questions like "is X dry?" or "what\'s the weather at X?". Does NOT score — use get_crag_score only when the user wants a conditions rating.',
+    description: 'Look up a crag by name and return its details (aspect, rock type, route types, tags, coordinates, region) together with the hourly weather forecast for the requested dates. Returns JSON with crag metadata and weather summary (avg/min/max temp, total rain, wind, gusts, cloud cover, rain probability, warnings). Use this as the DEFAULT tool for any question about a specific crag — "Is Stanage dry?", "What\'s the weather at Tremadog?", "Can I climb at Malham tomorrow?". This is the most commonly needed tool. Do NOT use get_crag_score unless the user explicitly asks for a numerical score or rating. Do NOT use get_weather_forecast for named crags — this tool already includes the forecast.',
     parameters: {
       type: 'object',
       properties: {
-        crag_name: { type: 'string', description: 'Name of the crag (e.g. "Stanage", "Tremadog")' },
+        crag_name: {
+          type: 'string',
+          description: 'Name of the crag as climbers know it, e.g. "Stanage", "Tremadog", "Malham Cove", "Froggatt Edge". The search is fuzzy — use the common name.'
+        },
         dates: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Dates to check in YYYY-MM-DD format'
+          description: 'Dates to fetch the forecast for, in YYYY-MM-DD format. Must be today or future dates. Example: ["2025-03-15", "2025-03-16"]'
         }
       },
       required: ['crag_name', 'dates']
@@ -88,34 +38,96 @@ export const toolDefinitions: ToolDefinition[] = [
   },
   {
     name: 'get_crag_score',
-    description: 'Score a specific crag\'s climbing conditions (0-100) for given dates. Use this only when the user explicitly wants a score or rating, or asks "how good" conditions are. For simple weather lookups, use lookup_crag instead.',
+    description: 'Score a specific crag\'s climbing conditions from 0 to 100 for the given dates, with detailed modifiers explaining how aspect, shelter, and rock type affect the score. Returns JSON with crag metadata, numerical score, region score, modifier breakdown, scoring rationale, and weather summary. Use ONLY when the user explicitly asks for a score, rating, or "how good" conditions are — e.g. "Rate Stanage for Saturday", "Score conditions at Tremadog", "How good is Malham this weekend?". For simple weather lookups or "is it dry?" questions, use lookup_crag instead.',
     parameters: {
       type: 'object',
       properties: {
-        crag_name: { type: 'string', description: 'Name of the crag to score (e.g. "Stanage", "Tremadog")' },
+        crag_name: {
+          type: 'string',
+          description: 'Name of the crag to score, e.g. "Stanage", "Tremadog", "Portland". Uses fuzzy matching.'
+        },
         dates: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Dates to score in YYYY-MM-DD format'
+          description: 'Dates to score conditions for, in YYYY-MM-DD format. Must be today or future dates.'
         }
       },
       required: ['crag_name', 'dates']
     }
   },
   {
-    name: 'get_region_info',
-    description: 'Get information about a climbing region including rock types, tags, and links to external weather services. Also lists available regions if no ID given.',
+    name: 'rank_regions',
+    description: 'Rank all UK climbing regions by overall conditions for the given dates. Returns JSON with an array of top regions sorted by score (0–100), each with region name, area, score, scoring rationale, rock types, drive time, weather summary (temp, wind, rain), and warnings. Optionally filters by drive time from a home location. Use when the user asks "where should I climb?", "best conditions this weekend?", "where\'s dry on Saturday?", or any open-ended venue recommendation. Do NOT use for questions about a specific named crag — use lookup_crag instead.',
     parameters: {
       type: 'object',
       properties: {
-        region_id: { type: 'string', description: 'Optional: specific region ID. Omit to list all regions.' }
+        dates: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Dates to rank for, in YYYY-MM-DD format. Must be today or future dates. Example: ["2025-03-15"]'
+        },
+        lat: { type: 'number', description: 'User\'s home latitude for distance filtering and drive time calculation. Optional.' },
+        lon: { type: 'number', description: 'User\'s home longitude for distance filtering and drive time calculation. Optional.' },
+        max_drive_mins: { type: 'number', description: 'Maximum acceptable drive time in minutes. Regions beyond this are excluded. Optional.' },
+        top_n: { type: 'number', description: 'Number of top-ranked regions to return. Defaults to 5. Set higher for broader comparisons.' }
+      },
+      required: ['dates']
+    }
+  },
+  {
+    name: 'search_crags',
+    description: 'List climbing crags within a specific region. Returns JSON with region name, array of crags (each with name, aspect, rock types, climbing types with route counts, total route count, tags, coordinates, UKC ID), and total count. Use when the user asks "what crags are in the Peak District?", "show me sport climbing in North Wales", or needs to browse crags by area. Requires a region_id — if you don\'t know the ID, call get_region_info first to list all regions.',
+    parameters: {
+      type: 'object',
+      properties: {
+        region_id: {
+          type: 'string',
+          description: 'Region ID to search within. Examples: "peak-n" (Peak District North/Gritstone), "peak-s" (Peak District South/Limestone), "nwales-n" (North Wales Mountains), "lakes-c" (Lake District Central), "swanage" (Dorset). Use get_region_info to discover valid IDs.'
+        },
+        climb_type: {
+          type: 'string',
+          enum: ['trad', 'sport', 'boulder'],
+          description: 'Filter crags to only those with routes of this type. Optional — omit to return all crags.'
+        },
+        limit: { type: 'number', description: 'Maximum number of crags to return. Defaults to 10.' }
+      },
+      required: ['region_id']
+    }
+  },
+  {
+    name: 'get_weather_forecast',
+    description: 'Fetch hourly weather forecast for a specific UK latitude/longitude over the requested dates. Returns JSON with location, dates, and weather summary (avg/min/max temp in °C, total rain in mm, avg wind and max gusts in mph, cloud cover %, max rain probability %, warnings). Use ONLY when you need weather for exact coordinates that are NOT a named crag — e.g. a user-provided lat/lon, or a location not in the crag database. For any named crag, use lookup_crag instead (it includes the forecast). Cannot return historical weather — only forecasts for today onwards.',
+    parameters: {
+      type: 'object',
+      properties: {
+        lat: { type: 'number', description: 'Latitude of the UK location (e.g. 53.35 for Peak District)' },
+        lon: { type: 'number', description: 'Longitude of the UK location (e.g. -1.63 for Peak District)' },
+        dates: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Dates to fetch the forecast for, in YYYY-MM-DD format. Must be today or future dates.'
+        }
+      },
+      required: ['lat', 'lon', 'dates']
+    }
+  },
+  {
+    name: 'get_region_info',
+    description: 'Get metadata about a UK climbing region — rock types, tags, coordinates, type affinity — or list all available regions grouped by area. Returns JSON with region details when given a region_id, or a grouped list of all regions when called without one. Use when the user asks "tell me about the Lake District", "what regions do you cover?", or when you need to discover valid region IDs for other tools like search_crags.',
+    parameters: {
+      type: 'object',
+      properties: {
+        region_id: {
+          type: 'string',
+          description: 'Specific region ID to look up, e.g. "peak-n", "lakes-c", "pembroke". Omit to list all available regions and their IDs.'
+        }
       },
       required: []
     }
   },
   {
     name: 'get_mwis_forecast',
-    description: 'Fetch Mountain Weather Information Service forecast for a UK mountain area. Provides detailed mountain weather including cloud base, freezing level, visibility, and wind. Use for mountain/upland regions like Snowdonia, Lake District, Scottish Highlands.',
+    description: 'Fetch the Mountain Weather Information Service (MWIS) forecast for a UK upland/mountain area. Returns JSON with area name, extracted forecast summary text, freezing level, cloud base, summit wind speeds, and visibility where available, plus a link to the full MWIS page. Use for mountain and upland weather questions — conditions above ~400m diverge dramatically from lowland forecasts (temperature drops ~1°C per 150m, summit winds can be 3x valley speeds). Use when the user asks about mountain conditions, winter climbing, or high-altitude crags in areas like Snowdonia, the Lake District, or the Scottish Highlands.',
     parameters: {
       type: 'object',
       properties: {
@@ -132,7 +144,7 @@ export const toolDefinitions: ToolDefinition[] = [
             'scottish-highlands-east',
             'scottish-highlands-north'
           ],
-          description: 'MWIS area to fetch forecast for'
+          description: 'MWIS mountain area to fetch the forecast for. Must be one of the listed values.'
         }
       },
       required: ['area']
