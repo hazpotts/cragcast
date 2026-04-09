@@ -99,7 +99,7 @@
         <span class="block text-center">{{ row.pending ? '…' : units.convertTemp(row.avgTempC) }}</span>
       </template>
       <template #avgWindMph-data="{ row }">
-        <span class="block text-center">{{ row.pending ? '…' : units.convertWind(row.avgWindMph) }}<template v-if="!row.pending && row.avgWindDir"> {{ row.avgWindDir }}</template></span>
+        <span class="inline-flex items-center justify-center gap-0.5 w-full">{{ row.pending ? '…' : units.convertWind(row.avgWindMph) }}<template v-if="!row.pending && row.avgWindDir"> <Icon name="lucide:arrow-up" class="h-3.5 w-3.5 text-current" :style="{ transform: windArrowRotation(row.avgWindDir) }" />{{ row.avgWindDir }}</template></span>
       </template>
       <template #avgRainMm-data="{ row }">
         <span class="block text-center">{{ row.pending ? '…' : units.convertRain(row.avgRainMm) }}</span>
@@ -195,6 +195,12 @@ function toggle(id: string) { emit('toggle-favourite', id) }
 const units = useUnits()
 const isCragGranularity = computed(() => prefs.granularity.value === 'crag')
 const isAreaGranularity = computed(() => prefs.granularity.value === 'area')
+
+const COMPASS_DEG: Record<string, number> = { N: 0, NE: 45, E: 90, SE: 135, S: 180, SW: 225, W: 270, NW: 315 }
+function windArrowRotation(compass: string): string {
+  const deg = COMPASS_DEG[compass] ?? 0
+  return `rotate(${(deg + 180) % 360}deg)`
+}
 // Show distance column when any distance filter is active
 const showDistance = computed(() => Number.isFinite(prefs.maxDriveMins.value) || prefs.minDriveMins.value > 0)
 const columns = computed(() => {
