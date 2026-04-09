@@ -290,7 +290,7 @@ const COMPASS_DEG: Record<string, number> = { N: 0, NE: 45, E: 90, SE: 135, S: 1
 /** CSS rotation for a wind-direction arrow (arrow points where wind blows TO) */
 function windArrowRotation(compass: string): string {
   const deg = COMPASS_DEG[compass] ?? 0
-  return `rotate(${deg}deg)`
+  return `rotate(${(deg + 180) % 360}deg)`
 }
 
 async function toggleCrags() {
