@@ -99,7 +99,7 @@
         <span class="block text-center">{{ row.pending ? '…' : units.convertTemp(row.avgTempC) }}</span>
       </template>
       <template #avgWindMph-data="{ row }">
-        <span class="block text-center">{{ row.pending ? '…' : units.convertWind(row.avgWindMph) }}</span>
+        <span class="block text-center">{{ row.pending ? '…' : units.convertWind(row.avgWindMph) }}<template v-if="!row.pending && row.avgWindDir"> {{ row.avgWindDir }}</template></span>
       </template>
       <template #avgRainMm-data="{ row }">
         <span class="block text-center">{{ row.pending ? '…' : units.convertRain(row.avgRainMm) }}</span>

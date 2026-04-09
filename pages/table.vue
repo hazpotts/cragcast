@@ -301,6 +301,7 @@ async function loadCompare(snap: PrefsSnapshot) {
           daily: regionRow.daily,
           avgTempC: regionRow.avgTempC,
           avgWindMph: regionRow.avgWindMph,
+          avgWindDir: regionRow.avgWindDir,
           avgRainMm: regionRow.avgRainMm,
           warnings: regionRow.warnings,
           cragCount: 0,

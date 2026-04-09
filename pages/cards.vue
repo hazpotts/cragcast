@@ -46,6 +46,7 @@
               :avgTempC="activeItems[0].avgTempC"
               :avgRainMm="activeItems[0].avgRainMm"
               :avgWindMph="activeItems[0].avgWindMph"
+              :avgWindDir="activeItems[0].avgWindDir"
               :cragCount="activeItems[0].cragCount || 0"
             />
           </div>
@@ -65,6 +66,7 @@
               :avgTempC="r.avgTempC"
               :avgRainMm="r.avgRainMm"
               :avgWindMph="r.avgWindMph"
+              :avgWindDir="r.avgWindDir"
               :cragCount="r.cragCount || 0"
               compact
             />

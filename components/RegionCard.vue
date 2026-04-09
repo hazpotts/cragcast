@@ -43,7 +43,7 @@
           <Icon name="lucide:thermometer" class="h-3 w-3 text-current" />{{ units.convertTemp(avgTempC) }}{{ units.tempLabel.value }}
         </span>
         <span v-if="Number.isFinite(avgWindMph)" class="inline-flex items-center gap-0.5">
-          <Icon name="lucide:wind" class="h-3 w-3 text-current" />{{ units.convertWind(avgWindMph) }} {{ units.windLabel.value }}
+          <Icon name="lucide:wind" class="h-3 w-3 text-current" />{{ units.convertWind(avgWindMph) }} {{ units.windLabel.value }}<template v-if="avgWindDir"> {{ avgWindDir }}</template>
         </span>
         <span v-if="Number.isFinite(avgRainMm)" class="inline-flex items-center gap-0.5">
           <Icon name="lucide:droplets" class="h-3 w-3 text-current" />{{ units.convertRain(avgRainMm) }} {{ units.rainLabel.value }}
@@ -183,7 +183,7 @@
               <div class="flex flex-col mt-1 mb-1 items-center text-center text-gray-600 dark:text-gray-300">
                 <div v-if="Number.isFinite(d.tempAvgC as any)" class="inline-flex items-center gap-0.5"><Icon name="lucide:thermometer" class="h-3.5 w-3.5 text-current" />{{ units.convertTemp(d.tempAvgC) }}{{ units.tempLabel.value }}</div>
                 <div v-if="Number.isFinite(d.rainSumMm as any)" class="inline-flex items-center gap-0.5"><Icon name="lucide:droplets" class="h-3.5 w-3.5 text-current" />{{ units.convertRain(d.rainSumMm) }} {{ units.rainLabel.value }}</div>
-                <div v-if="Number.isFinite(d.windAvgMph as any)" class="inline-flex items-center gap-0.5"><Icon name="lucide:wind" class="h-3.5 w-3.5 text-current" />{{ units.convertWind(d.windAvgMph) }} {{ units.windLabel.value }}</div>
+                <div v-if="Number.isFinite(d.windAvgMph as any)" class="inline-flex items-center gap-0.5"><Icon name="lucide:wind" class="h-3.5 w-3.5 text-current" />{{ units.convertWind(d.windAvgMph) }} {{ units.windLabel.value }}<template v-if="d.windDirCompass"> {{ d.windDirCompass }}</template></div>
               </div>
             </div>
           </template>
@@ -264,12 +264,13 @@ const props = defineProps<{
   score: number
   why: string[]
   warnings?: { level: string; type: string; message: string }[]
-  daily: { date: string; icon: string; tempAvgC: number; windAvgMph: number; rainSumMm: number }[]
+  daily: { date: string; icon: string; tempAvgC: number; windAvgMph: number; windDirCompass?: string; rainSumMm: number }[]
   distanceMins: number | null
   ukcUrl: string
   links?: { bbc: string; metoffice: string; windy: string; yrno?: string }
   avgTempC: number
   avgWindMph: number
+  avgWindDir?: string
   avgRainMm: number
   compact?: boolean
   cragCount?: number
