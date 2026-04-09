@@ -1,11 +1,12 @@
 import type { MiniSeries } from './forecast'
-import { avg, max, sum } from './server-utils'
+import { avg, max, sum, circularMeanDeg, degToCompass } from './server-utils'
 
 type DailyIcon = {
   date: string
   icon: string
   tempAvgC: number
   windAvgMph: number
+  windDirCompass: string
   rainSumMm: number
 }
 
@@ -25,7 +26,7 @@ export function dailyIcons(mini: MiniSeries, dates: string[]): DailyIcon[] {
 
     // No data for this date - use default cloud icon
     if (!idx.length) {
-      icons.push({ date: d, icon: 'cloud', tempAvgC: 0, windAvgMph: 0, rainSumMm: 0 })
+      icons.push({ date: d, icon: 'cloud', tempAvgC: 0, windAvgMph: 0, windDirCompass: '', rainSumMm: 0 })
       continue
     }
 
@@ -36,6 +37,7 @@ export function dailyIcons(mini: MiniSeries, dates: string[]): DailyIcon[] {
     const c = idx.map(i => mini.cloud[i] || 0)
     const t = idx.map(i => mini.temp[i] || 0)
     const w = idx.map(i => mini.wind[i] || 0)
+    const wd = mini.windDir ? idx.map(i => mini.windDir![i] ?? 0) : []
 
     // Calculate daily aggregates
     const rainSum = sum(r)
@@ -74,6 +76,7 @@ export function dailyIcons(mini: MiniSeries, dates: string[]): DailyIcon[] {
       icon,
       tempAvgC: Math.round(tempAvg * 10) / 10,
       windAvgMph: Math.round(windAvg * 10) / 10,
+      windDirCompass: wd.length ? degToCompass(circularMeanDeg(wd)) : '',
       rainSumMm: Math.round(rainSum * 10) / 10
     })
   }

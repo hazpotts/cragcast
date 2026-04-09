@@ -41,7 +41,7 @@ export const regions: Region[] = [
   // --- Peak District ---
   {
     id: "peak-n",
-    name: "North Peaks",
+    name: "North Peak",
     area: "Peak District",
     points: [{ lat: 53.45, lon: -1.88 }],
     rock: ["grit"],
@@ -50,7 +50,7 @@ export const regions: Region[] = [
   },
   {
     id: "peak-c",
-    name: "Central Peaks",
+    name: "Central Peak",
     area: "Peak District",
     points: [{ lat: 53.34, lon: -1.63 }],
     rock: ["grit", "limestone"],
@@ -59,7 +59,7 @@ export const regions: Region[] = [
   },
   {
     id: "peak-sw",
-    name: "South West Peaks",
+    name: "South West Peak",
     area: "Peak District",
     points: [{ lat: 53.17, lon: -2.03 }],
     rock: ["grit"],
@@ -68,7 +68,7 @@ export const regions: Region[] = [
   },
   {
     id: "peak-se",
-    name: "South East Peaks",
+    name: "South East Peak",
     area: "Peak District",
     points: [{ lat: 53.25, lon: -1.61 }],
     rock: ["grit"],

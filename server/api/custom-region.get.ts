@@ -3,7 +3,7 @@ import { haversineKm, driveMinutesApprox } from "~/server/utils/distance"
 import { scoreRegion } from "~/server/utils/score"
 import { parseDatesParam } from "~/server/utils/dates"
 import { dailyIcons } from "~/server/utils/icons"
-import { avg } from "~/server/utils/server-utils"
+import { avg, circularMeanDeg, degToCompass } from "~/server/utils/server-utils"
 
 /** Reverse-geocode lat/lon to nearest town name via Nominatim */
 async function reverseGeocode(lat: number, lon: number): Promise<string> {
@@ -60,6 +60,7 @@ export default defineEventHandler(async (event) => {
 
   const avgTempC = Math.round(avg(mini.temp) * 10) / 10
   const avgWindMph = Math.round(avg(mini.wind) * 10) / 10
+  const avgWindDir = mini.windDir?.length ? degToCompass(circularMeanDeg(mini.windDir)) : ''
   const avgRainMm = Math.round(avg(mini.rainMm) * 10) / 10
   const firstDate = dates[0]
 
@@ -88,6 +89,7 @@ export default defineEventHandler(async (event) => {
     ukcUrl: `https://www.ukclimbing.com/logbook/crags/?location=${encodeURIComponent(String(cragLat))}%2C+${encodeURIComponent(String(cragLon))}&distance=20`,
     avgTempC,
     avgWindMph,
+    avgWindDir,
     avgRainMm,
     links,
     custom: true

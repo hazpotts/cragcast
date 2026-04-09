@@ -5,7 +5,7 @@ import { scoreRegion } from "~/server/utils/score"
 import { parseDatesParam } from "~/server/utils/dates"
 import { dailyIcons } from "~/server/utils/icons"
 import { checkWarnings } from "~/server/utils/warnings"
-import { avg, parallel } from "~/server/utils/server-utils"
+import { avg, parallel, circularMeanDeg, degToCompass } from "~/server/utils/server-utils"
 
 export default defineEventHandler(async (event) => {
   const q = getQuery(event)
@@ -59,6 +59,7 @@ export default defineEventHandler(async (event) => {
 
     const avgTempC = Math.round(avg(mini.temp) * 10) / 10
     const avgWindMph = Math.round(avg(mini.wind) * 10) / 10
+    const avgWindDir = mini.windDir?.length ? degToCompass(circularMeanDeg(mini.windDir)) : ''
     const avgRainMm = Math.round(avg(mini.rainMm) * 10) / 10
     const warnings = checkWarnings(mini, dates)
 
@@ -82,6 +83,7 @@ export default defineEventHandler(async (event) => {
       ukcUrl: `https://www.ukclimbing.com/logbook/crags/?location=${encodeURIComponent(String(area.lat))}%2C+${encodeURIComponent(String(area.lon))}&distance=50`,
       avgTempC,
       avgWindMph,
+      avgWindDir,
       avgRainMm,
       links,
       regionCount: regionCountsByArea[area.name] || 0
