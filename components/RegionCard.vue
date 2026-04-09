@@ -43,7 +43,7 @@
           <Icon name="lucide:thermometer" class="h-3 w-3 text-current" />{{ units.convertTemp(avgTempC) }}{{ units.tempLabel.value }}
         </span>
         <span v-if="Number.isFinite(avgWindMph)" class="inline-flex items-center gap-0.5">
-          <Icon name="lucide:wind" class="h-3 w-3 text-current" />{{ units.convertWind(avgWindMph) }} {{ units.windLabel.value }}<template v-if="avgWindDir"> {{ avgWindDir }}</template>
+          <Icon name="lucide:wind" class="h-3 w-3 text-current" />{{ units.convertWind(avgWindMph) }} {{ units.windLabel.value }}<template v-if="avgWindDir"> <Icon name="lucide:arrow-up" class="h-3 w-3 text-current" :style="{ transform: windArrowRotation(avgWindDir) }" />{{ avgWindDir }}</template>
         </span>
         <span v-if="Number.isFinite(avgRainMm)" class="inline-flex items-center gap-0.5">
           <Icon name="lucide:droplets" class="h-3 w-3 text-current" />{{ units.convertRain(avgRainMm) }} {{ units.rainLabel.value }}
@@ -183,7 +183,7 @@
               <div class="flex flex-col mt-1 mb-1 items-center text-center text-gray-600 dark:text-gray-300">
                 <div v-if="Number.isFinite(d.tempAvgC as any)" class="inline-flex items-center gap-0.5"><Icon name="lucide:thermometer" class="h-3.5 w-3.5 text-current" />{{ units.convertTemp(d.tempAvgC) }}{{ units.tempLabel.value }}</div>
                 <div v-if="Number.isFinite(d.rainSumMm as any)" class="inline-flex items-center gap-0.5"><Icon name="lucide:droplets" class="h-3.5 w-3.5 text-current" />{{ units.convertRain(d.rainSumMm) }} {{ units.rainLabel.value }}</div>
-                <div v-if="Number.isFinite(d.windAvgMph as any)" class="inline-flex items-center gap-0.5"><Icon name="lucide:wind" class="h-3.5 w-3.5 text-current" />{{ units.convertWind(d.windAvgMph) }} {{ units.windLabel.value }}<template v-if="d.windDirCompass"> {{ d.windDirCompass }}</template></div>
+                <div v-if="Number.isFinite(d.windAvgMph as any)" class="inline-flex items-center gap-0.5"><Icon name="lucide:wind" class="h-3.5 w-3.5 text-current" />{{ units.convertWind(d.windAvgMph) }} {{ units.windLabel.value }}<template v-if="d.windDirCompass"> <Icon name="lucide:arrow-up" class="h-3.5 w-3.5 text-current" :style="{ transform: windArrowRotation(d.windDirCompass) }" />{{ d.windDirCompass }}</template></div>
               </div>
             </div>
           </template>
@@ -285,6 +285,13 @@ const prefs = usePrefs()
 
 const cragCount = computed(() => props.cragCount || 0)
 const isCragGranularity = computed(() => prefs.granularity.value === 'crag')
+
+const COMPASS_DEG: Record<string, number> = { N: 0, NE: 45, E: 90, SE: 135, S: 180, SW: 225, W: 270, NW: 315 }
+/** CSS rotation for a wind-direction arrow (arrow points where wind blows TO) */
+function windArrowRotation(compass: string): string {
+  const deg = COMPASS_DEG[compass] ?? 0
+  return `rotate(${(deg + 180) % 360}deg)`
+}
 
 async function toggleCrags() {
   showCrags.value = !showCrags.value
