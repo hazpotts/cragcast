@@ -99,7 +99,7 @@
         <span class="block text-center">{{ row.pending ? '…' : units.convertTemp(row.avgTempC) }}</span>
       </template>
       <template #avgWindMph-data="{ row }">
-        <span class="inline-flex items-center justify-center gap-0.5 w-full">{{ row.pending ? '…' : units.convertWind(row.avgWindMph) }}<template v-if="!row.pending && row.avgWindDir"> <Icon name="lucide:arrow-up" class="h-3.5 w-3.5 text-current" :style="{ transform: windArrowRotation(row.avgWindDir) }" />{{ row.avgWindDir }}</template></span>
+        <span class="inline-flex items-center justify-center gap-0.5 w-full">{{ row.pending ? '…' : units.convertWind(row.avgWindMph) }}<template v-if="!row.pending && row.avgWindDir"> <Icon name="lucide:arrow-up" class="h-3.5 w-3.5 text-current" :style="{ transform: windArrowRotation(row.avgWindDir) }" /></template></span>
       </template>
       <template #avgRainMm-data="{ row }">
         <span class="block text-center">{{ row.pending ? '…' : units.convertRain(row.avgRainMm) }}</span>
