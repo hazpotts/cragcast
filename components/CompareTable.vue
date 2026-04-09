@@ -199,7 +199,7 @@ const isAreaGranularity = computed(() => prefs.granularity.value === 'area')
 const COMPASS_DEG: Record<string, number> = { N: 0, NE: 45, E: 90, SE: 135, S: 180, SW: 225, W: 270, NW: 315 }
 function windArrowRotation(compass: string): string {
   const deg = COMPASS_DEG[compass] ?? 0
-  return `rotate(${(deg + 180) % 360}deg)`
+  return `rotate(${deg}deg)`
 }
 // Show distance column when any distance filter is active
 const showDistance = computed(() => Number.isFinite(prefs.maxDriveMins.value) || prefs.minDriveMins.value > 0)
