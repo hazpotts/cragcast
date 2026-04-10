@@ -3,7 +3,7 @@ import { haversineKm, driveMinutesApprox } from "~/server/utils/distance"
 import { scoreRegion } from "~/server/utils/score"
 import { parseDatesParam } from "~/server/utils/dates"
 import { dailyIcons } from "~/server/utils/icons"
-import { avg, circularMeanDeg, degToCompass } from "~/server/utils/server-utils"
+import { avg, sum, circularMeanDeg, degToCompass } from "~/server/utils/server-utils"
 
 /** Reverse-geocode lat/lon to nearest town name via Nominatim */
 async function reverseGeocode(lat: number, lon: number): Promise<string> {
@@ -61,7 +61,7 @@ export default defineEventHandler(async (event) => {
   const avgTempC = Math.round(avg(mini.temp) * 10) / 10
   const avgWindMph = Math.round(avg(mini.wind) * 10) / 10
   const avgWindDir = mini.windDir?.length ? degToCompass(circularMeanDeg(mini.windDir)) : ''
-  const avgRainMm = Math.round(avg(mini.rainMm) * 10) / 10
+  const totalRainMm = Math.round(sum(mini.rainMm) * 10) / 10
   const firstDate = dates[0]
 
   // Reverse geocode for BBC/Met Office links (nearest town)
@@ -90,7 +90,7 @@ export default defineEventHandler(async (event) => {
     avgTempC,
     avgWindMph,
     avgWindDir,
-    avgRainMm,
+    totalRainMm,
     links,
     custom: true
   }

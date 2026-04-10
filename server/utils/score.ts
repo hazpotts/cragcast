@@ -17,14 +17,14 @@ export function scoreRegion(mini: MiniSeries, opts: {
   minDriveMins?: number
   maxDriveMins: number
 }): { score: number; why: string[] } {
-  const rain = avg(mini.rainMm)
+  const rain = sum(mini.rainMm)
   const pop = avg(mini.pop)
   const wind = avg(mini.wind)
   const gust = max(mini.gust)
   const temp = avg(mini.temp)
   const cloud = avg(mini.cloud)
 
-  const drynessPct = Math.max(0, 100 - (rain * 12 + pop * 0.6)) // 40%
+  const drynessPct = Math.max(0, 100 - (rain + pop * 0.6)) // 40%
   let drynessScore = (drynessPct / 100) * 40
 
   let windPenalty = 0

@@ -45,8 +45,8 @@
         <span v-if="Number.isFinite(avgWindMph)" class="inline-flex items-center gap-0.5">
           <Icon name="lucide:wind" class="h-3 w-3 text-current" />{{ units.convertWind(avgWindMph) }} {{ units.windLabel.value }}<template v-if="avgWindDir"> <Icon name="lucide:arrow-up" class="h-3 w-3 text-current" :style="{ transform: windArrowRotation(avgWindDir) }" /></template>
         </span>
-        <span v-if="Number.isFinite(avgRainMm)" class="inline-flex items-center gap-0.5">
-          <Icon name="lucide:droplets" class="h-3 w-3 text-current" />{{ units.convertRain(avgRainMm) }} {{ units.rainLabel.value }}
+        <span v-if="Number.isFinite(totalRainMm)" class="inline-flex items-center gap-0.5">
+          <Icon name="lucide:droplets" class="h-3 w-3 text-current" />{{ units.convertRain(totalRainMm) }} {{ units.rainLabel.value }}
         </span>
         <span v-if="Number.isFinite(distanceMins as any) && (distanceMins as any) > 0" class="inline-flex items-center gap-0.5">
           <Icon name="heroicons:map-pin" class="h-3 w-3 text-current" />~{{ units.convertDistance(distanceMins as number) }} {{ units.distanceLabel.value }}
@@ -271,7 +271,7 @@ const props = defineProps<{
   avgTempC: number
   avgWindMph: number
   avgWindDir?: string
-  avgRainMm: number
+  totalRainMm: number
   compact?: boolean
   cragCount?: number
 }>()
