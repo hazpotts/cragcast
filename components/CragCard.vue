@@ -38,8 +38,8 @@
         <span v-if="Number.isFinite(crag.avgWindMph)" class="inline-flex items-center gap-0.5">
           <Icon name="lucide:wind" class="h-3 w-3 text-current" />{{ units.convertWind(crag.avgWindMph) }} {{ units.windLabel.value }}
         </span>
-        <span v-if="Number.isFinite(crag.avgRainMm)" class="inline-flex items-center gap-0.5">
-          <Icon name="lucide:droplets" class="h-3 w-3 text-current" />{{ units.convertRain(crag.avgRainMm) }} {{ units.rainLabel.value }}
+        <span v-if="Number.isFinite(crag.totalRainMm)" class="inline-flex items-center gap-0.5">
+          <Icon name="lucide:droplets" class="h-3 w-3 text-current" />{{ units.convertRain(crag.totalRainMm) }} {{ units.rainLabel.value }}
         </span>
         <span v-if="crag.distanceMins > 0" class="inline-flex items-center gap-0.5">
           <Icon name="heroicons:map-pin" class="h-3 w-3 text-current" />~{{ units.convertDistance(crag.distanceMins) }} {{ units.distanceLabel.value }}

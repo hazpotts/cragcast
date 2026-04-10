@@ -101,8 +101,8 @@
       <template #avgWindMph-data="{ row }">
         <span class="inline-flex items-center justify-center gap-0.5 w-full">{{ row.pending ? '…' : units.convertWind(row.avgWindMph) }}<template v-if="!row.pending && row.avgWindDir"> <Icon name="lucide:arrow-up" class="h-3.5 w-3.5 text-current" :style="{ transform: windArrowRotation(row.avgWindDir) }" /></template></span>
       </template>
-      <template #avgRainMm-data="{ row }">
-        <span class="block text-center">{{ row.pending ? '…' : units.convertRain(row.avgRainMm) }}</span>
+      <template #totalRainMm-data="{ row }">
+        <span class="block text-center">{{ row.pending ? '…' : units.convertRain(row.totalRainMm) }}</span>
       </template>
       <template #distanceMins-data="{ row }">
         <span class="block text-center">
@@ -210,7 +210,7 @@ const columns = computed(() => {
     { key: 'weather', label: 'Weather' },
     { key: 'avgTempC', label: `Temp (${units.tempLabel.value})` },
     { key: 'avgWindMph', label: `Wind (${units.windLabel.value})` },
-    { key: 'avgRainMm', label: `Rain (${units.rainLabel.value})` },
+    { key: 'totalRainMm', label: `Rain (${units.rainLabel.value})` },
     ...(!isAreaGranularity.value ? [{ key: 'areaSort', label: isCragGranularity.value ? 'Region' : 'Area', sortable: true }] : []),
     { key: 'score', label: 'Score', sortable: true },
     { key: 'ukc', label: 'Links' },

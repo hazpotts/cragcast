@@ -6,7 +6,7 @@ import { scoreRegion } from "~/server/utils/score"
 import { parseDatesParam } from "~/server/utils/dates"
 import { dailyIcons } from "~/server/utils/icons"
 import { checkWarnings } from "~/server/utils/warnings"
-import { avg, parallel, circularMeanDeg, degToCompass } from "~/server/utils/server-utils"
+import { avg, sum, parallel, circularMeanDeg, degToCompass } from "~/server/utils/server-utils"
 
 export default defineEventHandler(async (event) => {
   const q = getQuery(event)
@@ -75,7 +75,7 @@ export default defineEventHandler(async (event) => {
     const avgTempC = Math.round(avg(mini.temp) * 10) / 10
     const avgWindMph = Math.round(avg(mini.wind) * 10) / 10
     const avgWindDir = mini.windDir?.length ? degToCompass(circularMeanDeg(mini.windDir)) : ''
-    const avgRainMm = Math.round(avg(mini.rainMm) * 10) / 10
+    const totalRainMm = Math.round(sum(mini.rainMm) * 10) / 10
     const firstDate = dates[0]
     const zoom = r.external?.windyZoom ?? 8
     const bbcId = r.external?.bbcId
@@ -107,7 +107,7 @@ export default defineEventHandler(async (event) => {
       avgTempC,
       avgWindMph,
       avgWindDir,
-      avgRainMm,
+      totalRainMm,
       links,
       cragCount: cragCounts[r.id] || 0
     })

@@ -14,7 +14,7 @@ export type RankItem = {
   ukcUrl: string
   avgTempC: number
   avgWindMph: number
-  avgRainMm: number
+  totalRainMm: number
   links: { bbc: string; metoffice: string; windy: string; yrno?: string }
   cragCount?: number
 }

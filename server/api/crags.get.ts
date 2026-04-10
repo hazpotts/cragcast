@@ -6,7 +6,7 @@ import { scoreRegion, scoreCrag } from "~/server/utils/score"
 import { parseDatesParam } from "~/server/utils/dates"
 import { dailyIcons } from "~/server/utils/icons"
 import { checkWarnings } from "~/server/utils/warnings"
-import { avg, parallel, circularMeanDeg, degToCompass } from "~/server/utils/server-utils"
+import { avg, sum, parallel, circularMeanDeg, degToCompass } from "~/server/utils/server-utils"
 
 const coordKey = (lat: number, lon: number) => `${lat.toFixed(2)},${lon.toFixed(2)}`
 
@@ -85,7 +85,7 @@ export default defineEventHandler(async (event) => {
     const avgTempC = Math.round(avg(cragForecast.mini.temp) * 10) / 10
     const avgWindMph = Math.round(avg(cragForecast.mini.wind) * 10) / 10
     const avgWindDir = cragForecast.mini.windDir?.length ? degToCompass(circularMeanDeg(cragForecast.mini.windDir)) : ''
-    const avgRainMm = Math.round(avg(cragForecast.mini.rainMm) * 10) / 10
+    const totalRainMm = Math.round(sum(cragForecast.mini.rainMm) * 10) / 10
 
     results.push({
       id: crag.id,
@@ -99,7 +99,7 @@ export default defineEventHandler(async (event) => {
       avgTempC,
       avgWindMph,
       avgWindDir,
-      avgRainMm,
+      totalRainMm,
       aspect: crag.aspect,
       rock: crag.rock,
       types: crag.types,

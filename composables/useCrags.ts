@@ -11,7 +11,7 @@ export type CragItem = {
   daily: { date: string; icon: string; tempAvgC: number; windAvgMph: number; rainSumMm: number }[]
   avgTempC: number
   avgWindMph: number
-  avgRainMm: number
+  totalRainMm: number
   aspect: string | null
   rock: string[]
   types: { trad?: number; sport?: number; boulder?: number }
